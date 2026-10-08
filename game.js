@@ -3,17 +3,16 @@ let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
 
-// Giriş Yap fonksiyonu (iOS uyumlu)
+// iOS için %100 Çalışan Prompt Giriş Sistemi
 window.handleLogin = function() {
-    const inputEl = document.getElementById('username-input');
-    const inputVal = inputEl ? inputEl.value.trim() : "";
-    if (inputVal.length < 2) { 
-        alert("En az 2 harfli bir kullanıcı adı gir!"); 
-        return; 
+    let name = prompt("Kullanıcı adınızı girin:", "Maceracı");
+    if (name && name.trim().length >= 2) {
+        playerName = name.trim();
+        document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
+        switchScreen('menu-screen');
+    } else {
+        alert("En az 2 harfli geçerli bir isim girmelisin!");
     }
-    playerName = inputVal;
-    document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
-    switchScreen('menu-screen');
 };
 
 window.logout = function() { switchScreen('login-screen'); };
@@ -34,7 +33,7 @@ window.createRoom = function() {
 };
 
 window.joinRoomPrompt = function() {
-    let code = prompt("Oda Kodunu Gir:");
+    let code = prompt("Katılmak istediğin Oda Kodunu Gir:");
     if (code) {
         let cleanCode = code.trim();
         if (window.FB) {
@@ -113,10 +112,11 @@ function resizeGame() {
     canvas.style.height = (600 * scale) + 'px';
 }
 
+// Yeni odada çanta tamamen boş başlar
 let player = {
     x: 1000, y: 1000, radius: 15, speed: 3.5,
     hp: 100, hunger: 100, angle: 0,
-    inventory: { wood: 8, stone: 5, iron: 2, diamond: 0, cookedFood: 1 }
+    inventory: { wood: 0, stone: 0, iron: 0, diamond: 0 }
 };
 
 let worldResources = [];
@@ -151,6 +151,7 @@ function generateChunkResources(cx, cy) {
     for (let i = 0; i < 6; i++) {
         let item = types[Math.floor(Math.random() * types.length)];
         worldResources.push({
+            id: 'res_' + Math.random().toString(36.2),
             x: startX + Math.random() * (CHUNK_SIZE - 100) + 50,
             y: startY + Math.random() * (CHUNK_SIZE - 100) + 50,
             type: item.type,
@@ -165,6 +166,7 @@ let projectiles = [];
 
 function startGame() {
     if (!currentRoomId) currentRoomId = "genel_oda";
+    player.inventory = { wood: 0, stone: 0, iron: 0, diamond: 0 }; // Sıfırla
     let codeEl = document.getElementById('room-code-display');
     if (codeEl) codeEl.innerText = currentRoomId;
     
@@ -183,8 +185,17 @@ function initFirebaseMultiplayer() {
             
             const roomPlayersRef = ref(db, 'rooms/' + currentRoomId + '/players');
             onValue(roomPlayersRef, (snapshot) => {
-                const data = snapshot.val();
-                remotePlayers = data || {};
+                const data = snapshot.val() || {};
+                remotePlayers = data;
+                
+                // PvP Hasar Kontrolü: Diğer oyunculardan gelen can azalmasını kontrol et
+                if (data[myPlayerId] && data[myPlayerId].hp !== undefined) {
+                    player.hp = data[myPlayerId].hp;
+                    if (player.hp <= 0) {
+                        alert("Öldün! Ana menüye dönülüyor.");
+                        window.returnToMainMenu();
+                    }
+                }
             });
 
             window.addEventListener('beforeunload', () => {
@@ -194,7 +205,7 @@ function initFirebaseMultiplayer() {
     }, 100);
 }
 
-// Joystick ve Dokunmatik Kontrol
+// Joystick
 const jBase = document.getElementById('joystick-base');
 const jKnob = document.getElementById('joystick-knob');
 let joyActive = false;
@@ -252,13 +263,24 @@ function handleTouchMove(touch) {
     joyVector = dist < 5 ? { x: 0, y: 0 } : { x: dx / maxDist, y: dy / maxDist };
 }
 
+// PvP SALDIRI SİSTEMİ (⚔️ Butonuna basınca önündeki oyuncuya hasar ver)
 document.getElementById('btn-attack').addEventListener('touchstart', (e) => {
     e.preventDefault();
-    projectiles.push({
-        x: player.x, y: player.y,
-        vx: Math.cos(player.angle) * 8, vy: Math.sin(player.angle) * 8,
-        radius: 5, color: '#f1c40f'
-    });
+    
+    // Yakındaki oyuncuları kontrol et ve vur
+    for (let id in remotePlayers) {
+        if (id === myPlayerId) continue;
+        let p = remotePlayers[id];
+        let dist = Math.hypot(player.x - p.x, player.y - p.y);
+        if (dist < 50) { // Yakın dövüş menzili
+            let newHp = (p.hp !== undefined ? p.hp : 100) - 20; // Her vuruş 20 hasar
+            if (window.FB) {
+                window.FB.update(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + id), {
+                    hp: newHp > 0 ? newHp : 0
+                });
+            }
+        }
+    }
 }, { passive: false });
 
 document.getElementById('btn-inv').addEventListener('click', () => {
@@ -281,7 +303,7 @@ window.placeWorkbench = function() {
         worldObjects.push({ x: player.x, y: player.y, type: 'workbench' });
         updateUI(); window.closeModals();
         alert('Çalışma Masası kuruldu!');
-    } else { alert('Yetersiz malzeme!'); }
+    } else { alert('Yetersiz malzeme! (5 Odun, 3 Taş gerekli)'); }
 };
 
 let activeWorkbench = null;
@@ -312,7 +334,7 @@ window.closeModals = function() {
 window.craftItem = function(type, reqWood, reqIron) {
     if (player.inventory.wood >= reqWood && player.inventory.iron >= reqIron) {
         player.inventory.wood -= reqWood; player.inventory.iron -= reqIron;
-        updateUI(); window.closeModals(); alert('Üretildi!');
+        updateUI(); window.closeModals(); alert('Demir Kılıç üretildi!');
     } else { alert('Yetersiz malzeme!'); }
 };
 
@@ -341,6 +363,7 @@ function update() {
         checkAndGenerateChunks();
     }
 
+    // Firebase'e Konum, Envanter ve Can Senkronizasyonu
     firebaseSyncTimer++;
     if (firebaseSyncTimer > 3 && window.FB && currentRoomId) {
         firebaseSyncTimer = 0;
@@ -349,10 +372,12 @@ function update() {
             x: player.x,
             y: player.y,
             angle: player.angle,
-            inventory: player.inventory
+            inventory: player.inventory,
+            hp: player.hp
         });
     }
 
+    // Ortak Kaynakları Toplama (Toplanan eşya envantere gider, ekrandan silinir)
     for (let i = worldResources.length - 1; i >= 0; i--) {
         let res = worldResources[i];
         if (Math.hypot(player.x - res.x, player.y - res.y) < player.radius + res.radius) {
@@ -367,11 +392,6 @@ function update() {
     }
 
     checkWorkbenchProximity();
-
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        let p = projectiles[i];
-        p.x += p.vx; p.y += p.vy;
-    }
 }
 
 function draw() {
@@ -380,6 +400,7 @@ function draw() {
     ctx.save();
     ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
+    // Harita zemin çizgileri
     ctx.strokeStyle = 'rgba(255,255,255,0.03)';
     ctx.lineWidth = 1;
     let startX = Math.floor((player.x - canvas.width) / 50) * 50;
@@ -400,6 +421,7 @@ function draw() {
         ctx.fillText(res.emoji, res.x, res.y);
     });
 
+    // Diğer Oyuncuları Çizme
     for (let id in remotePlayers) {
         if (id === myPlayerId) continue;
         let p = remotePlayers[id];
@@ -411,13 +433,11 @@ function draw() {
         ctx.restore();
 
         ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText(p.name || "Oyuncu", p.x, p.y - 22);
+        let remoteHp = p.hp !== undefined ? p.hp : 100;
+        ctx.fillText(`${p.name || "Oyuncu"} (❤️${remoteHp})`, p.x, p.y - 22);
     }
 
-    projectiles.forEach(p => {
-        ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
-    });
-
+    // Kendi Oyuncumuz
     ctx.save();
     ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.fillStyle = '#3498db'; ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
