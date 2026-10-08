@@ -11,13 +11,6 @@ body { background: #07070f; color: #fff; font-family: sans-serif; width: 100vw; 
 .btn-blue { background: #3498db; }
 .btn-green { background: #2ecc71; }
 
-.input-box { 
-    width: 80%; max-width: 280px; padding: 14px; margin: 10px 0; 
-    background: rgba(255,255,255,0.2); border: 2px solid #3498db; 
-    border-radius: 8px; color: white; font-size: 18px; text-align: center; 
-    outline: none; -webkit-appearance: none; z-index: 9999; position: relative; 
-}
-
 #game-screen { background: #132213; justify-content: flex-start; }
 #ui {
     position: absolute; top: 10px; left: 10px; right: 10px;
@@ -40,11 +33,11 @@ canvas { background: #132213; display: block; box-shadow: 0 0 20px rgba(0,0,0,0.
 .btn-round {
     width: 70px; height: 70px; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 24px;
     border: 2px solid rgba(255,255,255,0.4); box-shadow: 0 4px 10px rgba(0,0,0,0.5); background: rgba(40,40,60,0.8);
-    touch-action: manipulation; -webkit-appearance: none;
+    touch-action: manipulation; -webkit-appearance: none; cursor: pointer;
 }
 #btn-attack { background: rgba(231, 76, 60, 0.8); border-color: #e74c3c; }
 #btn-inv { background: rgba(52, 152, 219, 0.8); border-color: #3498db; }
-#btn-interact { background: rgba(46, 204, 113, 0.8); border-color: #2ecc71; display: none; }
+#btn-interact { background: rgba(46, 204, 113, 0.8); border-color: #2ecc71; }
 
 .modal {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
