@@ -2,34 +2,22 @@ let playerName = "";
 let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
+let activeRoomsData = {};
 
-// iOS ve tüm cihazlar için güvenli giriş fonksiyonu
 window.handleLogin = function() {
     const inputEl = document.getElementById('username-input');
     const inputVal = inputEl ? inputEl.value.trim() : "";
-    
-    if (inputVal.length < 2) { 
-        alert("En az 2 harfli isim gir!"); 
-        return; 
-    }
-    
+    if (inputVal.length < 2) { alert("En az 2 harfli isim gir!"); return; }
     playerName = inputVal;
     document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
     switchScreen('menu-screen');
 };
 
-// iOS Klavye ve Input odaklanma güvencesi
 document.addEventListener("DOMContentLoaded", () => {
     const inputEl = document.getElementById('username-input');
     if (inputEl) {
-        inputEl.addEventListener('touchstart', (e) => {
-            e.stopPropagation();
-            inputEl.focus();
-        }, { passive: true });
-        
-        inputEl.addEventListener('input', (e) => {
-            playerName = e.target.value;
-        });
+        inputEl.addEventListener('touchstart', (e) => { e.stopPropagation(); inputEl.focus(); }, { passive: true });
+        inputEl.addEventListener('input', (e) => { playerName = e.target.value; });
     }
 });
 
@@ -37,6 +25,10 @@ window.logout = function() { switchScreen('login-screen'); };
 
 window.createRoom = function() {
     currentRoomId = "oda_" + Math.floor(Math.random() * 9000 + 1000);
+    // Firebase'e odanın aktif olduğunu kaydedelim
+    if (window.FB) {
+        window.FB.set(window.FB.ref(window.FB.db, 'activeRooms/' + currentRoomId), { host: playerName, time: Date.now() });
+    }
     alert("Oda Kuruldu! Kodun: " + currentRoomId);
     startGame();
 };
@@ -47,6 +39,55 @@ window.joinRoomPrompt = function() {
         currentRoomId = code.trim();
         startGame();
     }
+};
+
+// Açık Odalar Paneli
+window.openRoomList = function() {
+    const modal = document.getElementById('room-list-modal');
+    const container = document.getElementById('active-rooms-container');
+    container.innerHTML = "Yükleniyor...";
+    modal.style.display = 'flex';
+
+    if (window.FB) {
+        window.FB.onValue(window.FB.ref(window.FB.db, 'activeRooms'), (snapshot) => {
+            activeRoomsData = snapshot.val() || {};
+            container.innerHTML = "";
+            let keys = Object.keys(activeRoomsData);
+            if (keys.length === 0) {
+                container.innerHTML = "<div class='item-row'>Aktif oda yok. Yeni oda kur!</div>";
+                return;
+            }
+            keys.forEach(roomId => {
+                let room = activeRoomsData[roomId];
+                container.innerHTML += `
+                    <div class="item-row">
+                        <span>Oda: ${roomId} (Kurucu: ${room.host || 'Bilinmiyor'})</span>
+                        <button class="craft-btn" onclick="joinSpecificRoom('${roomId}')">Katıl</button>
+                    </div>
+                `;
+            });
+        }, { onlyOnce: true });
+    }
+};
+
+window.closeRoomList = function() {
+    document.getElementById('room-list-modal').style.display = 'none';
+};
+
+window.joinSpecificRoom = function(roomId) {
+    currentRoomId = roomId;
+    closeRoomList();
+    startGame();
+};
+
+// Oyundan çıkıp ana menüye dönme tuşu
+window.returnToMainMenu = function() {
+    if (window.FB && currentRoomId) {
+        // Odadan oyuncumuzu temizle
+        window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + myPlayerId));
+    }
+    currentRoomId = "";
+    switchScreen('menu-screen');
 };
 
 function switchScreen(screenId) {
@@ -109,7 +150,7 @@ function initFirebaseMultiplayer() {
     }, 100);
 }
 
-// iOS Uyumlu Touch / Joystick Mantığı
+// Joystick
 const jBase = document.getElementById('joystick-base');
 const jKnob = document.getElementById('joystick-knob');
 let joyActive = false;
@@ -298,6 +339,7 @@ function draw() {
         ctx.fillText("🪵🛠️", obj.x, obj.y);
     });
 
+    resources.resources?.forEach?.(res => {}); // güvenli kontrol
     resources.forEach(res => {
         ctx.font = "20px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(res.emoji, res.x, res.y);
