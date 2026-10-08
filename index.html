@@ -2,17 +2,19 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>2D Survival PvP - Kusursuz Multiplayer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2D Survival PvP - iOS Kesin Çözüm</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 1. GİRİŞ EKRANI (iOS Kesin Düzeltme) -->
+    <!-- 1. GİRİŞ EKRANI (iOS Uyumlu Net Alan) -->
     <div id="login-screen" class="screen active">
-        <h1 style="font-size: 26px; margin-bottom: 20px; text-shadow: 0 0 10px #3498db; pointer-events: none;">⚔️ SURVIVAL PVP</h1>
-        <input type="text" id="username-input" class="input-box" placeholder="Kullanıcı Adı" maxlength="15" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-        <button class="btn" onclick="handleLogin()">Giriş Yap</button>
+        <div class="login-container">
+            <h1>⚔️ SURVIVAL PVP</h1>
+            <input type="text" id="username-input" class="input-box" placeholder="Kullanıcı Adı Girin" maxlength="15" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <button class="btn" onclick="handleLogin()">Giriş Yap</button>
+        </div>
     </div>
 
     <!-- 2. ANA MENÜ EKRANI -->
@@ -25,7 +27,7 @@
     </div>
 
     <!-- AÇIK ODALAR LİSTESİ MODALI -->
-    <div class="modal" id="room-list-modal" style="display:none; z-index: 200;">
+    <div class="modal" id="room-list-modal" style="display:none;">
         <div class="modal-header">
             <span>Aktif Odalar (Canlı)</span>
             <button class="close-btn" onclick="closeRoomList()">X</button>
