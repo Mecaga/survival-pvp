@@ -3,13 +3,35 @@ let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
 
+// iOS ve tüm cihazlar için güvenli giriş fonksiyonu
 window.handleLogin = function() {
-    const input = document.getElementById('username-input').value.trim();
-    if (input.length < 2) { alert("En az 2 harfli isim gir!"); return; }
-    playerName = input;
+    const inputEl = document.getElementById('username-input');
+    const inputVal = inputEl ? inputEl.value.trim() : "";
+    
+    if (inputVal.length < 2) { 
+        alert("En az 2 harfli isim gir!"); 
+        return; 
+    }
+    
+    playerName = inputVal;
     document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
     switchScreen('menu-screen');
 };
+
+// iOS Klavye ve Input odaklanma güvencesi
+document.addEventListener("DOMContentLoaded", () => {
+    const inputEl = document.getElementById('username-input');
+    if (inputEl) {
+        inputEl.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            inputEl.focus();
+        }, { passive: true });
+        
+        inputEl.addEventListener('input', (e) => {
+            playerName = e.target.value;
+        });
+    }
+});
 
 window.logout = function() { switchScreen('login-screen'); };
 
