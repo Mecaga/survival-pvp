@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2D Survival PvP</title>
+    <title>2D Survival PvP - Son Sürüm</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 1. GİRİŞ EKRANI (İsim Kutusu ve Buton Birlikte) -->
+    <!-- 1. GİRİŞ EKRANI (iOS Uyumlu %100 Çalışan Prompt Butonu) -->
     <div id="login-screen" class="screen active">
         <div class="login-container">
             <h1>⚔️ SURVIVAL PVP</h1>
-            <input type="text" id="username-input" class="input-box" placeholder="Kullanıcı Adı Girin" maxlength="15" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-            <button class="btn btn-green" onclick="handleLogin()">Giriş Yap</button>
+            <p style="color: #aaa; font-size: 14px; margin-bottom: 15px;">Oyuna katılmak için dokun:</p>
+            <button class="btn btn-green" onclick="handleLogin()">Giriş Yap ve Başla</button>
         </div>
     </div>
 
@@ -44,7 +44,7 @@
                 ❤️ <span id="hp-val">100</span> | 🍖 <span id="hunger-val">100</span> | Oda: <span id="room-code-display"></span>
             </div>
             <div class="panel" style="display:flex; gap:10px; align-items:center; pointer-events: auto;">
-                <span>🪵<span id="i-wood">5</span> 🪨<span id="i-stone">2</span></span>
+                <span>🪵<span id="i-wood">0</span> 🪨<span id="i-stone">0</span></span>
                 <button class="craft-btn" style="background:#e74c3c; padding:6px 10px; cursor:pointer;" onclick="returnToMainMenu()">Ana Menü</button>
             </div>
         </div>
@@ -56,7 +56,7 @@
         </div>
         
         <div class="action-container">
-            <div class="btn-round" id="btn-interact">🛠️ Masa</div>
+            <div class="btn-round" id="btn-interact">🛠️</div>
             <div class="btn-round" id="btn-inv">🎒</div>
             <div class="btn-round" id="btn-attack">⚔️</div>
         </div>
@@ -76,7 +76,7 @@
         </div>
     </div>
 
-    <!-- Envanter Menüsü -->
+    <!-- Envanter Menüsü (Boş Başlar) -->
     <div class="modal" id="inv-modal" style="display:none;">
         <div class="modal-header">
             <span>Çanta ve Eşyalar</span>
