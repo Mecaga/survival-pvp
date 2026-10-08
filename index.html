@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>2D Survival PvP - iOS Fix</title>
+    <title>2D Survival PvP - Online & Menü</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 1. GİRİŞ EKRANI (iOS Tıklama Sorunu Giderildi) -->
+    <!-- 1. GİRİŞ EKRANI -->
     <div id="login-screen" class="screen active" style="z-index: 9999; position: absolute;">
         <h1 style="font-size: 26px; margin-bottom: 20px; text-shadow: 0 0 10px #3498db; pointer-events: none;">⚔️ SURVIVAL PVP</h1>
         <input type="text" id="username-input" class="input-box" placeholder="Kullanıcı Adı" maxlength="15" autocomplete="off" autocapitalize="off">
@@ -17,10 +17,22 @@
 
     <!-- 2. ANA MENÜ EKRANI -->
     <div id="menu-screen" class="screen">
-        <h2 id="welcome-text" style="margin-bottom: 20px; color: #2ecc71;">Hoş Geldin</h2>
+        <h2 id="welcome-text" style="margin-bottom: 15px; color: #2ecc71;">Hoş Geldin</h2>
         <button class="btn btn-green" onclick="createRoom()">Oda Kur (Lobi)</button>
-        <button class="btn btn-blue" onclick="joinRoomPrompt()">Odaya Katıl</button>
+        <button class="btn btn-blue" onclick="joinRoomPrompt()">Kod ile Odaya Katıl</button>
+        <button class="btn" style="background: #e67e22;" onclick="openRoomList()">Açık Odalar</button>
         <button class="btn" style="background: #7f8c8d;" onclick="logout()">Çıkış Yap</button>
+    </div>
+
+    <!-- 2.5. AÇIK ODALAR LİSTESİ MODALI -->
+    <div class="modal" id="room-list-modal" style="display:none; z-index: 200;">
+        <div class="modal-header">
+            <span>Aktif Odalar (Canlı)</span>
+            <button class="close-btn" onclick="closeRoomList()">X</button>
+        </div>
+        <div id="active-rooms-container" style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto;">
+            <!-- Canlı odalar buraya dolacak -->
+        </div>
     </div>
 
     <!-- 3. OYUN EKRANI -->
@@ -29,8 +41,10 @@
             <div class="panel">
                 ❤️ <span id="hp-val">100</span> | 🍖 <span id="hunger-val">100</span> | Oda: <span id="room-code-display"></span>
             </div>
-            <div class="panel">
-                🪵<span id="i-wood">5</span> 🪨<span id="i-stone">2</span> 🔩<span id="i-iron">0</span> 💎<span id="i-diamond">0</span>
+            <div class="panel" style="display:flex; gap:10px; align-items:center;">
+                <span>🪵<span id="i-wood">5</span> 🪨<span id="i-stone">2</span></span>
+                <!-- OYUN İÇİ ANA MENÜYE DÖNME / ÇIKIŞ TUŞU -->
+                <button class="craft-btn" style="background:#e74c3c; padding:4px 8px;" onclick="returnToMainMenu()">Ana Menü</button>
             </div>
         </div>
 
