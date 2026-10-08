@@ -8,5 +8,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Tüm fonksiyonları global olarak dışa aktarıyoruz
+// Bağlantı testi ve global aktarım
 window.FB = { db, ref, set, get, onValue, remove, push, update };
+console.log("Firebase başarıyla yüklendi ve bağlandı.");
