@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2D Survival PvP - Kesin Kararlı Sürüm</title>
+    <title>2D Survival PvP</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 1. GİRİŞ EKRANI (iOS Uyumlu Butonla İsim Alma) -->
+    <!-- 1. GİRİŞ EKRANI (İsim Kutusu ve Buton Birlikte) -->
     <div id="login-screen" class="screen active">
         <div class="login-container">
             <h1>⚔️ SURVIVAL PVP</h1>
-            <p style="color: #aaa; font-size: 14px; margin-bottom: 10px;">Oyuna başlamak için tıkla:</p>
-            <button class="btn btn-green" onclick="handleLoginIOS()">Oyuna Giriş Yap</button>
+            <input type="text" id="username-input" class="input-box" placeholder="Kullanıcı Adı Girin" maxlength="15" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <button class="btn btn-green" onclick="handleLogin()">Giriş Yap</button>
         </div>
     </div>
 
