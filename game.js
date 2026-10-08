@@ -1,18 +1,19 @@
-let playerName = "Maceraci";
+let playerName = "Maceracı";
 let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
 
-// iOS için %100 çalışan güvenli isim alma (Prompt yöntemi iOS Safari'de klavye kilitlenmesini kesin çözer)
-window.handleLoginIOS = function() {
-    let name = prompt("Kullanıcı adınızı girin:", "Maceracı");
-    if (name && name.trim().length >= 2) {
-        playerName = name.trim();
-        document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
-        switchScreen('menu-screen');
-    } else {
-        alert("En az 2 harfli geçerli bir isim girmelisin!");
+// Giriş Yap fonksiyonu (iOS uyumlu)
+window.handleLogin = function() {
+    const inputEl = document.getElementById('username-input');
+    const inputVal = inputEl ? inputEl.value.trim() : "";
+    if (inputVal.length < 2) { 
+        alert("En az 2 harfli bir kullanıcı adı gir!"); 
+        return; 
     }
+    playerName = inputVal;
+    document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
+    switchScreen('menu-screen');
 };
 
 window.logout = function() { switchScreen('login-screen'); };
@@ -33,7 +34,7 @@ window.createRoom = function() {
 };
 
 window.joinRoomPrompt = function() {
-    let code = prompt("Katılmak istediğin Oda Kodunu Gir:");
+    let code = prompt("Oda Kodunu Gir:");
     if (code) {
         let cleanCode = code.trim();
         if (window.FB) {
