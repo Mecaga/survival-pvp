@@ -1,32 +1,19 @@
-let playerName = "";
+let playerName = "Maceraci";
 let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
 
-// iOS için klavye ve input odaklanma çözümü
-window.handleLogin = function() {
-    const inputEl = document.getElementById('username-input');
-    const inputVal = inputEl ? inputEl.value.trim() : "";
-    if (inputVal.length < 2) { 
-        alert("En az 2 harfli bir kullanıcı adı gir!"); 
-        return; 
+// iOS için %100 çalışan güvenli isim alma (Prompt yöntemi iOS Safari'de klavye kilitlenmesini kesin çözer)
+window.handleLoginIOS = function() {
+    let name = prompt("Kullanıcı adınızı girin:", "Maceracı");
+    if (name && name.trim().length >= 2) {
+        playerName = name.trim();
+        document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
+        switchScreen('menu-screen');
+    } else {
+        alert("En az 2 harfli geçerli bir isim girmelisin!");
     }
-    playerName = inputVal;
-    document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
-    switchScreen('menu-screen');
 };
-
-document.addEventListener("DOMContentLoaded", () => {
-    const inputEl = document.getElementById('username-input');
-    if (inputEl) {
-        inputEl.addEventListener('touchend', (e) => {
-            inputEl.focus();
-        });
-        inputEl.addEventListener('input', (e) => {
-            playerName = e.target.value;
-        });
-    }
-});
 
 window.logout = function() { switchScreen('login-screen'); };
 
@@ -46,7 +33,7 @@ window.createRoom = function() {
 };
 
 window.joinRoomPrompt = function() {
-    let code = prompt("Oda Kodunu Gir:");
+    let code = prompt("Katılmak istediğin Oda Kodunu Gir:");
     if (code) {
         let cleanCode = code.trim();
         if (window.FB) {
@@ -177,7 +164,9 @@ let projectiles = [];
 
 function startGame() {
     if (!currentRoomId) currentRoomId = "genel_oda";
-    document.getElementById('room-code-display').innerText = currentRoomId;
+    let codeEl = document.getElementById('room-code-display');
+    if (codeEl) codeEl.innerText = currentRoomId;
+    
     switchScreen('game-screen');
     resizeGame();
     updateUI();
@@ -204,7 +193,7 @@ function initFirebaseMultiplayer() {
     }, 100);
 }
 
-// Joystick
+// Joystick ve Dokunmatik Kontrol
 const jBase = document.getElementById('joystick-base');
 const jKnob = document.getElementById('joystick-knob');
 let joyActive = false;
@@ -271,16 +260,18 @@ document.getElementById('btn-attack').addEventListener('touchstart', (e) => {
     });
 }, { passive: false });
 
-// Envanter Modalını Güvenli Açma
 document.getElementById('btn-inv').addEventListener('click', () => {
     let invList = document.getElementById('inv-list');
-    invList.innerHTML = `
-        <div class="item-row"><span>🪵 Odun: ${player.inventory.wood}</span></div>
-        <div class="item-row"><span>🪨 Taş: ${player.inventory.stone}</span></div>
-        <div class="item-row"><span>🔩 Demir: ${player.inventory.iron}</span></div>
-        <div class="item-row"><span>💎 Elmas: ${player.inventory.diamond}</span></div>
-    `;
-    document.getElementById('inv-modal').style.display = 'flex';
+    if (invList) {
+        invList.innerHTML = `
+            <div class="item-row"><span>🪵 Odun: ${player.inventory.wood}</span></div>
+            <div class="item-row"><span>🪨 Taş: ${player.inventory.stone}</span></div>
+            <div class="item-row"><span>🔩 Demir: ${player.inventory.iron}</span></div>
+            <div class="item-row"><span>💎 Elmas: ${player.inventory.diamond}</span></div>
+        `;
+    }
+    let modal = document.getElementById('inv-modal');
+    if (modal) modal.style.display = 'flex';
 });
 
 window.placeWorkbench = function() {
@@ -295,6 +286,7 @@ window.placeWorkbench = function() {
 let activeWorkbench = null;
 function checkWorkbenchProximity() {
     let interactBtn = document.getElementById('btn-interact');
+    if (!interactBtn) return;
     activeWorkbench = null;
     worldObjects.forEach(obj => {
         if (Math.hypot(player.x - obj.x, player.y - obj.y) < 45) activeWorkbench = obj;
@@ -303,12 +295,17 @@ function checkWorkbenchProximity() {
 }
 
 document.getElementById('btn-interact').addEventListener('click', () => {
-    if (activeWorkbench) document.getElementById('craft-modal').style.display = 'flex';
+    if (activeWorkbench) {
+        let modal = document.getElementById('craft-modal');
+        if (modal) modal.style.display = 'flex';
+    }
 });
 
 window.closeModals = function() {
-    document.getElementById('craft-modal').style.display = 'none';
-    document.getElementById('inv-modal').style.display = 'none';
+    let craftModal = document.getElementById('craft-modal');
+    let invModal = document.getElementById('inv-modal');
+    if (craftModal) craftModal.style.display = 'none';
+    if (invModal) invModal.style.display = 'none';
 };
 
 window.craftItem = function(type, reqWood, reqIron) {
@@ -319,12 +316,19 @@ window.craftItem = function(type, reqWood, reqIron) {
 };
 
 function updateUI() {
-    document.getElementById('hp-val').innerText = player.hp;
-    document.getElementById('hunger-val').innerText = player.hunger;
-    document.getElementById('i-wood').innerText = player.inventory.wood;
-    document.getElementById('i-stone').innerText = player.inventory.stone;
-    document.getElementById('i-iron').innerText = player.inventory.iron;
-    document.getElementById('i-diamond').innerText = player.inventory.diamond;
+    let hpEl = document.getElementById('hp-val');
+    let hungerEl = document.getElementById('hunger-val');
+    let woodEl = document.getElementById('i-wood');
+    let stoneEl = document.getElementById('i-stone');
+    let ironEl = document.getElementById('i-iron');
+    let diamondEl = document.getElementById('i-diamond');
+
+    if (hpEl) hpEl.innerText = player.hp;
+    if (hungerEl) hungerEl.innerText = player.hunger;
+    if (woodEl) woodEl.innerText = player.inventory.wood;
+    if (stoneEl) stoneEl.innerText = player.inventory.stone;
+    if (ironEl) ironEl.innerText = player.inventory.iron;
+    if (diamondEl) diamondEl.innerText = player.inventory.diamond;
 }
 
 let firebaseSyncTimer = 0;
@@ -409,7 +413,6 @@ function draw() {
         ctx.fillText(p.name || "Oyuncu", p.x, p.y - 22);
     }
 
-    projectiles.exportPaths?.();
     projectiles.forEach(p => {
         ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
     });
