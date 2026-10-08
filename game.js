@@ -1,4 +1,3 @@
-
 let playerName = "";
 let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
@@ -88,50 +87,72 @@ function initFirebaseMultiplayer() {
     }, 100);
 }
 
-// Joystick
+// iOS Uyumlu Touch / Joystick Mantığı
 const jBase = document.getElementById('joystick-base');
 const jKnob = document.getElementById('joystick-knob');
 let joyActive = false;
 let joyVector = { x: 0, y: 0 };
 let activeTouchId = null;
 
-jBase.addEventListener('pointerdown', (e) => {
-    joyActive = true; activeTouchId = e.pointerId;
-    jBase.setPointerCapture(activeTouchId);
-    handleJoyMove(e);
-});
-jBase.addEventListener('pointermove', (e) => {
-    if (joyActive && e.pointerId === activeTouchId) handleJoyMove(e);
-});
-function resetJoystick() {
-    joyActive = false; activeTouchId = null;
-    joyVector = { x: 0, y: 0 };
-    jKnob.style.transform = `translate(0px, 0px)`;
-}
-jBase.addEventListener('pointerup', resetJoystick);
-jBase.addEventListener('pointercancel', resetJoystick);
+jBase.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (!joyActive) {
+        let touch = e.changedTouches[0];
+        joyActive = true;
+        activeTouchId = touch.identifier;
+        handleTouchMove(touch);
+    }
+}, { passive: false });
 
-function handleJoyMove(e) {
+window.addEventListener('touchmove', (e) => {
+    if (!joyActive) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        let touch = e.changedTouches[i];
+        if (touch.identifier === activeTouchId) {
+            e.preventDefault();
+            handleTouchMove(touch);
+            break;
+        }
+    }
+}, { passive: false });
+
+function resetJoystick(e) {
+    if (!joyActive) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeTouchId) {
+            joyActive = false;
+            activeTouchId = null;
+            joyVector = { x: 0, y: 0 };
+            jKnob.style.transform = `translate(0px, 0px)`;
+            break;
+        }
+    }
+}
+
+window.addEventListener('touchend', resetJoystick);
+window.addEventListener('touchcancel', resetJoystick);
+
+function handleTouchMove(touch) {
     const rect = jBase.getBoundingClientRect();
     let cx = rect.left + rect.width / 2;
     let cy = rect.top + rect.height / 2;
-    let dx = e.clientX - cx;
-    let dy = e.clientY - cy;
+    let dx = touch.clientX - cx;
+    let dy = touch.clientY - cy;
     let dist = Math.hypot(dx, dy);
-    let maxDist = 40;
+    let maxDist = 45;
     if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
     jKnob.style.transform = `translate(${dx}px, ${dy}px)`;
     joyVector = dist < 5 ? { x: 0, y: 0 } : { x: dx / maxDist, y: dy / maxDist };
 }
 
-document.getElementById('btn-attack').addEventListener('pointerdown', (e) => {
+document.getElementById('btn-attack').addEventListener('touchstart', (e) => {
     e.preventDefault();
     projectiles.push({
         x: player.x, y: player.y,
         vx: Math.cos(player.angle) * 8, vy: Math.sin(player.angle) * 8,
         radius: 5, color: '#f1c40f'
     });
-});
+}, { passive: false });
 
 document.getElementById('btn-inv').addEventListener('click', () => {
     let invList = document.getElementById('inv-list');
