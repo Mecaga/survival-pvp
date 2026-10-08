@@ -2,26 +2,29 @@ let playerName = "";
 let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
-let playersListenerRef = null;
 
-// iOS klavye kilitlenme sorununu çözen tam bağımsız giriş
+// iOS için kesin ve sorunsuz giriş
 window.handleLogin = function() {
     const inputEl = document.getElementById('username-input');
     const inputVal = inputEl ? inputEl.value.trim() : "";
-    if (inputVal.length < 2) { alert("En az 2 harfli isim gir!"); return; }
+    if (inputVal.length < 2) { 
+        alert("En az 2 harfli bir kullanıcı adı gir!"); 
+        return; 
+    }
     playerName = inputVal;
     document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
     switchScreen('menu-screen');
 };
 
+// iOS input odaklanma ve klavye açma dinleyicisi
 document.addEventListener("DOMContentLoaded", () => {
     const inputEl = document.getElementById('username-input');
     if (inputEl) {
-        inputEl.addEventListener('input', (e) => {
-            playerName = e.target.value;
+        inputEl.addEventListener('touchstart', (e) => {
+            inputEl.focus();
         });
-        inputEl.addEventListener('keyup', (e) => {
-            playerName = e.target.value;
+        inputEl.addEventListener('click', () => {
+            inputEl.focus();
         });
     }
 });
@@ -31,11 +34,19 @@ window.logout = function() { switchScreen('login-screen'); };
 window.createRoom = function() {
     currentRoomId = "oda_" + Math.floor(Math.random() * 9000 + 1000);
     if (window.FB) {
-        // Firebase'e aktif oda kaydediliyor
-        window.FB.set(window.FB.ref(window.FB.db, 'activeRooms/' + currentRoomId), { host: playerName, time: Date.now() });
+        // Firebase aktif odalar listesine kaydet
+        window.FB.set(window.FB.ref(window.FB.db, 'activeRooms/' + currentRoomId), { 
+            host: playerName, 
+            time: Date.now() 
+        }).then(() => {
+            alert("Oda Kuruldu! Kodun: " + currentRoomId);
+            startGame();
+        }).catch((err) => {
+            alert("Oda kurulamadı: " + err.message);
+        });
+    } else {
+        alert("Firebase bağlantısı bekleniyor!");
     }
-    alert("Oda Kuruldu! Kodun: " + currentRoomId);
-    startGame();
 };
 
 window.joinRoomPrompt = function() {
@@ -64,7 +75,7 @@ window.openRoomList = function() {
     modal.style.display = 'flex';
 
     if (window.FB) {
-        window.FB.onValue(window.FB.ref(window.FB.db, 'activeRooms'), (snapshot) => {
+        window.FB.get(window.FB.ref(window.FB.db, 'activeRooms')).then((snapshot) => {
             let roomsData = snapshot.val() || {};
             container.innerHTML = "";
             let keys = Object.keys(roomsData);
@@ -81,7 +92,9 @@ window.openRoomList = function() {
                     </div>
                 `;
             });
-        }, { onlyOnce: true });
+        }).catch(() => {
+            container.innerHTML = "<div class='item-row'>Odalar yüklenemedi.</div>";
+        });
     }
 };
 
@@ -97,7 +110,6 @@ window.joinSpecificRoom = function(roomId) {
 
 window.returnToMainMenu = function() {
     if (window.FB && currentRoomId) {
-        // Odadan ve firebase'den oyuncuyu temizle
         window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + myPlayerId));
     }
     currentRoomId = "";
@@ -331,7 +343,7 @@ function update() {
         checkAndGenerateChunks();
     }
 
-    // Firebase'e konum ve envanter verilerini sürekli kaydetme
+    // Firebase'e konum ve veri senkronizasyonu
     firebaseSyncTimer++;
     if (firebaseSyncTimer > 3 && window.FB && currentRoomId) {
         firebaseSyncTimer = 0;
