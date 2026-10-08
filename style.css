@@ -1,19 +1,22 @@
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-body { background: #07070f; color: #fff; font-family: sans-serif; height: 100vh; height: -webkit-fill-available; display: flex; align-items: center; justify-content: center; width: 100%; overflow: hidden; position: fixed; }
+body { background: #07070f; color: #fff; font-family: sans-serif; width: 100vw; height: 100vh; overflow: hidden; position: relative; }
 
 .screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a2e 0%, #07070f 100%); z-index: 10; }
 .screen.active { display: flex; }
+
+.login-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; z-index: 999; }
 
 .btn { width: 80%; max-width: 280px; padding: 14px; margin: 8px 0; background: #e74c3c; border: none; border-radius: 8px; color: white; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.4); cursor: pointer; text-align: center; -webkit-appearance: none; }
 .btn:active { transform: scale(0.97); }
 .btn-blue { background: #3498db; }
 .btn-green { background: #2ecc71; }
 
+/* iOS klavye ve tıklama sorununu tamamen çözen input tasarımı */
 .input-box { 
-    width: 80%; max-width: 280px; padding: 14px; margin: 8px 0; 
-    background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); 
-    border-radius: 8px; color: white; font-size: 16px; text-align: center; 
-    outline: none; -webkit-appearance: none; pointer-events: auto; z-index: 999; 
+    width: 80%; max-width: 280px; padding: 14px; margin: 10px 0; 
+    background: rgba(255,255,255,0.2); border: 2px solid #3498db; 
+    border-radius: 8px; color: white; font-size: 18px; text-align: center; 
+    outline: none; -webkit-appearance: none; z-index: 9999; position: relative; 
 }
 
 #game-screen { background: #132213; justify-content: flex-start; }
@@ -46,12 +49,12 @@ canvas { background: #132213; display: block; box-shadow: 0 0 20px rgba(0,0,0,0.
 
 .modal {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 90%; max-width: 380px; background: rgba(18, 18, 26, 0.96);
-    border: 2px solid #3498db; border-radius: 12px; padding: 15px; z-index: 100;
-    display: none; flex-direction: column; gap: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.9);
+    width: 90%; max-width: 380px; background: rgba(18, 18, 26, 0.98);
+    border: 2px solid #3498db; border-radius: 12px; padding: 15px; z-index: 1000;
+    display: flex; flex-direction: column; gap: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.9);
     max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
 .modal-header { display: flex; justify-content: space-between; align-items: center; font-size: 15px; border-bottom: 1px solid #444; padding-bottom: 6px; }
-.close-btn { background: #e74c3c; border: none; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+.close-btn { background: #e74c3c; border: none; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 .item-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; font-size: 12px; }
 .craft-btn { background: #2ecc71; border: none; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; -webkit-appearance: none; cursor: pointer; pointer-events: auto; }
