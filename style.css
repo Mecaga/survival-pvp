@@ -1,14 +1,14 @@
-* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-body { background: #07070f; color: #fff; font-family: sans-serif; overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+body { background: #07070f; color: #fff; font-family: sans-serif; overflow: hidden; height: 100vh; height: -webkit-fill-available; display: flex; align-items: center; justify-content: center; position: fixed; width: 100%; }
 
 .screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a2e 0%, #07070f 100%); }
 .screen.active { display: flex; }
 
-.btn { width: 80%; max-width: 280px; padding: 14px; margin: 8px 0; background: #e74c3c; border: none; border-radius: 8px; color: white; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.4); cursor: pointer; text-align: center; }
+.btn { width: 80%; max-width: 280px; padding: 14px; margin: 8px 0; background: #e74c3c; border: none; border-radius: 8px; color: white; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.4); cursor: pointer; text-align: center; -webkit-appearance: none; }
 .btn:active { transform: scale(0.97); }
 .btn-blue { background: #3498db; }
 .btn-green { background: #2ecc71; }
-.input-box { width: 80%; max-width: 280px; padding: 14px; margin: 8px 0; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; color: white; font-size: 16px; text-align: center; outline: none; }
+.input-box { width: 80%; max-width: 280px; padding: 14px; margin: 8px 0; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; color: white; font-size: 16px; text-align: center; outline: none; -webkit-appearance: none; }
 
 #game-screen { background: #132213; justify-content: flex-start; }
 #ui {
@@ -17,22 +17,22 @@ body { background: #07070f; color: #fff; font-family: sans-serif; overflow: hidd
     font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px #000; z-index: 10; pointer-events: none;
 }
 .panel { background: rgba(0,0,0,0.75); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); pointer-events: auto; }
-canvas { background: #132213; display: block; box-shadow: 0 0 20px rgba(0,0,0,0.9); margin-top: 50px; }
+canvas { background: #132213; display: block; box-shadow: 0 0 20px rgba(0,0,0,0.9); margin-top: 50px; touch-action: none; }
 
 #joystick-base {
-    position: absolute; bottom: 25px; left: 25px; width: 110px; height: 110px;
+    position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px;
     background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 55px; z-index: 10; touch-action: none;
+    border-radius: 60px; z-index: 10; touch-action: none;
 }
 #joystick-knob {
-    position: absolute; top: 32px; left: 32px; width: 46px; height: 46px;
-    background: rgba(255,255,255,0.6); border-radius: 23px; pointer-events: none;
+    position: absolute; top: 35px; left: 35px; width: 50px; height: 50px;
+    background: rgba(255,255,255,0.6); border-radius: 25px; pointer-events: none;
 }
-.action-container { position: absolute; bottom: 25px; right: 25px; display: flex; gap: 12px; z-index: 10; align-items: flex-end; }
+.action-container { position: absolute; bottom: 30px; right: 30px; display: flex; gap: 12px; z-index: 10; align-items: flex-end; }
 .btn-round {
-    width: 65px; height: 65px; border-radius: 32px; display: flex; align-items: center; justify-content: center; font-size: 24px;
+    width: 70px; height: 70px; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 24px;
     border: 2px solid rgba(255,255,255,0.4); box-shadow: 0 4px 10px rgba(0,0,0,0.5); background: rgba(40,40,60,0.8);
-    touch-action: manipulation;
+    touch-action: manipulation; -webkit-appearance: none;
 }
 #btn-attack { background: rgba(231, 76, 60, 0.8); border-color: #e74c3c; }
 #btn-inv { background: rgba(52, 152, 219, 0.8); border-color: #3498db; }
@@ -43,9 +43,9 @@ canvas { background: #132213; display: block; box-shadow: 0 0 20px rgba(0,0,0,0.
     width: 90%; max-width: 380px; background: rgba(18, 18, 26, 0.96);
     border: 2px solid #3498db; border-radius: 12px; padding: 15px; z-index: 100;
     display: none; flex-direction: column; gap: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.9);
-    max-height: 80vh; overflow-y: auto;
+    max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
 .modal-header { display: flex; justify-content: space-between; align-items: center; font-size: 15px; border-bottom: 1px solid #444; padding-bottom: 6px; }
 .close-btn { background: #e74c3c; border: none; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
 .item-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; font-size: 12px; }
-.craft-btn { background: #2ecc71; border: none; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+.craft-btn { background: #2ecc71; border: none; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; -webkit-appearance: none; }
