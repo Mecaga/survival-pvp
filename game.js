@@ -3,16 +3,17 @@ let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
 
-// iOS için %100 Çalışan Prompt Giriş Sistemi
+// iOS ve tüm cihazlar için %100 çalışan input okuma
 window.handleLogin = function() {
-    let name = prompt("Kullanıcı adınızı girin:", "Maceracı");
-    if (name && name.trim().length >= 2) {
-        playerName = name.trim();
-        document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
-        switchScreen('menu-screen');
-    } else {
-        alert("En az 2 harfli geçerli bir isim girmelisin!");
+    const inputEl = document.getElementById('username-input');
+    const inputVal = inputEl ? inputEl.value.trim() : "";
+    if (inputVal.length < 2) { 
+        alert("En az 2 harfli bir kullanıcı adı gir!"); 
+        return; 
     }
+    playerName = inputVal;
+    document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
+    switchScreen('menu-screen');
 };
 
 window.logout = function() { switchScreen('login-screen'); };
@@ -112,7 +113,7 @@ function resizeGame() {
     canvas.style.height = (600 * scale) + 'px';
 }
 
-// Yeni odada çanta tamamen boş başlar
+// Envanter her yeni oyunda / odada tamamen boş başlar
 let player = {
     x: 1000, y: 1000, radius: 15, speed: 3.5,
     hp: 100, hunger: 100, angle: 0,
@@ -151,7 +152,7 @@ function generateChunkResources(cx, cy) {
     for (let i = 0; i < 6; i++) {
         let item = types[Math.floor(Math.random() * types.length)];
         worldResources.push({
-            id: 'res_' + Math.random().toString(36.2),
+            id: 'res_' + Math.random().toString(36).substring(2, 9),
             x: startX + Math.random() * (CHUNK_SIZE - 100) + 50,
             y: startY + Math.random() * (CHUNK_SIZE - 100) + 50,
             type: item.type,
@@ -166,7 +167,7 @@ let projectiles = [];
 
 function startGame() {
     if (!currentRoomId) currentRoomId = "genel_oda";
-    player.inventory = { wood: 0, stone: 0, iron: 0, diamond: 0 }; // Sıfırla
+    player.inventory = { wood: 0, stone: 0, iron: 0, diamond: 0 }; // Çantayı sıfırla
     let codeEl = document.getElementById('room-code-display');
     if (codeEl) codeEl.innerText = currentRoomId;
     
@@ -188,7 +189,7 @@ function initFirebaseMultiplayer() {
                 const data = snapshot.val() || {};
                 remotePlayers = data;
                 
-                // PvP Hasar Kontrolü: Diğer oyunculardan gelen can azalmasını kontrol et
+                // PvP Hasar Kontrolü
                 if (data[myPlayerId] && data[myPlayerId].hp !== undefined) {
                     player.hp = data[myPlayerId].hp;
                     if (player.hp <= 0) {
@@ -263,17 +264,15 @@ function handleTouchMove(touch) {
     joyVector = dist < 5 ? { x: 0, y: 0 } : { x: dx / maxDist, y: dy / maxDist };
 }
 
-// PvP SALDIRI SİSTEMİ (⚔️ Butonuna basınca önündeki oyuncuya hasar ver)
+// PvP SALDIRI SİSTEMİ (⚔️ Butonuna basınca yakındaki oyuncuya hasar ver)
 document.getElementById('btn-attack').addEventListener('touchstart', (e) => {
     e.preventDefault();
-    
-    // Yakındaki oyuncuları kontrol et ve vur
     for (let id in remotePlayers) {
         if (id === myPlayerId) continue;
         let p = remotePlayers[id];
         let dist = Math.hypot(player.x - p.x, player.y - p.y);
-        if (dist < 50) { // Yakın dövüş menzili
-            let newHp = (p.hp !== undefined ? p.hp : 100) - 20; // Her vuruş 20 hasar
+        if (dist < 60) {
+            let newHp = (p.hp !== undefined ? p.hp : 100) - 20;
             if (window.FB) {
                 window.FB.update(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + id), {
                     hp: newHp > 0 ? newHp : 0
@@ -363,7 +362,6 @@ function update() {
         checkAndGenerateChunks();
     }
 
-    // Firebase'e Konum, Envanter ve Can Senkronizasyonu
     firebaseSyncTimer++;
     if (firebaseSyncTimer > 3 && window.FB && currentRoomId) {
         firebaseSyncTimer = 0;
@@ -377,7 +375,7 @@ function update() {
         });
     }
 
-    // Ortak Kaynakları Toplama (Toplanan eşya envantere gider, ekrandan silinir)
+    // Ortak Kaynakları Toplama (Toplanan envantere gider, ekrandan silinir)
     for (let i = worldResources.length - 1; i >= 0; i--) {
         let res = worldResources[i];
         if (Math.hypot(player.x - res.x, player.y - res.y) < player.radius + res.radius) {
@@ -400,7 +398,6 @@ function draw() {
     ctx.save();
     ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-    // Harita zemin çizgileri
     ctx.strokeStyle = 'rgba(255,255,255,0.03)';
     ctx.lineWidth = 1;
     let startX = Math.floor((player.x - canvas.width) / 50) * 50;
@@ -421,7 +418,6 @@ function draw() {
         ctx.fillText(res.emoji, res.x, res.y);
     });
 
-    // Diğer Oyuncuları Çizme
     for (let id in remotePlayers) {
         if (id === myPlayerId) continue;
         let p = remotePlayers[id];
@@ -437,7 +433,6 @@ function draw() {
         ctx.fillText(`${p.name || "Oyuncu"} (❤️${remoteHp})`, p.x, p.y - 22);
     }
 
-    // Kendi Oyuncumuz
     ctx.save();
     ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.fillStyle = '#3498db'; ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
