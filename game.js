@@ -3,7 +3,7 @@ let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
 
-// iOS Klavye ve Input Garantisi
+// iOS için kesin ve kararlı input okuma
 window.handleLogin = function() {
     const inputEl = document.getElementById('username-input');
     const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -16,12 +16,11 @@ window.handleLogin = function() {
 document.addEventListener("DOMContentLoaded", () => {
     const inputEl = document.getElementById('username-input');
     if (inputEl) {
-        inputEl.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            inputEl.focus();
+        inputEl.addEventListener('keyup', (e) => {
+            playerName = e.target.value;
         });
-        inputEl.addEventListener('click', () => {
-            inputEl.focus();
+        inputEl.addEventListener('input', (e) => {
+            playerName = e.target.value;
         });
     }
 });
@@ -41,21 +40,19 @@ window.joinRoomPrompt = function() {
     let code = prompt("Oda Kodunu Gir:");
     if (code) {
         let cleanCode = code.trim();
-        // Oda var mı kontrol et
         if (window.FB) {
-            window.FB.get(window.FB.ref(window.FB.db, 'activeRooms/' + cleanCode)).then((snapshot) => {
+            window.FB.onValue(window.FB.ref(window.FB.db, 'activeRooms/' + cleanCode), (snapshot) => {
                 if (snapshot.exists()) {
                     currentRoomId = cleanCode;
                     startGame();
                 } else {
-                    alert("Böyle aktif bir oda bulunamadı! Lütfen geçerli bir oda kodu gir.");
+                    alert("Böyle bir oda bulunamadı veya kapalı!");
                 }
-            });
+            }, { onlyOnce: true });
         }
     }
 };
 
-// Açık Odalar Paneli
 window.openRoomList = function() {
     const modal = document.getElementById('room-list-modal');
     const container = document.getElementById('active-rooms-container');
@@ -94,7 +91,6 @@ window.joinSpecificRoom = function(roomId) {
     startGame();
 };
 
-// Kesin Çalışan Ana Menüye Dönüş Tuşu
 window.returnToMainMenu = function() {
     if (window.FB && currentRoomId) {
         window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + myPlayerId));
@@ -120,12 +116,11 @@ function resizeGame() {
 }
 
 let player = {
-    x: 1000, y: 1000, radius: 15, speed: 3.5, // Sonsuz dünyada başlangıç konumu
+    x: 1000, y: 1000, radius: 15, speed: 3.5,
     hp: 100, hunger: 100, angle: 0,
     inventory: { wood: 8, stone: 5, iron: 2, diamond: 0, cookedFood: 1 }
 };
 
-// Minecraft Chunk Sistemi (Sonsuz dünya kaynak üretici)
 let worldResources = [];
 let generatedChunks = {};
 const CHUNK_SIZE = 400;
@@ -134,7 +129,6 @@ function checkAndGenerateChunks() {
     let chunkX = Math.floor(player.x / CHUNK_SIZE);
     let chunkY = Math.floor(player.y / CHUNK_SIZE);
 
-    // Etraftaki 3x3 chunk alanını kontrol et
     for (let x = chunkX - 1; x <= chunkX + 1; x++) {
         for (let y = chunkY - 1; y <= chunkY + 1; y++) {
             let chunkKey = `${x}_${y}`;
@@ -156,7 +150,6 @@ function generateChunkResources(cx, cy) {
         { type: 'diamond', emoji: '💎' }
     ];
 
-    // Her chunk içinde rastgele 5-8 kaynak oluştur
     for (let i = 0; i < 6; i++) {
         let item = types[Math.floor(Math.random() * types.length)];
         worldResources.push({
@@ -329,7 +322,7 @@ function update() {
         player.x += joyVector.x * player.speed;
         player.y += joyVector.y * player.speed;
         player.angle = Math.atan2(joyVector.y, joyVector.x);
-        checkAndGenerateChunks(); // İlerledikçe yeni chunk üret
+        checkAndGenerateChunks();
     }
 
     firebaseSyncTimer++;
@@ -343,7 +336,6 @@ function update() {
         });
     }
 
-    // Kaynak toplama
     for (let i = worldResources.length - 1; i >= 0; i--) {
         let res = worldResources[i];
         if (Math.hypot(player.x - res.x, player.y - res.y) < player.radius + res.radius) {
@@ -352,7 +344,7 @@ function update() {
             if (res.type === 'iron') player.inventory.iron++;
             if (res.type === 'diamond') player.inventory.diamond++;
             
-            worldResources.splice(i, 1); // Toplanan kaynağı haritadan kaldır
+            worldResources.splice(i, 1);
             updateUI();
         }
     }
@@ -369,10 +361,8 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
-    // Kamera Karakteri Takip Sistemi (Sonsuz Dünya Görünümü)
     ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-    // Izgara Desenleri (Dünya Tabanı)
     ctx.strokeStyle = 'rgba(255,255,255,0.03)';
     ctx.lineWidth = 1;
     let startX = Math.floor((player.x - canvas.width) / 50) * 50;
@@ -383,19 +373,16 @@ function draw() {
     for (let x = startX; x < endX; x += 50) { ctx.beginPath(); ctx.moveTo(x, startY); ctx.lineTo(x, endY); ctx.stroke(); }
     for (let y = startY; y < endY; y += 50) { ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(endX, y); ctx.stroke(); }
 
-    // Dünya Objeleri (Yere kurulan masalar)
     worldObjects.forEach(obj => {
         ctx.font = "24px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText("🪵🛠️", obj.x, obj.y);
     });
 
-    // Chunk Kaynakları
     worldResources.forEach(res => {
         ctx.font = "20px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(res.emoji, res.x, res.y);
     });
 
-    // Diğer Oyuncular
     for (let id in remotePlayers) {
         if (id === myPlayerId) continue;
         let p = remotePlayers[id];
@@ -410,12 +397,10 @@ function draw() {
         ctx.fillText(p.name, p.x, p.y - 22);
     }
 
-    // Mermiler
     projectiles.forEach(p => {
         ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
     });
 
-    // Kendi Oyuncumuz
     ctx.save();
     ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.fillStyle = '#3498db'; ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
@@ -426,7 +411,7 @@ function draw() {
     ctx.fillStyle = "#2ecc71"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
     ctx.fillText(playerName + " (Sen)", player.x, player.y - 22);
 
-    ctx.restore(); // Kamera sıfırlama
+    ctx.restore();
 }
 
 function loop() {
