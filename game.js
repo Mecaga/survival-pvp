@@ -3,7 +3,6 @@ let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
 
-// iOS ve TÜM cihazlar için %100 kusursuz çalışan prompt giriş yöntemi
 window.handleLogin = function() {
     let name = prompt("Kullanıcı adınızı girin:", "Maceracı");
     if (name && name.trim().length >= 2) {
@@ -112,7 +111,6 @@ function resizeGame() {
     canvas.style.height = (600 * scale) + 'px';
 }
 
-// Oyuncu ve Envanter (Her odada sıfırdan ve bomboş başlar)
 let player = {
     x: 1000, y: 1000, radius: 15, speed: 3.5,
     hp: 100, hunger: 100, angle: 0,
@@ -121,13 +119,14 @@ let player = {
 
 let worldResources = [];
 let worldObjects = [];
-let projectiles = [];
+let projectiles = {};
 let generatedChunks = {};
 const CHUNK_SIZE = 400;
 
 function startGame() {
     if (!currentRoomId) currentRoomId = "genel_oda";
     player.inventory = { wood: 0, stone: 0, iron: 0, diamond: 0 };
+    player.hp = 100;
     let codeEl = document.getElementById('room-code-display');
     if (codeEl) codeEl.innerText = currentRoomId;
     
@@ -137,12 +136,11 @@ function startGame() {
     initFirebaseMultiplayer();
 }
 
-// Minecraft Mantığı: Ortak Dünya Kaynakları Firebase'den Senkronize Edilir
 function initFirebaseMultiplayer() {
     const checkFB = setInterval(() => {
         if (window.FB) {
             clearInterval(checkFB);
-            const { db, ref, onValue, remove, set } = window.FB;
+            const { db, ref, onValue, remove } = window.FB;
             
             // 1. Oyuncuları Dinle
             const roomPlayersRef = ref(db, 'rooms/' + currentRoomId + '/players');
@@ -150,32 +148,33 @@ function initFirebaseMultiplayer() {
                 const data = snapshot.val() || {};
                 remotePlayers = data;
                 
+                // Ölünce odayı terketmek yerine canı yenile ve yeniden doğur
                 if (data[myPlayerId] && data[myPlayerId].hp !== undefined) {
-                    player.hp = data[myPlayerId].hp;
-                    if (player.hp <= 0) {
-                        alert("Öldün! Ana menüye dönülüyor.");
-                        window.returnToMainMenu();
+                    if (data[myPlayerId].hp <= 0) {
+                        player.hp = 100;
+                        alert("Öldün! Aynı odada yeniden doğdun.");
+                    } else {
+                        player.hp = data[myPlayerId].hp;
                     }
                 }
             });
 
-            // 2. Ortak Dünya Kaynaklarını (Maden/Odun) Dinle (Minecraft Ortak Harita)
+            // 2. Ortak Dünya Kaynaklarını Dinle
             const worldResRef = ref(db, 'rooms/' + currentRoomId + '/worldResources');
             onValue(worldResRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     worldResources = Object.values(data);
                 } else {
-                    // Oda ilk açıldıysa harita kaynaklarını üret ve Firebase'e yaz
                     generateInitialWorldResources();
                 }
             });
 
-            // 3. Mermileri Dinle (Ateş Etme Sistemi)
+            // 3. Mermileri Dinle
             const projectilesRef = ref(db, 'rooms/' + currentRoomId + '/projectiles');
             onValue(projectilesRef, (snapshot) => {
                 const data = snapshot.val() || {};
-                projectiles = Object.values(data);
+                projectiles = data;
             });
 
             window.addEventListener('beforeunload', () => {
@@ -194,7 +193,6 @@ function generateInitialWorldResources() {
         { type: 'diamond', emoji: '💎' }
     ];
 
-    // Başlangıç etrafında 30 ortak kaynak üret
     for (let i = 0; i < 30; i++) {
         let id = 'res_' + i + '_' + Math.random().toString(36).substring(2, 6);
         let item = types[Math.floor(Math.random() * types.length)];
@@ -268,11 +266,11 @@ function handleTouchMove(touch) {
     joyVector = dist < 5 ? { x: 0, y: 0 } : { x: dx / maxDist, y: dy / maxDist };
 }
 
-// ATEŞ ETME / MERMİ SİSTEMİ (⚔️ Butonuna basınca mermi fırlatır ve diğer oyuncuları vurur)
+// Sadece tuşa basan oyuncunun mermi üretmesi sağlandı
 document.getElementById('btn-attack').addEventListener('touchstart', (e) => {
     e.preventDefault();
     if (window.FB && currentRoomId) {
-        let bulletId = 'b_' + Math.random().toString(36).substring(2, 9);
+        let bulletId = 'b_' + myPlayerId + '_' + Date.now();
         let bulletData = {
             id: bulletId,
             x: player.x,
@@ -367,9 +365,8 @@ function update() {
         updateUI();
     }
 
-    // Konum ve Can Senkronizasyonu
     firebaseSyncTimer++;
-    if (firebaseSyncTimer > 3 && window.FB && currentRoomId) {
+    if (firebaseSyncTimer > 2 && window.FB && currentRoomId) {
         firebaseSyncTimer = 0;
         window.FB.set(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + myPlayerId), {
             name: playerName,
@@ -381,7 +378,7 @@ function update() {
         });
     }
 
-    // Ortak Maden / Eşya Toplama (Minecraft Mantığı: Biri alırsa herkesten yok olur)
+    // Ortak Kaynak Toplama
     for (let i = 0; i < worldResources.length; i++) {
         let res = worldResources[i];
         if (Math.hypot(player.x - res.x, player.y - res.y) < player.radius + res.radius) {
@@ -390,7 +387,6 @@ function update() {
             if (res.type === 'iron') player.inventory.iron++;
             if (res.type === 'diamond') player.inventory.diamond++;
             
-            // Firebase'den bu kaynağı tamamen sil ki diğerlerinde de yok olsun
             if (window.FB && currentRoomId) {
                 window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/worldResources/' + res.id));
             }
@@ -399,23 +395,22 @@ function update() {
         }
     }
 
-    // Mermi Hareketleri ve Vuruş Kontrolü
+    // Mermi Hareketleri ve Hasar
     if (window.FB && currentRoomId) {
-        projectiles.forEach((b, index) => {
+        for (let bId in projectiles) {
+            let b = projectiles[bId];
             b.x += b.vx;
             b.y += b.vy;
 
-            // Eğer mermi beni vurduysa ve atan ben değilsem canım azalır
             if (b.shooter !== myPlayerId) {
                 let dist = Math.hypot(player.x - b.x, player.y - b.y);
                 if (dist < 20) {
                     player.hp -= 15;
                     updateUI();
-                    // Mermiyi ortadan kaldır
                     window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/projectiles/' + b.id));
                 }
             }
-        });
+        }
     }
 
     checkWorkbenchProximity();
@@ -427,7 +422,6 @@ function draw() {
     ctx.save();
     ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-    // Harita zemin ızgarası
     ctx.strokeStyle = 'rgba(255,255,255,0.03)';
     ctx.lineWidth = 1;
     let startX = Math.floor((player.x - canvas.width) / 50) * 50;
@@ -443,13 +437,11 @@ function draw() {
         ctx.fillText("🪵🛠️", obj.x, obj.y);
     });
 
-    // Ortak Kaynakları Çiz (Herkes aynı anda aynı kaynakları görür, toplanınca kaybolur)
     worldResources.forEach(res => {
         ctx.font = "20px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(res.emoji, res.x, res.y);
     });
 
-    // Diğer Oyuncular
     for (let id in remotePlayers) {
         if (id === myPlayerId) continue;
         let p = remotePlayers[id];
@@ -465,13 +457,12 @@ function draw() {
         ctx.fillText(`${p.name || "Oyuncu"} (❤️${remoteHp})`, p.x, p.y - 22);
     }
 
-    // Mermiler
-    projectiles.forEach(b => {
+    for (let bId in projectiles) {
+        let b = projectiles[bId];
         ctx.fillStyle = '#f1c40f';
         ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill();
-    });
+    }
 
-    // Kendi Oyuncumuz
     ctx.save();
     ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.fillStyle = '#3498db'; ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
