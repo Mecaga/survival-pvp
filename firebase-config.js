@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove, push, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// Firebase Realtime Database Yapılandırması
 const firebaseConfig = {
     databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com/"
 };
@@ -9,5 +8,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Oyunda kullanılmak üzere global olarak dışa aktarıyoruz
 window.FB = { db, ref, set, onValue, remove, push, update };
