@@ -3,7 +3,7 @@ let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
 
-// iOS ve tüm cihazlar için %100 çalışan giriş fonksiyonu
+// iOS için klavye ve input odaklanma çözümü
 window.handleLogin = function() {
     const inputEl = document.getElementById('username-input');
     const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -16,51 +16,56 @@ window.handleLogin = function() {
     switchScreen('menu-screen');
 };
 
+document.addEventListener("DOMContentLoaded", () => {
+    const inputEl = document.getElementById('username-input');
+    if (inputEl) {
+        inputEl.addEventListener('touchend', (e) => {
+            inputEl.focus();
+        });
+        inputEl.addEventListener('input', (e) => {
+            playerName = e.target.value;
+        });
+    }
+});
+
 window.logout = function() { switchScreen('login-screen'); };
 
-// 1. ODA KURMA (Firebase'e anlık kayıt)
 window.createRoom = function() {
-    if (!window.FB) { alert("Firebase yükleniyor, lütfen bekleyin..."); return; }
-    
+    if (!window.FB) { alert("Firebase yükleniyor..."); return; }
     currentRoomId = "oda_" + Math.floor(Math.random() * 9000 + 1000);
     
-    const roomRef = window.FB.ref(window.FB.db, 'activeRooms/' + currentRoomId);
-    window.FB.set(roomRef, { 
+    window.FB.set(window.FB.ref(window.FB.db, 'activeRooms/' + currentRoomId), { 
         host: playerName, 
         createdAt: Date.now() 
     }).then(() => {
-        alert("Oda Başarıyla Kuruldu! Kodun: " + currentRoomId);
+        alert("Oda Kuruldu! Kodun: " + currentRoomId);
         startGame();
     }).catch((err) => {
-        alert("Oda kurulamadı: " + err.message);
+        alert("Hata: " + err.message);
     });
 };
 
-// 2. KOD İLE ODAYA KATILMA
 window.joinRoomPrompt = function() {
-    let code = prompt("Katılmak istediğin Oda Kodunu Gir:");
+    let code = prompt("Oda Kodunu Gir:");
     if (code) {
         let cleanCode = code.trim();
-        if (!window.FB) { alert("Firebase bağlantısı yok!"); return; }
-
-        window.FB.get(window.FB.ref(window.FB.db, 'activeRooms/' + cleanCode)).then((snapshot) => {
-            if (snapshot.exists()) {
-                currentRoomId = cleanCode;
-                startGame();
-            } else {
-                alert("Böyle bir oda bulunamadı veya kapatılmış!");
-            }
-        }).catch(() => {
-            alert("Bağlantı hatası oluştu.");
-        });
+        if (window.FB) {
+            window.FB.get(window.FB.ref(window.FB.db, 'activeRooms/' + cleanCode)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    currentRoomId = cleanCode;
+                    startGame();
+                } else {
+                    alert("Böyle bir oda bulunamadı!");
+                }
+            });
+        }
     }
 };
 
-// 3. AÇIK ODALAR LİSTESİNİ GÖSTERME
 window.openRoomList = function() {
     const modal = document.getElementById('room-list-modal');
     const container = document.getElementById('active-rooms-container');
-    container.innerHTML = "Odalar aranıyor...";
+    container.innerHTML = "Yükleniyor...";
     modal.style.display = 'flex';
 
     if (window.FB) {
@@ -69,20 +74,18 @@ window.openRoomList = function() {
             container.innerHTML = "";
             let keys = Object.keys(roomsData);
             if (keys.length === 0) {
-                container.innerHTML = "<div class='item-row'>Aktif oda yok. Yeni oda kurabilirsin!</div>";
+                container.innerHTML = "<div class='item-row'>Aktif oda yok.</div>";
                 return;
             }
             keys.forEach(roomId => {
                 let room = roomsData[roomId];
                 container.innerHTML += `
                     <div class="item-row">
-                        <span>Oda: <b>${roomId}</b> (Kurucu: ${room.host || 'Bilinmiyor'})</span>
+                        <span>Oda: ${roomId} (Kurucu: ${room.host || 'Bilinmiyor'})</span>
                         <button class="craft-btn" onclick="joinSpecificRoom('${roomId}')">Katıl</button>
                     </div>
                 `;
             });
-        }).catch(() => {
-            container.innerHTML = "<div class='item-row'>Odalar yüklenemedi.</div>";
         });
     }
 };
@@ -97,10 +100,8 @@ window.joinSpecificRoom = function(roomId) {
     startGame();
 };
 
-// 4. ÇIKIŞ VE ANA MENÜYE DÖNÜŞ
 window.returnToMainMenu = function() {
     if (window.FB && currentRoomId) {
-        // Oyuncuyu odadaki veritabanından temizle
         window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + myPlayerId));
     }
     currentRoomId = "";
@@ -184,21 +185,18 @@ function startGame() {
     initFirebaseMultiplayer();
 }
 
-// 5. OYUN İÇİ MULTIPLAYER VE VERİ SENKRONİZASYONU
 function initFirebaseMultiplayer() {
     const checkFB = setInterval(() => {
         if (window.FB) {
             clearInterval(checkFB);
             const { db, ref, onValue, remove } = window.FB;
             
-            // Odadaki diğer oyuncuları canlı dinle
             const roomPlayersRef = ref(db, 'rooms/' + currentRoomId + '/players');
             onValue(roomPlayersRef, (snapshot) => {
                 const data = snapshot.val();
                 remotePlayers = data || {};
             });
 
-            // Sekme kapanırsa oyuncuyu sil
             window.addEventListener('beforeunload', () => {
                 remove(ref(db, 'rooms/' + currentRoomId + '/players/' + myPlayerId));
             });
@@ -273,6 +271,7 @@ document.getElementById('btn-attack').addEventListener('touchstart', (e) => {
     });
 }, { passive: false });
 
+// Envanter Modalını Güvenli Açma
 document.getElementById('btn-inv').addEventListener('click', () => {
     let invList = document.getElementById('inv-list');
     invList.innerHTML = `
@@ -337,7 +336,6 @@ function update() {
         checkAndGenerateChunks();
     }
 
-    // FIREBASE'E SÜREKLİ VERİ AKTARIMI (Konum ve Envanter)
     firebaseSyncTimer++;
     if (firebaseSyncTimer > 3 && window.FB && currentRoomId) {
         firebaseSyncTimer = 0;
@@ -397,7 +395,6 @@ function draw() {
         ctx.fillText(res.emoji, res.x, res.y);
     });
 
-    // DİĞER OYUNCULARI ÇİZME
     for (let id in remotePlayers) {
         if (id === myPlayerId) continue;
         let p = remotePlayers[id];
@@ -412,6 +409,7 @@ function draw() {
         ctx.fillText(p.name || "Oyuncu", p.x, p.y - 22);
     }
 
+    projectiles.exportPaths?.();
     projectiles.forEach(p => {
         ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
     });
