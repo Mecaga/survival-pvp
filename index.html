@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>2D Survival PvP - Kararlı Sürüm</title>
+    <title>2D Survival PvP - Kusursuz Multiplayer</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 1. GİRİŞ EKRANI (iOS Uyumlu) -->
+    <!-- 1. GİRİŞ EKRANI (iOS Kesin Düzeltme) -->
     <div id="login-screen" class="screen active">
         <h1 style="font-size: 26px; margin-bottom: 20px; text-shadow: 0 0 10px #3498db; pointer-events: none;">⚔️ SURVIVAL PVP</h1>
         <input type="text" id="username-input" class="input-box" placeholder="Kullanıcı Adı" maxlength="15" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -41,7 +41,7 @@
             <div class="panel">
                 ❤️ <span id="hp-val">100</span> | 🍖 <span id="hunger-val">100</span> | Oda: <span id="room-code-display"></span>
             </div>
-            <div class="panel" style="display:flex; gap:10px; align-items:center;">
+            <div class="panel" style="display:flex; gap:10px; align-items:center; pointer-events: auto;">
                 <span>🪵<span id="i-wood">5</span> 🪨<span id="i-stone">2</span></span>
                 <button class="craft-btn" style="background:#e74c3c; padding:6px 10px; cursor:pointer;" onclick="returnToMainMenu()">Ana Menü</button>
             </div>
