@@ -11,7 +11,6 @@ body { background: #07070f; color: #fff; font-family: sans-serif; width: 100vw; 
 .btn-blue { background: #3498db; }
 .btn-green { background: #2ecc71; }
 
-/* iOS klavye ve tıklama sorununu tamamen çözen input tasarımı */
 .input-box { 
     width: 80%; max-width: 280px; padding: 14px; margin: 10px 0; 
     background: rgba(255,255,255,0.2); border: 2px solid #3498db; 
@@ -51,7 +50,7 @@ canvas { background: #132213; display: block; box-shadow: 0 0 20px rgba(0,0,0,0.
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     width: 90%; max-width: 380px; background: rgba(18, 18, 26, 0.98);
     border: 2px solid #3498db; border-radius: 12px; padding: 15px; z-index: 1000;
-    display: flex; flex-direction: column; gap: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.9);
+    flex-direction: column; gap: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.9);
     max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
 .modal-header { display: flex; justify-content: space-between; align-items: center; font-size: 15px; border-bottom: 1px solid #444; padding-bottom: 6px; }
