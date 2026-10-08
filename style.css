@@ -11,6 +11,13 @@ body { background: #07070f; color: #fff; font-family: sans-serif; width: 100vw; 
 .btn-blue { background: #3498db; }
 .btn-green { background: #2ecc71; }
 
+.input-box { 
+    width: 80%; max-width: 280px; padding: 14px; margin: 10px 0; 
+    background: rgba(255,255,255,0.2); border: 2px solid #3498db; 
+    border-radius: 8px; color: white; font-size: 18px; text-align: center; 
+    outline: none; -webkit-appearance: none; z-index: 9999; position: relative; 
+}
+
 #game-screen { background: #132213; justify-content: flex-start; }
 #ui {
     position: absolute; top: 10px; left: 10px; right: 10px;
