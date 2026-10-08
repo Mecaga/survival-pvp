@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2D Survival PvP - İsim Kutulu Sürüm</title>
+    <title>2D Survival PvP - Minecraft Mantığı</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 1. GİRİŞ EKRANI (iOS Uyumlu Garanti İsim Kutusu) -->
+    <!-- 1. GİRİŞ EKRANI (Sadece Şık Buton - Prompt ile İsim Alınır) -->
     <div id="login-screen" class="screen active">
         <div class="login-container">
             <h1>⚔️ SURVIVAL PVP</h1>
-            <p style="color: #aaa; font-size: 14px; margin-bottom: 10px;">Kullanıcı Adını Yaz:</p>
-            <input type="text" id="username-input" class="input-box" placeholder="Örn: Maceracı" maxlength="15" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Maceraya başlamak için dokun:</p>
             <button class="btn btn-green" onclick="handleLogin()">Giriş Yap ve Başla</button>
         </div>
     </div>
@@ -42,7 +41,7 @@
     <div id="game-screen" class="screen">
         <div id="ui">
             <div class="panel">
-                ❤️ <span id="hp-val">100</span> | 🍖 <span id="hunger-val">100</span> | Oda: <span id="room-code-display"></span>
+                ❤️ <span id="hp-val">100</span> | 📍 X:<span id="coord-x">1000</span> Y:<span id="coord-y">1000</span> | Oda: <span id="room-code-display"></span>
             </div>
             <div class="panel" style="display:flex; gap:10px; align-items:center; pointer-events: auto;">
                 <span>🪵<span id="i-wood">0</span> 🪨<span id="i-stone">0</span></span>
@@ -77,7 +76,7 @@
         </div>
     </div>
 
-    <!-- Envanter Menüsü (Boş Başlar) -->
+    <!-- Envanter Menüsü (Her yeni odada bomboş başlar) -->
     <div class="modal" id="inv-modal" style="display:none;">
         <div class="modal-header">
             <span>Çanta ve Eşyalar</span>
