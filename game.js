@@ -3,7 +3,7 @@ let currentRoomId = "";
 let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
 let remotePlayers = {};
 
-// iOS için kesin ve sorunsuz giriş
+// iOS ve tüm cihazlar için %100 çalışan giriş fonksiyonu
 window.handleLogin = function() {
     const inputEl = document.getElementById('username-input');
     const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -16,62 +16,51 @@ window.handleLogin = function() {
     switchScreen('menu-screen');
 };
 
-// iOS input odaklanma ve klavye açma dinleyicisi
-document.addEventListener("DOMContentLoaded", () => {
-    const inputEl = document.getElementById('username-input');
-    if (inputEl) {
-        inputEl.addEventListener('touchstart', (e) => {
-            inputEl.focus();
-        });
-        inputEl.addEventListener('click', () => {
-            inputEl.focus();
-        });
-    }
-});
-
 window.logout = function() { switchScreen('login-screen'); };
 
+// 1. ODA KURMA (Firebase'e anlık kayıt)
 window.createRoom = function() {
+    if (!window.FB) { alert("Firebase yükleniyor, lütfen bekleyin..."); return; }
+    
     currentRoomId = "oda_" + Math.floor(Math.random() * 9000 + 1000);
-    if (window.FB) {
-        // Firebase aktif odalar listesine kaydet
-        window.FB.set(window.FB.ref(window.FB.db, 'activeRooms/' + currentRoomId), { 
-            host: playerName, 
-            time: Date.now() 
-        }).then(() => {
-            alert("Oda Kuruldu! Kodun: " + currentRoomId);
-            startGame();
-        }).catch((err) => {
-            alert("Oda kurulamadı: " + err.message);
-        });
-    } else {
-        alert("Firebase bağlantısı bekleniyor!");
-    }
+    
+    const roomRef = window.FB.ref(window.FB.db, 'activeRooms/' + currentRoomId);
+    window.FB.set(roomRef, { 
+        host: playerName, 
+        createdAt: Date.now() 
+    }).then(() => {
+        alert("Oda Başarıyla Kuruldu! Kodun: " + currentRoomId);
+        startGame();
+    }).catch((err) => {
+        alert("Oda kurulamadı: " + err.message);
+    });
 };
 
+// 2. KOD İLE ODAYA KATILMA
 window.joinRoomPrompt = function() {
-    let code = prompt("Oda Kodunu Gir:");
+    let code = prompt("Katılmak istediğin Oda Kodunu Gir:");
     if (code) {
         let cleanCode = code.trim();
-        if (window.FB) {
-            window.FB.get(window.FB.ref(window.FB.db, 'activeRooms/' + cleanCode)).then((snapshot) => {
-                if (snapshot.exists()) {
-                    currentRoomId = cleanCode;
-                    startGame();
-                } else {
-                    alert("Böyle bir oda bulunamadı veya kapalı!");
-                }
-            }).catch(() => {
-                alert("Bağlantı hatası!");
-            });
-        }
+        if (!window.FB) { alert("Firebase bağlantısı yok!"); return; }
+
+        window.FB.get(window.FB.ref(window.FB.db, 'activeRooms/' + cleanCode)).then((snapshot) => {
+            if (snapshot.exists()) {
+                currentRoomId = cleanCode;
+                startGame();
+            } else {
+                alert("Böyle bir oda bulunamadı veya kapatılmış!");
+            }
+        }).catch(() => {
+            alert("Bağlantı hatası oluştu.");
+        });
     }
 };
 
+// 3. AÇIK ODALAR LİSTESİNİ GÖSTERME
 window.openRoomList = function() {
     const modal = document.getElementById('room-list-modal');
     const container = document.getElementById('active-rooms-container');
-    container.innerHTML = "Yükleniyor...";
+    container.innerHTML = "Odalar aranıyor...";
     modal.style.display = 'flex';
 
     if (window.FB) {
@@ -80,14 +69,14 @@ window.openRoomList = function() {
             container.innerHTML = "";
             let keys = Object.keys(roomsData);
             if (keys.length === 0) {
-                container.innerHTML = "<div class='item-row'>Aktif oda yok. Yeni oda kur!</div>";
+                container.innerHTML = "<div class='item-row'>Aktif oda yok. Yeni oda kurabilirsin!</div>";
                 return;
             }
             keys.forEach(roomId => {
                 let room = roomsData[roomId];
                 container.innerHTML += `
                     <div class="item-row">
-                        <span>Oda: ${roomId} (Kurucu: ${room.host || 'Bilinmiyor'})</span>
+                        <span>Oda: <b>${roomId}</b> (Kurucu: ${room.host || 'Bilinmiyor'})</span>
                         <button class="craft-btn" onclick="joinSpecificRoom('${roomId}')">Katıl</button>
                     </div>
                 `;
@@ -108,8 +97,10 @@ window.joinSpecificRoom = function(roomId) {
     startGame();
 };
 
+// 4. ÇIKIŞ VE ANA MENÜYE DÖNÜŞ
 window.returnToMainMenu = function() {
     if (window.FB && currentRoomId) {
+        // Oyuncuyu odadaki veritabanından temizle
         window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + myPlayerId));
     }
     currentRoomId = "";
@@ -193,18 +184,21 @@ function startGame() {
     initFirebaseMultiplayer();
 }
 
+// 5. OYUN İÇİ MULTIPLAYER VE VERİ SENKRONİZASYONU
 function initFirebaseMultiplayer() {
     const checkFB = setInterval(() => {
         if (window.FB) {
             clearInterval(checkFB);
             const { db, ref, onValue, remove } = window.FB;
             
+            // Odadaki diğer oyuncuları canlı dinle
             const roomPlayersRef = ref(db, 'rooms/' + currentRoomId + '/players');
             onValue(roomPlayersRef, (snapshot) => {
                 const data = snapshot.val();
                 remotePlayers = data || {};
             });
 
+            // Sekme kapanırsa oyuncuyu sil
             window.addEventListener('beforeunload', () => {
                 remove(ref(db, 'rooms/' + currentRoomId + '/players/' + myPlayerId));
             });
@@ -343,7 +337,7 @@ function update() {
         checkAndGenerateChunks();
     }
 
-    // Firebase'e konum ve veri senkronizasyonu
+    // FIREBASE'E SÜREKLİ VERİ AKTARIMI (Konum ve Envanter)
     firebaseSyncTimer++;
     if (firebaseSyncTimer > 3 && window.FB && currentRoomId) {
         firebaseSyncTimer = 0;
@@ -403,6 +397,7 @@ function draw() {
         ctx.fillText(res.emoji, res.x, res.y);
     });
 
+    // DİĞER OYUNCULARI ÇİZME
     for (let id in remotePlayers) {
         if (id === myPlayerId) continue;
         let p = remotePlayers[id];
