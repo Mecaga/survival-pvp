@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2D Survival PvP - iOS Kesin Çözüm</title>
+    <title>2D Survival PvP - Kesin Çözüm</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 1. GİRİŞ EKRANI (iOS Uyumlu Net Alan) -->
+    <!-- 1. GİRİŞ EKRANI -->
     <div id="login-screen" class="screen active">
         <div class="login-container">
             <h1>⚔️ SURVIVAL PVP</h1>
@@ -62,8 +62,8 @@
         </div>
     </div>
 
-    <!-- Crafting Menüsü -->
-    <div class="modal" id="craft-modal">
+    <!-- Crafting Menüsü (Başlangıçta gizli) -->
+    <div class="modal" id="craft-modal" style="display:none;">
         <div class="modal-header">
             <span id="modal-title">Çalışma Masası</span>
             <button class="close-btn" onclick="closeModals()">X</button>
@@ -76,8 +76,8 @@
         </div>
     </div>
 
-    <!-- Envanter Menüsü -->
-    <div class="modal" id="inv-modal">
+    <!-- Envanter Menüsü (Başlangıçta kesinlikle gizli) -->
+    <div class="modal" id="inv-modal" style="display:none;">
         <div class="modal-header">
             <span>Çanta ve Eşyalar</span>
             <button class="close-btn" onclick="closeModals()">X</button>
