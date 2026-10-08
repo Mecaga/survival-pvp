@@ -11,18 +11,11 @@ body { background: #07070f; color: #fff; font-family: sans-serif; width: 100vw; 
 .btn-blue { background: #3498db; }
 .btn-green { background: #2ecc71; }
 
-.input-box { 
-    width: 80%; max-width: 280px; padding: 14px; margin: 10px 0; 
-    background: rgba(255,255,255,0.2); border: 2px solid #3498db; 
-    border-radius: 8px; color: white; font-size: 18px; text-align: center; 
-    outline: none; -webkit-appearance: none; z-index: 9999; position: relative; 
-}
-
 #game-screen { background: #132213; justify-content: flex-start; }
 #ui {
     position: absolute; top: 10px; left: 10px; right: 10px;
     display: flex; justify-content: space-between; align-items: flex-start;
-    font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px #000; z-index: 50; pointer-events: none;
+    font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px #000; z-index: 50; pointer-events: none;
 }
 .panel { background: rgba(0,0,0,0.75); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); pointer-events: auto; }
 canvas { background: #132213; display: block; box-shadow: 0 0 20px rgba(0,0,0,0.9); margin-top: 50px; touch-action: none; }
