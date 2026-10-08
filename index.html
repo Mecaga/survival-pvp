@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>2D Survival PvP - iOS Uyumlu</title>
+    <title>2D Survival PvP - iOS Fix</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 1. GİRİŞ EKRANI -->
-    <div id="login-screen" class="screen active">
-        <h1 style="font-size: 26px; margin-bottom: 20px; text-shadow: 0 0 10px #3498db;">⚔️ SURVIVAL PVP</h1>
-        <input type="text" id="username-input" class="input-box" placeholder="Kullanıcı Adı" maxlength="15" autocomplete="off">
+    <!-- 1. GİRİŞ EKRANI (iOS Tıklama Sorunu Giderildi) -->
+    <div id="login-screen" class="screen active" style="z-index: 9999; position: absolute;">
+        <h1 style="font-size: 26px; margin-bottom: 20px; text-shadow: 0 0 10px #3498db; pointer-events: none;">⚔️ SURVIVAL PVP</h1>
+        <input type="text" id="username-input" class="input-box" placeholder="Kullanıcı Adı" maxlength="15" autocomplete="off" autocapitalize="off">
         <button class="btn" onclick="handleLogin()">Giriş Yap</button>
     </div>
 
