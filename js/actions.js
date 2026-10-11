@@ -63,6 +63,13 @@ function near(type){for(const kk in blocks)if(blocks[kk]===type){const [x,y]=kk.
 function canCraft([o,n,need,st]){return Object.entries(need).every(([t,v])=>count(t)>=v)&&(!st||near(st))&&space(o,n)}
 function craft(r){if(!canCraft(r))return toast('Malzeme/istasyon eksik');for(const t in r[2])take(t,r[2][t]);add(r[0],r[1]);beep(600,.1);renderInv()}
 function pickup(){
+ const cx=Math.round(me.x),cy=Math.round(me.y);
+ for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){
+  const x=cx+i,y=cy+j,g=groundAt(x,y),kk='g'+K(x,y);
+  if(!g||!alive(kk)||pending[kk]||blocks[K(x,y)]||Math.hypot(x-me.x,y-me.y)>.8||!space(g,2))continue;pending[kk]=1;
+  db.ref('rooms/'+code+'/taken/'+kk).transaction(v=>(v&&Date.now()-v<REGROW)?undefined:Date.now(),(e,ok)=>{
+   delete pending[kk];if(ok){taken[kk]=Date.now();const n=1+(Math.random()*2|0);add(g,n);beep(750,.05);floatTxt('+'+n+ITEMS[g][1],x,y)}});
+ }
  for(const id in drops){
   const d=drops[id];if(pending[id]||Math.hypot(d.x-me.x,d.y-me.y)>.9||!space(d.t,d.n))continue;pending[id]=1;
   db.ref('rooms/'+code+'/drops/'+id).transaction(v=>v?null:undefined,(e,ok,snap)=>{
