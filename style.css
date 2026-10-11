@@ -1,86 +1,25 @@
-* { 
-    box-sizing: border-box; 
-    margin: 0; 
-    padding: 0; 
-    user-select: none; 
-    -webkit-user-select: none; 
-    -webkit-touch-callout: none;
-}
-
-html, body { 
-    background: #07070f; 
-    color: #fff; 
-    font-family: sans-serif; 
-    width: 100vw; 
-    height: 100vh; 
-    overflow: hidden; 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    touch-action: none; 
-    -webkit-overflow-scrolling: touch;
-}
-
-.screen { 
-    display: none; 
-    width: 100%; 
-    height: 100%; 
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    background: radial-gradient(circle, #1a1a2e 0%, #07070f 100%); 
-    z-index: 10; 
-    overflow: hidden;
-    touch-action: none;
-}
-.screen.active { display: flex; }
-
-.login-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; z-index: 999; padding: 20px; }
-
-.btn { width: 80%; max-width: 280px; padding: 14px; margin: 8px 0; background: #e74c3c; border: none; border-radius: 8px; color: white; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.4); cursor: pointer; text-align: center; -webkit-appearance: none; }
-.btn:active { transform: scale(0.97); }
-.btn-blue { background: #3498db; }
-.btn-green { background: #2ecc71; }
-
-#game-screen { background: #132213; justify-content: flex-start; overflow: hidden; }
-#ui {
-    position: absolute; top: 10px; left: 10px; right: 10px;
-    display: flex; justify-content: space-between; align-items: flex-start;
-    font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px #000; z-index: 50; pointer-events: none;
-}
-.panel { background: rgba(0,0,0,0.75); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); pointer-events: auto; }
-canvas { background: #132213; display: block; box-shadow: 0 0 20px rgba(0,0,0,0.9); margin-top: 50px; touch-action: none; }
-
-#joystick-base {
-    position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px;
-    background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 60px; z-index: 50; touch-action: none;
-}
-#joystick-knob {
-    position: absolute; top: 35px; left: 35px; width: 50px; height: 50px;
-    background: rgba(255,255,255,0.6); border-radius: 25px; pointer-events: none;
-}
-.action-container { position: absolute; bottom: 30px; right: 30px; display: flex; gap: 12px; z-index: 50; align-items: flex-end; }
-.btn-round {
-    width: 70px; height: 70px; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 24px;
-    border: 2px solid rgba(255,255,255,0.4); box-shadow: 0 4px 10px rgba(0,0,0,0.5); background: rgba(40,40,60,0.8);
-    touch-action: manipulation; -webkit-appearance: none; cursor: pointer;
-}
-#btn-attack { background: rgba(231, 76, 60, 0.8); border-color: #e74c3c; }
-#btn-inv { background: rgba(52, 152, 219, 0.8); border-color: #3498db; }
-#btn-interact { background: rgba(46, 204, 113, 0.8); border-color: #2ecc71; }
-
-.modal {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 90%; max-width: 380px; background: rgba(18, 18, 26, 0.98);
-    border: 2px solid #3498db; border-radius: 12px; padding: 15px; z-index: 1000;
-    flex-direction: column; gap: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.9);
-    max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
-}
-.modal-header { display: flex; justify-content: space-between; align-items: center; font-size: 15px; border-bottom: 1px solid #444; padding-bottom: 6px; }
-.close-btn { background: #e74c3c; border: none; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-.item-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; font-size: 12px; }
-.craft-btn { background: #2ecc71; border: none; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; -webkit-appearance: none; cursor: pointer; pointer-events: auto; }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;touch-action:none;overscroll-behavior:none;background:#10201a;color:#e8f3ea;font-family:"Trebuchet MS",system-ui,sans-serif;-webkit-user-select:none;user-select:none}
+#lobby{height:100%;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 28px) 22px 28px;max-width:460px;margin:auto;touch-action:pan-y}
+h1{font-size:2.4rem;margin:0 0 4px;letter-spacing:.5px;color:#9be37a}
+h2{font-size:1.05rem;margin:26px 0 8px;color:#b9d1bf}
+#hello{margin:0 0 22px;color:#8fb09a}
+button,input{font:inherit;border:0;border-radius:12px;padding:14px 16px}
+button{background:#2f5d3f;color:#fff;font-weight:700}
+button:active{transform:scale(.97)}
+.big{width:100%;background:#7ac74f;color:#10201a;font-size:1.1rem}
+.row{display:flex;gap:10px;margin-top:12px}
+input{flex:1;min-width:0;background:#1b3328;color:#fff;text-transform:uppercase;letter-spacing:3px;text-align:center}
+#rooms{list-style:none;margin:0;padding:0}
+#rooms li{display:flex;justify-content:space-between;align-items:center;background:#1b3328;border-radius:12px;padding:12px 14px;margin-bottom:8px}
+#rooms li.empty{color:#7f9a88;display:block}
+#rooms b{letter-spacing:3px;font-size:1.1rem}
+#rooms button{padding:8px 14px}
+#game{position:fixed;inset:0}
+canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;top:calc(env(safe-area-inset-top) + 8px);left:10px;font-size:13px;background:#0008;padding:8px 10px;border-radius:10px;pointer-events:none}
+#hp{width:120px;height:8px;background:#400;border-radius:4px;margin:6px 0;overflow:hidden}
+#hpbar{display:block;height:100%;width:100%;background:#e5484d;transition:width .15s}
+#roomtag{position:absolute;top:calc(env(safe-area-inset-top) + 8px);right:10px;background:#0008;padding:8px 10px;border-radius:10px;font-size:13px;letter-spacing:2px}
+#toast{position:absolute;top:30%;left:50%;transform:translateX(-50%);font-size:1.6rem;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;text-shadow:0 2px 6px #000}
+#atk{position:absolute;right:24px;bottom:calc(env(safe-area-inset-bottom) + 28px);width:84px;height:84px;border-radius:50%;font-size:2rem;padding:0;background:#c0392bcc}
