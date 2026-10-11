@@ -7,13 +7,13 @@ $('nick').addEventListener('keydown',e=>{if(e.key==='Enter')$('enter').onclick()
 $('enter').onclick=()=>{name=$('nick').value.trim().slice(0,12);if(!name){$('nick').focus();return}
  localStorage.setItem('spn',name);$('hello').textContent='Hoş geldin, '+name;show('menu')};
 const rand4=()=>Math.random().toString(36).slice(2,6).toUpperCase();
-$('create').onclick=()=>start(rand4(),true);
+$('create').onclick=()=>start(rand4(),true,Date.now());
 $('join').onclick=()=>joinCode($('code').value.trim().toUpperCase());
 async function joinCode(c){
  if(!db)return alert('Sunucuya bağlanılamadı, sayfayı yenile.');
  if(c.length!==4)return alert('Oda kodu 4 karakter olmalı.');
  const s=await db.ref('rooms/'+c+'/meta').once('value');
- if(!s.exists())return alert('Bu kodla açık bir oda yok.');start(c,false);
+ if(!s.exists())return alert('Bu kodla açık bir oda yok.');start(c,false,(s.val()||{}).t||Date.now());
 }
 if(db)db.ref('rooms').on('value',s=>{
  const ul=$('rooms');ul.innerHTML='';let n=0;
@@ -23,17 +23,19 @@ if(db)db.ref('rooms').on('value',s=>{
  if(!n)ul.innerHTML='<li class="empty">Henüz oda yok. İlk odayı sen kur.</li>';
 });
 const listen=(ref,ev,fn)=>{ref.on(ev,fn);refs.push([ref,ev,fn])};
-function start(c,host){
- code=c;isHost=host;seed=[...c].reduce((a,ch)=>a*31+ch.charCodeAt(0),7);
+function start(c,host,t0){
+ code=c;isHost=host;roomT0=t0;spawnPt=null;floats=[];parts=[];seed=[...c].reduce((a,ch)=>a*31+ch.charCodeAt(0),7);
  players={};taken={};blocks={};crops={};hitsMap={};drops={};shots=[];pending={};refs=[];emoteAt={};
  deadUntil=0;godUntil=0;sprint=false;flash=0;slots.fill(null);sel=0;
  let x=0,y=0;for(let i=0;i<300;i++){x=(Math.random()-.5)*40;y=(Math.random()-.5)*40;if(canStand(x,y))break}
- me={id:Math.random().toString(36).slice(2,8),x,y,hp:100,hg:100,d:0};
+ me={id:Math.random().toString(36).slice(2,8),x,y,hp:100,hg:100,en:100,d:0};
  const base=db.ref('rooms/'+c);
- if(host){base.child('meta').set({host:me.id,hostName:name,t:Date.now()});base.onDisconnect().remove()}
- pRef=base.child('players/'+me.id);pRef.onDisconnect().remove();pRef.set({n:name,x,y,hp:100,a:1,k:0,d:0});
+ if(host){base.child('meta').set({host:me.id,hostName:name,t:t0});base.onDisconnect().remove()}
+ pRef=base.child('players/'+me.id);pRef.onDisconnect().remove();pRef.set({n:name,x,y,hp:100,a:1,k:0,d:0,c:myColor});
  listen(base.child('players'),'value',s=>{const v=s.val()||{};
-  for(const i in v)if(v[i].e&&(!players[i]||players[i].e!==v[i].e))emoteAt[i]=performance.now();players=v;renderPanel()});
+  for(const i in v){const o=players[i]||{};if(v[i].e&&o.e!==v[i].e)emoteAt[i]=performance.now();
+   if(o.k!==undefined&&(v[i].k||0)>(o.k||0)){if(i===me.id){gainXp(10);ach('kill','İlk öldürme!')}if((v[i].k||0)%3===0)feedMsg('🔥 '+v[i].n+' seri yapıyor: '+v[i].k)}}
+  players=v;renderPanel()});
  const mapOf=(path,obj,ev)=>{listen(base.child(path),ev,s=>{obj()[s.key]=s.val()})};
  for(const ev of['child_added','child_changed']){mapOf('taken',()=>taken,ev);mapOf('blocks',()=>blocks,ev);mapOf('crops',()=>crops,ev);mapOf('drops',()=>drops,ev)}
  for(const p of['blocks','crops','drops'])listen(base.child(p),'child_removed',s=>{delete({blocks,crops,drops})[p][s.key]});
@@ -41,9 +43,9 @@ function start(c,host){
  listen(base.child('shots'),'child_added',s=>{const v=s.val();if(shots.some(q=>q.k===s.key)||Date.now()-v.t>3000)return;shots.push({...v,k:s.key,born:performance.now(),hit:false})});
  listen(base.child('shots'),'child_removed',s=>{shots=shots.filter(q=>q.k!==s.key)});
  listen(base.child('feed').limitToLast(5),'child_added',s=>{const v=s.val();if(Date.now()-v.t>6000)return;
-  const d=document.createElement('div');d.textContent=`💥 ${v.a} → ${v.b}`;$('feed').appendChild(d);setTimeout(()=>d.remove(),4500)});
+  feedMsg('💥 '+v.a+' → '+v.b)});
  if(!host)listen(base.child('meta'),'value',s=>{if(!s.exists()&&running){leave(false);alert('Oda sahibi ayrıldı, oda kapandı.')}});
- show('game');$('panel').hidden=true;$('bag').hidden=true;resize();add('apple',2);renderInv();
+ show('game');$('panel').hidden=true;$('bag').hidden=true;$('stn').hidden=true;$('sprint').style.opacity=.55;resize();sizeMM();add('apple',2);renderInv();
  timer=setInterval(push,100);running=true;prev=performance.now();requestAnimationFrame(loop);
 }
 function push(){pRef.update({x:+me.x.toFixed(2),y:+me.y.toFixed(2),hp:me.hp,d:me.d,a:deadUntil?0:1})}
@@ -59,3 +61,6 @@ function renderPanel(){
  $('plist').innerHTML=ids.map(i=>{const p=players[i];return `<li><span>${i===me.id?'⭐ ':''}${esc(p.n)}</span><span>⚔️ ${p.k||0}  💀 ${p.d||0}</span></li>`}).join('');
  $('leave').textContent=isHost?'Odayı kapat ve ayrıl':'Odadan ayrıl';
 }
+function feedMsg(t){const d=document.createElement('div');d.textContent=t;$('feed').appendChild(d);setTimeout(()=>d.remove(),4500)}
+['#4aa8ff','#7ac74f','#f1c40f','#e67e22','#c678dd','#ff7eb6'].forEach(c=>{const i=document.createElement('i');i.style.background=c;if(c===myColor)i.className='on';
+ i.onclick=()=>{myColor=c;localStorage.setItem('spc',c);[...$('colors').children].forEach(x=>x.className=x===i?'on':'')};$('colors').appendChild(i)});
