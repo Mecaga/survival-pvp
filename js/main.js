@@ -1,9 +1,9 @@
 // Ana döngü, girdiler, açlık/yenilenme, düğmeler
 let prev=0,tHun=0,tReg=0,emoN=0,ei=0,curSt='';const EM=['😀','😡','👍','😭','❤️'];
-addEventListener('keydown',e=>{if(!running)return;const k=e.key.toLowerCase();keys[k]=1;
+addEventListener('keydown',e=>{if(!running||e.target.id==='chatin')return;const k=e.key.toLowerCase();keys[k]=1;
  if(k===' ')shoot();if(k==='e')mine();if(k==='f')use();if(k==='b')toggleBag();if('1234'.includes(k)&&k.length===1){sel=+k-1;renderInv()}});
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
-cv.addEventListener('touchstart',e=>{e.preventDefault();if(deadUntil)return;for(const t of e.changedTouches)if(!joy&&t.clientX<innerWidth*.6)joy={id:t.identifier,sx:t.clientX,sy:t.clientY,dx:0,dy:0}},{passive:false});
+cv.addEventListener('touchstart',e=>{e.preventDefault();if(!$('chatbar').hidden){chatOpen(false);return}if(deadUntil)return;for(const t of e.changedTouches)if(!joy&&t.clientX<innerWidth*.6)joy={id:t.identifier,sx:t.clientX,sy:t.clientY,dx:0,dy:0}},{passive:false});
 cv.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches)if(joy&&t.identifier===joy.id){joy.dx=t.clientX-joy.sx;joy.dy=t.clientY-joy.sy}},{passive:false});
 cv.addEventListener('touchend',e=>{for(const t of e.changedTouches)if(joy&&t.identifier===joy.id)joy=null});
 cv.addEventListener('touchcancel',()=>joy=null);
@@ -11,7 +11,11 @@ document.addEventListener('touchmove',e=>{if(!e.target.closest('#plist,#clist,#s
 const btn=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();fn()});
 btn('atk',shoot);btn('mine',mine);btn('use',use);
 btn('sprint',()=>{if(!sprint&&me.en<15)return toast('Enerji yetersiz ⚡');sprint=!sprint;$('sprint').style.opacity=sprint?1:.55});
-btn('chat',()=>{const t=(prompt('Mesaj yaz (en fazla 40 karakter):')||'').trim().slice(0,40);if(!t)return;me.emo=t+'|'+(++emoN);emoteAt[me.id]=performance.now();pRef.update({e:me.emo})});
+function chatOpen(v){$('chatbar').hidden=!v;if(v){joy=null;$('chatin').value='';setTimeout(()=>$('chatin').focus(),30)}else $('chatin').blur()}
+function chatSend(){const t=$('chatin').value.trim().slice(0,40);chatOpen(false);if(!t)return;me.emo=t+'|'+(++emoN);emoteAt[me.id]=performance.now();pRef.update({e:me.emo})}
+$('chat').onclick=()=>chatOpen($('chatbar').hidden);
+$('chatsend').onclick=chatSend;
+$('chatin').addEventListener('keydown',e=>{if(e.key==='Enter')chatSend()});
 btn('stbtn',()=>{stOpen=curSt;$('stitle').textContent=stOpen==='table'?'🛠️ Craft masası':'🔥 Fırın';$('stn').hidden=false;renderInv()});
 $('sclose').onclick=()=>$('stn').hidden=true;
 $('mute').onclick=()=>{muted=!muted;$('mute').textContent=muted?'🔇 Ses: kapalı':'🔊 Ses: açık'};
