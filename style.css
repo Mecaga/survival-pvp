@@ -19,13 +19,17 @@ input{flex:1;width:100%;min-width:0;background:#1b3328;color:#fff;text-transform
 #game{position:fixed;inset:0}
 canvas{display:block;width:100%;height:100%}
 #hud{position:absolute;top:calc(env(safe-area-inset-top) + 8px);left:10px;font-size:13px;background:#0009;padding:8px 10px;border-radius:10px;pointer-events:none;line-height:1.5}
+#hg{width:130px;height:6px;background:#432;border-radius:4px;margin-bottom:4px;overflow:hidden}
+#hgbar{display:block;height:100%;background:#e0a030}
 #hp{width:130px;height:8px;background:#400;border-radius:4px;margin:4px 0;overflow:hidden}
 #hpbar{display:block;height:100%;width:100%;background:#e5484d;transition:width .15s}
 #exit{position:absolute;top:calc(env(safe-area-inset-top) + 8px);right:10px;padding:10px 14px;background:#000a;font-size:1.2rem}
 #toast{position:absolute;top:28%;left:50%;transform:translateX(-50%);font-size:1.5rem;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;text-shadow:0 2px 6px #000;white-space:nowrap}
-.act{position:absolute;border-radius:50%;width:78px;height:78px;font-size:1.9rem;padding:0}
-#atk{right:20px;bottom:calc(env(safe-area-inset-bottom) + 28px);background:#c0392bcc}
-#mine{right:108px;bottom:calc(env(safe-area-inset-bottom) + 28px);background:#b9770ecc}
+.act{position:absolute;border-radius:50%;width:64px;height:64px;font-size:1.6rem;padding:0}
+#atk{right:14px;bottom:calc(env(safe-area-inset-bottom) + 84px);background:#c0392bcc}
+#mine{right:86px;bottom:calc(env(safe-area-inset-bottom) + 84px);background:#b9770ecc}
+#use{right:14px;bottom:calc(env(safe-area-inset-bottom) + 156px);background:#2e86c1cc}
+#sprint{right:86px;bottom:calc(env(safe-area-inset-bottom) + 156px);background:#7d3c98cc;opacity:.55}
 #panel{position:absolute;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:20px}
 .card{width:100%;max-width:380px;background:#16291f;border-radius:16px;padding:16px}
 .ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
@@ -35,3 +39,21 @@ canvas{display:block;width:100%;height:100%}
 #plist span:last-child{color:#9bb8a3;font-size:13px}
 .danger{width:100%;background:#c0392b}
 #err{position:fixed;left:0;right:0;top:0;z-index:99;background:#c0392b;color:#fff;font-size:12px;padding:calc(env(safe-area-inset-top) + 6px) 10px 6px;-webkit-user-select:text;user-select:text}
+#emote{position:absolute;top:calc(env(safe-area-inset-top) + 8px);right:62px;padding:10px 12px;background:#000a;font-size:1.2rem}
+#mm{position:absolute;left:10px;top:calc(env(safe-area-inset-top) + 112px);width:90px;height:90px;border:2px solid #fff6;border-radius:8px;pointer-events:none}
+#feed{position:absolute;top:calc(env(safe-area-inset-top) + 60px);left:50%;transform:translateX(-50%);font-size:13px;text-align:center;pointer-events:none;text-shadow:0 1px 4px #000}
+#hotbar{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 10px);transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:#000a;padding:6px;border-radius:14px}
+#hslots,#grid,#grid2{display:grid;gap:6px}
+#hslots,#grid2{grid-template-columns:repeat(4,46px)}
+#grid{grid-template-columns:repeat(5,46px);justify-content:center;margin-bottom:6px}#grid2{justify-content:center}
+.slot{width:46px;height:46px;background:#1b3328;border:2px solid #ffffff22;border-radius:9px;display:flex;align-items:center;justify-content:center;position:relative;font-size:24px;touch-action:none}
+.slot.sel{border-color:#9be37a}.slot small{position:absolute;right:3px;bottom:0;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000}
+#bagbtn{width:46px;height:46px;padding:0;font-size:22px;background:#5a3e1f}
+#selname{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 70px);transform:translateX(-50%);font-size:12px;text-shadow:0 1px 3px #000;pointer-events:none}
+.ghost{position:fixed;z-index:50;font-size:34px;transform:translate(-50%,-50%);pointer-events:none}
+#bag{position:absolute;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:14px}
+.tabs button{padding:8px 14px;background:#22382b;margin-right:6px}.tabs .on{background:#7ac74f;color:#10201a}
+.sep{text-align:center;font-size:12px;color:#8fb09a;margin:6px 0}
+#clist{max-height:55vh;overflow-y:auto;touch-action:pan-y}
+.rec{display:flex;justify-content:space-between;align-items:center;padding:7px 4px;border-bottom:1px solid #ffffff14;font-size:14px}
+.rec small{color:#9bb8a3}.rec.no b{opacity:.5}.rec button{padding:8px 14px}.rec button:disabled{opacity:.35}
