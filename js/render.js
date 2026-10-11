@@ -19,6 +19,7 @@ function draw(now){
   const c=crops[kk];
   if(c){sq(px,py,'#4a2f17',2);const a=tn-c.t;emo(a<GROW?'🌱':a<2*GROW?'🌿':c.c==='carrot'?'🥕':'🌾',px,py,S*.8)}
   if(b==='table'||b==='furnace'){sq(px,py,b==='table'?'#7a5230':'#555',2);emo(b==='table'?'🛠️':'🔥',px,py,S*.65)}
+  if(!t&&!b&&!c){const g=groundAt(x,y);if(g&&alive('g'+kk)){ctx.fillStyle='#ffffff45';ctx.beginPath();ctx.arc(px,py,S*.27,0,7);ctx.fill();emo(ITEMS[g][1],px,py,S*.48)}}
   if(b==='torch')emo('🕯️',px,py,S*.6);
   if(b==='bed')emo('🛏️',px,py,S*.8);
   if(t&&t!=='water'&&alive(kk)){
