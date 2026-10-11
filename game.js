@@ -1,486 +1,120 @@
-let playerName = "Maceracı";
-let currentRoomId = "";
-let myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
-let remotePlayers = {};
+const $=id=>document.getElementById(id), db=firebase.database();
+const S=36, SPEED=4.5, BSPEED=11, BLIFE=900;
+const RES={tree:['🌲','wood'],stone:['🪨','stone'],iron:['⛏️','iron'],diamond:['💎','diamond']};
+let name=localStorage.getItem('spn');
+if(!name){name=(prompt('Oyuncu adın?')||'').trim().slice(0,12)||'Oyuncu'+Math.floor(Math.random()*99);localStorage.setItem('spn',name)}
+$('hello').textContent='Hoş geldin, '+name;
 
-window.handleLogin = function() {
-    let name = prompt("Kullanıcı adınızı girin:", "Maceracı");
-    if (name && name.trim().length >= 2) {
-        playerName = name.trim();
-        document.getElementById('welcome-text').innerText = "Hoş Geldin, " + playerName;
-        switchScreen('menu-screen');
-    } else {
-        alert("En az 2 harfli geçerli bir isim girmelisin!");
-    }
-};
-
-window.logout = function() { switchScreen('login-screen'); };
-
-window.createRoom = function() {
-    if (!window.FB) { alert("Firebase yükleniyor..."); return; }
-    currentRoomId = "oda_" + Math.floor(Math.random() * 9000 + 1000);
-    
-    window.FB.set(window.FB.ref(window.FB.db, 'activeRooms/' + currentRoomId), { 
-        host: playerName, 
-        createdAt: Date.now() 
-    }).then(() => {
-        alert("Oda Kuruldu! Kodun: " + currentRoomId);
-        startGame();
-    }).catch((err) => {
-        alert("Hata: " + err.message);
-    });
-};
-
-window.joinRoomPrompt = function() {
-    let code = prompt("Katılmak istediğin Oda Kodunu Gir:");
-    if (code) {
-        let cleanCode = code.trim();
-        if (window.FB) {
-            window.FB.get(window.FB.ref(window.FB.db, 'activeRooms/' + cleanCode)).then((snapshot) => {
-                if (snapshot.exists()) {
-                    currentRoomId = cleanCode;
-                    startGame();
-                } else {
-                    alert("Böyle bir oda bulunamadı!");
-                }
-            });
-        }
-    }
-};
-
-window.openRoomList = function() {
-    const modal = document.getElementById('room-list-modal');
-    const container = document.getElementById('active-rooms-container');
-    container.innerHTML = "Yükleniyor...";
-    modal.style.display = 'flex';
-
-    if (window.FB) {
-        window.FB.get(window.FB.ref(window.FB.db, 'activeRooms')).then((snapshot) => {
-            let roomsData = snapshot.val() || {};
-            container.innerHTML = "";
-            let keys = Object.keys(roomsData);
-            if (keys.length === 0) {
-                container.innerHTML = "<div class='item-row'>Aktif oda yok.</div>";
-                return;
-            }
-            keys.forEach(roomId => {
-                let room = roomsData[roomId];
-                container.innerHTML += `
-                    <div class="item-row">
-                        <span>Oda: ${roomId} (Kurucu: ${room.host || 'Bilinmiyor'})</span>
-                        <button class="craft-btn" onclick="joinSpecificRoom('${roomId}')">Katıl</button>
-                    </div>
-                `;
-            });
-        });
-    }
-};
-
-window.closeRoomList = function() {
-    document.getElementById('room-list-modal').style.display = 'none';
-};
-
-window.joinSpecificRoom = function(roomId) {
-    currentRoomId = roomId;
-    closeRoomList();
-    startGame();
-};
-
-window.returnToMainMenu = function() {
-    if (window.FB && currentRoomId) {
-        window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + myPlayerId));
-    }
-    currentRoomId = "";
-    remotePlayers = {};
-    switchScreen('menu-screen');
-};
-
-function switchScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
-}
-
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-function resizeGame() {
-    canvas.width = 600;
-    canvas.height = 600;
-    let scale = Math.min(window.innerWidth / 600, (window.innerHeight - 60) / 600) * 0.95;
-    canvas.style.width = (600 * scale) + 'px';
-    canvas.style.height = (600 * scale) + 'px';
-}
-
-let player = {
-    x: 1000, y: 1000, radius: 15, speed: 3.5,
-    hp: 100, hunger: 100, angle: 0,
-    inventory: { wood: 0, stone: 0, iron: 0, diamond: 0 }
-};
-
-let worldResources = [];
-let worldObjects = [];
-let projectiles = {};
-let generatedChunks = {};
-const CHUNK_SIZE = 400;
-
-function startGame() {
-    if (!currentRoomId) currentRoomId = "genel_oda";
-    player.inventory = { wood: 0, stone: 0, iron: 0, diamond: 0 };
-    player.hp = 100;
-    let codeEl = document.getElementById('room-code-display');
-    if (codeEl) codeEl.innerText = currentRoomId;
-    
-    switchScreen('game-screen');
-    resizeGame();
-    updateUI();
-    initFirebaseMultiplayer();
-}
-
-function initFirebaseMultiplayer() {
-    const checkFB = setInterval(() => {
-        if (window.FB) {
-            clearInterval(checkFB);
-            const { db, ref, onValue, remove } = window.FB;
-            
-            // 1. Oyuncuları Dinle
-            const roomPlayersRef = ref(db, 'rooms/' + currentRoomId + '/players');
-            onValue(roomPlayersRef, (snapshot) => {
-                const data = snapshot.val() || {};
-                remotePlayers = data;
-                
-                // Ölünce odayı terketmek yerine canı yenile ve yeniden doğur
-                if (data[myPlayerId] && data[myPlayerId].hp !== undefined) {
-                    if (data[myPlayerId].hp <= 0) {
-                        player.hp = 100;
-                        alert("Öldün! Aynı odada yeniden doğdun.");
-                    } else {
-                        player.hp = data[myPlayerId].hp;
-                    }
-                }
-            });
-
-            // 2. Ortak Dünya Kaynaklarını Dinle
-            const worldResRef = ref(db, 'rooms/' + currentRoomId + '/worldResources');
-            onValue(worldResRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    worldResources = Object.values(data);
-                } else {
-                    generateInitialWorldResources();
-                }
-            });
-
-            // 3. Mermileri Dinle
-            const projectilesRef = ref(db, 'rooms/' + currentRoomId + '/projectiles');
-            onValue(projectilesRef, (snapshot) => {
-                const data = snapshot.val() || {};
-                projectiles = data;
-            });
-
-            window.addEventListener('beforeunload', () => {
-                remove(ref(db, 'rooms/' + currentRoomId + '/players/' + myPlayerId));
-            });
-        }
-    }, 100);
-}
-
-function generateInitialWorldResources() {
-    let initialRes = {};
-    let types = [
-        { type: 'wood', emoji: '🪵' },
-        { type: 'stone', emoji: '🪨' },
-        { type: 'iron', emoji: '🔩' },
-        { type: 'diamond', emoji: '💎' }
-    ];
-
-    for (let i = 0; i < 30; i++) {
-        let id = 'res_' + i + '_' + Math.random().toString(36).substring(2, 6);
-        let item = types[Math.floor(Math.random() * types.length)];
-        initialRes[id] = {
-            id: id,
-            x: 800 + Math.random() * 400,
-            y: 800 + Math.random() * 400,
-            type: item.type,
-            emoji: item.emoji,
-            radius: 16
-        };
-    }
-    window.FB.set(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/worldResources'), initialRes);
-}
-
-// Joystick
-const jBase = document.getElementById('joystick-base');
-const jKnob = document.getElementById('joystick-knob');
-let joyActive = false;
-let joyVector = { x: 0, y: 0 };
-let activeTouchId = null;
-
-jBase.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (!joyActive) {
-        let touch = e.changedTouches[0];
-        joyActive = true;
-        activeTouchId = touch.identifier;
-        handleTouchMove(touch);
-    }
-}, { passive: false });
-
-window.addEventListener('touchmove', (e) => {
-    if (!joyActive) return;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-        let touch = e.changedTouches[i];
-        if (touch.identifier === activeTouchId) {
-            e.preventDefault();
-            handleTouchMove(touch);
-            break;
-        }
-    }
-}, { passive: false });
-
-function resetJoystick(e) {
-    if (!joyActive) return;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-        if (e.changedTouches[i].identifier === activeTouchId) {
-            joyActive = false;
-            activeTouchId = null;
-            joyVector = { x: 0, y: 0 };
-            jKnob.style.transform = `translate(0px, 0px)`;
-            break;
-        }
-    }
-}
-
-window.addEventListener('touchend', resetJoystick);
-window.addEventListener('touchcancel', resetJoystick);
-
-function handleTouchMove(touch) {
-    const rect = jBase.getBoundingClientRect();
-    let cx = rect.left + rect.width / 2;
-    let cy = rect.top + rect.height / 2;
-    let dx = touch.clientX - cx;
-    let dy = touch.clientY - cy;
-    let dist = Math.hypot(dx, dy);
-    let maxDist = 45;
-    if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
-    jKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-    joyVector = dist < 5 ? { x: 0, y: 0 } : { x: dx / maxDist, y: dy / maxDist };
-}
-
-// Sadece tuşa basan oyuncunun mermi üretmesi sağlandı
-document.getElementById('btn-attack').addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (window.FB && currentRoomId) {
-        let bulletId = 'b_' + myPlayerId + '_' + Date.now();
-        let bulletData = {
-            id: bulletId,
-            x: player.x,
-            y: player.y,
-            vx: Math.cos(player.angle) * 10,
-            vy: Math.sin(player.angle) * 10,
-            shooter: myPlayerId
-        };
-        window.FB.set(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/projectiles/' + bulletId), bulletData);
-    }
-}, { passive: false });
-
-document.getElementById('btn-inv').addEventListener('click', () => {
-    let invList = document.getElementById('inv-list');
-    if (invList) {
-        invList.innerHTML = `
-            <div class="item-row"><span>🪵 Odun: ${player.inventory.wood}</span></div>
-            <div class="item-row"><span>🪨 Taş: ${player.inventory.stone}</span></div>
-            <div class="item-row"><span>🔩 Demir: ${player.inventory.iron}</span></div>
-            <div class="item-row"><span>💎 Elmas: ${player.inventory.diamond}</span></div>
-        `;
-    }
-    let modal = document.getElementById('inv-modal');
-    if (modal) modal.style.display = 'flex';
+// ---- Lobi ----
+const rand4=()=>Math.random().toString(36).slice(2,6).toUpperCase();
+$('create').onclick=()=>{const c=rand4();db.ref('rooms/'+c+'/meta').set({t:Date.now(),host:name});start(c)};
+$('join').onclick=()=>{const c=$('code').value.trim().toUpperCase();if(c.length==4)start(c)};
+db.ref('rooms').on('value',s=>{
+  const ul=$('rooms');ul.innerHTML='';let n=0;
+  s.forEach(r=>{const p=r.child('players').numChildren();if(!p)return;n++;
+    const li=document.createElement('li');li.innerHTML=`<span><b>${r.key}</b> · ${p} oyuncu</span>`;
+    const b=document.createElement('button');b.textContent='Katıl';b.onclick=()=>start(r.key);li.appendChild(b);ul.appendChild(li)});
+  if(!n)ul.innerHTML='<li class="empty">Henüz oda yok. İlk odayı sen kur.</li>';
 });
 
-window.placeWorkbench = function() {
-    if (player.inventory.wood >= 5 && player.inventory.stone >= 3) {
-        player.inventory.wood -= 5; player.inventory.stone -= 3;
-        worldObjects.push({ x: player.x, y: player.y, type: 'workbench' });
-        updateUI(); window.closeModals();
-        alert('Çalışma Masası kuruldu!');
-    } else { alert('Yetersiz malzeme! (5 Odun, 3 Taş gerekli)'); }
-};
+// ---- Dünya ----
+let seed=1;
+function hash(x,y){let h=(x*374761393+y*668265263+seed*2147483647)|0;h=(h^(h>>>13))*1274126177|0;return((h^(h>>>16))>>>0)/4294967295}
+function tileAt(x,y){const r=hash(x,y);return r<.08?'tree':r<.12?'stone':r<.135?'iron':r<.14?'diamond':null}
 
-let activeWorkbench = null;
-function checkWorkbenchProximity() {
-    let interactBtn = document.getElementById('btn-interact');
-    if (!interactBtn) return;
-    activeWorkbench = null;
-    worldObjects.forEach(obj => {
-        if (Math.hypot(player.x - obj.x, player.y - obj.y) < 45) activeWorkbench = obj;
+// ---- Durum ----
+let code,me,pRef,players={},taken={},shots=[],inv={wood:0,stone:0,iron:0,diamond:0},pending={},keys={},joy=null,aim={x:1,y:0},lastHit=0,godUntil=0;
+const cv=$('c'),ctx=cv.getContext('2d');
+function resize(){const d=devicePixelRatio||1;cv.width=innerWidth*d;cv.height=innerHeight*d;ctx.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',resize);
+
+function start(c){
+  code=c;seed=[...c].reduce((a,ch)=>a*31+ch.charCodeAt(0),7);
+  $('lobby').hidden=true;$('game').hidden=false;$('roomtag').textContent=c;resize();
+  me={id:Math.random().toString(36).slice(2,8),x:(Math.random()-.5)*20,y:(Math.random()-.5)*20,hp:100};
+  const base='rooms/'+c;pRef=db.ref(base+'/players/'+me.id);
+  pRef.onDisconnect().remove();push();setInterval(push,100);
+  db.ref(base+'/players').on('value',s=>{players=s.val()||{}});
+  const t=db.ref(base+'/taken');
+  t.on('child_added',s=>{taken[s.key]=1});
+  db.ref(base+'/shots').limitToLast(20).on('child_added',s=>{const v=s.val();if(Date.now()-v.t<3000)shots.push({...v,k:s.key,born:performance.now(),hit:false})});
+  requestAnimationFrame(loop);
+}
+function push(){pRef.set({n:name,x:+me.x.toFixed(2),y:+me.y.toFixed(2),hp:me.hp})}
+function toast(t){const e=$('toast');e.textContent=t;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,1200)}
+
+// ---- Girdi ----
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1;if(e.key==' ')shoot()});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
+cv.addEventListener('touchstart',e=>{e.preventDefault();const t=e.changedTouches[0];if(!joy&&t.clientX<innerWidth*.6)joy={id:t.identifier,sx:t.clientX,sy:t.clientY,dx:0,dy:0}},{passive:false});
+cv.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches)if(joy&&t.identifier===joy.id){joy.dx=t.clientX-joy.sx;joy.dy=t.clientY-joy.sy}},{passive:false});
+cv.addEventListener('touchend',e=>{for(const t of e.changedTouches)if(joy&&t.identifier===joy.id)joy=null});
+$('atk').addEventListener('touchstart',e=>{e.preventDefault();shoot()},{passive:false});
+$('atk').onclick=shoot;
+document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+
+let lastShot=0;
+function shoot(){
+  if(!me||Date.now()-lastShot<350)return;lastShot=Date.now();
+  db.ref('rooms/'+code+'/shots').push({o:me.id,x:me.x,y:me.y,dx:aim.x,dy:aim.y,t:Date.now()}).then(r=>setTimeout(()=>r.remove(),4000));
+}
+
+// ---- Döngü ----
+let prev=performance.now();
+function loop(now){
+  const dt=Math.min((now-prev)/1000,.05);prev=now;
+  let vx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),vy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
+  if(joy){const m=Math.hypot(joy.dx,joy.dy);if(m>8){vx=joy.dx/Math.max(m,50);vy=joy.dy/Math.max(m,50)}}
+  const m=Math.hypot(vx,vy);
+  if(m>0){if(m>1){vx/=m;vy/=m}me.x+=vx*SPEED*dt;me.y+=vy*SPEED*dt;aim={x:vx/Math.max(m,1e-6)*Math.min(m,1)||vx,y:vy/Math.max(m,1e-6)*Math.min(m,1)||vy};const am=Math.hypot(aim.x,aim.y);aim={x:aim.x/am,y:aim.y/am}}
+  collect();bullets(now);draw(now);
+  $('pos').textContent=`X: ${Math.round(me.x)}  Y: ${Math.round(me.y)}`;
+  $('hpbar').style.width=Math.max(me.hp,0)+'%';
+  $('inv').textContent=`🌲${inv.wood} 🪨${inv.stone} ⛏️${inv.iron} 💎${inv.diamond}`;
+  requestAnimationFrame(loop);
+}
+function collect(){
+  const cx=Math.round(me.x),cy=Math.round(me.y);
+  for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){
+    const x=cx+i,y=cy+j,k=x+'_'+y,t=tileAt(x,y);
+    if(!t||taken[k]||pending[k]||Math.hypot(x-me.x,y-me.y)>.9)continue;
+    pending[k]=1;
+    db.ref('rooms/'+code+'/taken/'+k).transaction(v=>v?undefined:true,(err,ok,snap)=>{
+      delete pending[k];if(ok&&snap.val()){taken[k]=1;inv[RES[t][1]]++}
     });
-    interactBtn.style.display = activeWorkbench ? 'flex' : 'none';
+  }
 }
-
-document.getElementById('btn-interact').addEventListener('click', () => {
-    if (activeWorkbench) {
-        let modal = document.getElementById('craft-modal');
-        if (modal) modal.style.display = 'flex';
+function bullets(now){
+  shots=shots.filter(s=>now-s.born<BLIFE);
+  for(const s of shots){
+    if(s.o===me.id||s.hit||now<godUntil)continue;
+    const a=(now-s.born)/1000,bx=s.x+s.dx*BSPEED*a,by=s.y+s.dy*BSPEED*a;
+    if(Math.hypot(bx-me.x,by-me.y)<.6){
+      s.hit=true;me.hp-=20;
+      if(me.hp<=0){toast('Öldün! Yeniden doğuyorsun');me.hp=100;godUntil=now+2000;for(const k in inv)inv[k]=Math.floor(inv[k]/2)}
     }
-});
-
-window.closeModals = function() {
-    let craftModal = document.getElementById('craft-modal');
-    let invModal = document.getElementById('inv-modal');
-    if (craftModal) craftModal.style.display = 'none';
-    if (invModal) invModal.style.display = 'none';
-};
-
-window.craftItem = function(type, reqWood, reqIron) {
-    if (player.inventory.wood >= reqWood && player.inventory.iron >= reqIron) {
-        player.inventory.wood -= reqWood; player.inventory.iron -= reqIron;
-        updateUI(); window.closeModals(); alert('Demir Kılıç üretildi!');
-    } else { alert('Yetersiz malzeme!'); }
-};
-
-function updateUI() {
-    let hpEl = document.getElementById('hp-val');
-    let coordX = document.getElementById('coord-x');
-    let coordY = document.getElementById('coord-y');
-    let woodEl = document.getElementById('i-wood');
-    let stoneEl = document.getElementById('i-stone');
-    let ironEl = document.getElementById('i-iron');
-    let diamondEl = document.getElementById('i-diamond');
-
-    if (hpEl) hpEl.innerText = player.hp;
-    if (coordX) coordX.innerText = Math.floor(player.x);
-    if (coordY) coordY.innerText = Math.floor(player.y);
-    if (woodEl) woodEl.innerText = player.inventory.wood;
-    if (stoneEl) stoneEl.innerText = player.inventory.stone;
-    if (ironEl) ironEl.innerText = player.inventory.iron;
-    if (diamondEl) diamondEl.innerText = player.inventory.diamond;
+  }
 }
-
-let firebaseSyncTimer = 0;
-function update() {
-    if (joyVector.x !== 0 || joyVector.y !== 0) {
-        player.x += joyVector.x * player.speed;
-        player.y += joyVector.y * player.speed;
-        player.angle = Math.atan2(joyVector.y, joyVector.x);
-        updateUI();
-    }
-
-    firebaseSyncTimer++;
-    if (firebaseSyncTimer > 2 && window.FB && currentRoomId) {
-        firebaseSyncTimer = 0;
-        window.FB.set(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/players/' + myPlayerId), {
-            name: playerName,
-            x: player.x,
-            y: player.y,
-            angle: player.angle,
-            inventory: player.inventory,
-            hp: player.hp
-        });
-    }
-
-    // Ortak Kaynak Toplama
-    for (let i = 0; i < worldResources.length; i++) {
-        let res = worldResources[i];
-        if (Math.hypot(player.x - res.x, player.y - res.y) < player.radius + res.radius) {
-            if (res.type === 'wood') player.inventory.wood++;
-            if (res.type === 'stone') player.inventory.stone++;
-            if (res.type === 'iron') player.inventory.iron++;
-            if (res.type === 'diamond') player.inventory.diamond++;
-            
-            if (window.FB && currentRoomId) {
-                window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/worldResources/' + res.id));
-            }
-            updateUI();
-            break;
-        }
-    }
-
-    // Mermi Hareketleri ve Hasar
-    if (window.FB && currentRoomId) {
-        for (let bId in projectiles) {
-            let b = projectiles[bId];
-            b.x += b.vx;
-            b.y += b.vy;
-
-            if (b.shooter !== myPlayerId) {
-                let dist = Math.hypot(player.x - b.x, player.y - b.y);
-                if (dist < 20) {
-                    player.hp -= 15;
-                    updateUI();
-                    window.FB.remove(window.FB.ref(window.FB.db, 'rooms/' + currentRoomId + '/projectiles/' + b.id));
-                }
-            }
-        }
-    }
-
-    checkWorkbenchProximity();
+function draw(now){
+  const W=innerWidth,H=innerHeight;
+  ctx.fillStyle='#2d5a34';ctx.fillRect(0,0,W,H);
+  const ox=W/2-me.x*S,oy=H/2-me.y*S,x0=Math.floor(me.x-W/2/S)-1,x1=Math.ceil(me.x+W/2/S)+1,y0=Math.floor(me.y-H/2/S)-1,y1=Math.ceil(me.y+H/2/S)+1;
+  ctx.font=S*.8+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){
+    if((x+y)&1){ctx.fillStyle='#00000010';ctx.fillRect(ox+(x-.5)*S,oy+(y-.5)*S,S,S)}
+    const t=tileAt(x,y);if(t&&!taken[x+'_'+y])ctx.fillText(RES[t][0],ox+x*S,oy+y*S);
+  }
+  ctx.fillStyle='#ffd84a';
+  for(const s of shots){const a=(now-s.born)/1000;ctx.beginPath();ctx.arc(ox+(s.x+s.dx*BSPEED*a)*S,oy+(s.y+s.dy*BSPEED*a)*S,5,0,7);ctx.fill()}
+  ctx.font='bold 12px sans-serif';
+  for(const id in players){
+    if(id===me.id)continue;const p=players[id];
+    dot(ox+p.x*S,oy+p.y*S,'#e5484d',p.n,p.hp);
+  }
+  ctx.globalAlpha=now<godUntil?.5:1;dot(W/2,H/2,'#4aa8ff',name,me.hp);ctx.globalAlpha=1;
 }
-
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-    ctx.lineWidth = 1;
-    let startX = Math.floor((player.x - canvas.width) / 50) * 50;
-    let endX = startX + canvas.width * 2;
-    let startY = Math.floor((player.y - canvas.height) / 50) * 50;
-    let endY = startY + canvas.height * 2;
-
-    for (let x = startX; x < endX; x += 50) { ctx.beginPath(); ctx.moveTo(x, startY); ctx.lineTo(x, endY); ctx.stroke(); }
-    for (let y = startY; y < endY; y += 50) { ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(endX, y); ctx.stroke(); }
-
-    worldObjects.forEach(obj => {
-        ctx.font = "24px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText("🪵🛠️", obj.x, obj.y);
-    });
-
-    worldResources.forEach(res => {
-        ctx.font = "20px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(res.emoji, res.x, res.y);
-    });
-
-    for (let id in remotePlayers) {
-        if (id === myPlayerId) continue;
-        let p = remotePlayers[id];
-        ctx.save();
-        ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-        ctx.fillStyle = '#e74c3c';
-        ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill();
-        ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
-        ctx.restore();
-
-        ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
-        let remoteHp = p.hp !== undefined ? p.hp : 100;
-        ctx.fillText(`${p.name || "Oyuncu"} (❤️${remoteHp})`, p.x, p.y - 22);
-    }
-
-    for (let bId in projectiles) {
-        let b = projectiles[bId];
-        ctx.fillStyle = '#f1c40f';
-        ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill();
-    }
-
-    ctx.save();
-    ctx.translate(player.x, player.y); ctx.rotate(player.angle);
-    ctx.fillStyle = '#3498db'; ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
-    ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
-    ctx.fillStyle = '#e74c3c'; ctx.fillRect(0, -4, player.radius + 10, 8);
-    ctx.restore();
-
-    ctx.fillStyle = "#2ecc71"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText(playerName + " (Sen)", player.x, player.y - 22);
-
-    ctx.restore();
+function dot(x,y,c,n,hp){
+  ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,S*.38,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#fff';ctx.fillText(n,x,y-S*.7);
+  ctx.fillStyle='#400';ctx.fillRect(x-16,y+S*.5,32,4);ctx.fillStyle='#e5484d';ctx.fillRect(x-16,y+S*.5,32*Math.max(hp,0)/100,4);
 }
-
-function loop() {
-    if (document.getElementById('game-screen').classList.contains('active')) {
-        update();
-        draw();
-    }
-    requestAnimationFrame(loop);
-}
-loop();
