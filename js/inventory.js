@@ -1,8 +1,13 @@
 // Envanter: 4 hotbar + 20 çanta, sürükle-bırak, craft listesi
 let slots=Array(24).fill(null),sel=0,drag=null,tab=1;
+const seen=JSON.parse(localStorage.getItem('spseen')||'{}');
+const saveSeen=()=>localStorage.setItem('spseen',JSON.stringify(seen));
+function note(t){if(!seen[t]){seen[t]=1;saveSeen();toast('🏆 Yeni eşya: '+ITEMS[t][0])}}
+function ach(id,txt){if(!seen['a_'+id]){seen['a_'+id]=1;saveSeen();toast('🏆 '+txt)}}
+function dropStack(i){const s=slots[i];if(!s||!running)return;spawnDrop(s.t,s.n,me.x+aim.x*1.6,me.y+aim.y*1.6);slots[i]=null;renderInv()}
 function count(t){return slots.reduce((a,s)=>a+(s&&s.t===t?s.n:0),0)}
 function space(t,n){let r=n;for(const s of slots){if(!s)r-=MAXST;else if(s.t===t)r-=MAXST-s.n;if(r<=0)return true}return false}
-function add(t,n){
+function add(t,n){note(t);
  for(const s of slots)if(n&&s&&s.t===t){const q=Math.min(n,MAXST-s.n);s.n+=q;n-=q}
  for(let i=0;i<24&&n;i++)if(!slots[i]){const q=Math.min(n,MAXST);slots[i]={t,n:q};n-=q}
  renderInv();return n}
@@ -12,7 +17,8 @@ function slotEl(i){const d=document.createElement('div');d.className='slot'+(i==
 function fill(id,from,to){const g=$(id);g.innerHTML='';for(let i=from;i<to;i++)g.appendChild(slotEl(i))}
 function renderInv(){
  fill('hslots',0,4);const s=slots[sel];$('selname').textContent=s?ITEMS[s.t][0]:'';
- if(!$('bag').hidden){fill('grid',4,24);fill('grid2',0,4);if(tab===2)renderCraft()}
+ if(!$('bag').hidden){fill('grid',4,24);fill('grid2',0,4);if(tab===2)renderCraft('clist','')}
+ if(!$('stn').hidden)renderCraft('slist',stOpen);
 }
 function showTab(n){tab=n;$('bagview').hidden=n!==1;$('clist').hidden=n!==2;$('tb1').classList.toggle('on',n===1);$('tb2').classList.toggle('on',n===2);renderInv()}
 function moveItem(a,b){
@@ -29,15 +35,15 @@ document.addEventListener('pointermove',e=>{
 });
 document.addEventListener('pointerup',e=>{
  if(!drag)return;const d=drag;drag=null;if(d.g)d.g.remove();
- if(d.moved){const t=document.elementFromPoint(e.clientX,e.clientY),el=t&&t.closest('.slot');if(el)moveItem(d.i,+el.dataset.i)}
+ if(d.moved){const t=document.elementFromPoint(e.clientX,e.clientY),el=t&&t.closest('.slot');if(el)moveItem(d.i,+el.dataset.i);else if(t&&t.id==='bag')dropStack(d.i)}
  else if(d.i<4){sel=d.i;renderInv()}
 });
 document.addEventListener('pointercancel',()=>{if(drag&&drag.g)drag.g.remove();drag=null});
-function renderCraft(){
- const L=$('clist');L.innerHTML='';
- for(const r of RECIPES){
-  const [o,n,need,st]=r,ok=canCraft(r),row=document.createElement('div');row.className='rec'+(ok?'':' no');
-  row.innerHTML=`<span>${ITEMS[o][1]} ×${n} <b>${ITEMS[o][0]}</b><br><small>${Object.entries(need).map(([a,v])=>ITEMS[a][1]+v).join(' ')}${st?' · '+(st==='table'?'🛠️ masa':'🔥 fırın')+' yakında':''}</small></span>`;
+function renderCraft(id,st){
+ const L=$(id);L.innerHTML='';
+ for(const r of RECIPES.filter(r=>(r[3]||'')===st)){
+  const [o,n,need]=r,ok=canCraft(r),row=document.createElement('div');row.className='rec'+(ok?'':' no');
+  row.innerHTML=`<span>${ITEMS[o][1]} ×${n} <b>${ITEMS[o][0]}</b><br><small>${Object.entries(need).map(([a,v])=>ITEMS[a][1]+v+(count(a)>=v?'':'✗')).join(' ')}</small></span>`;
   const b=document.createElement('button');b.textContent='Yap';b.disabled=!ok;b.onclick=()=>craft(r);row.appendChild(b);L.appendChild(row);
  }
 }
