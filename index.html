@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Survival PvP</title>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div id="err" hidden></div>
@@ -26,22 +26,28 @@
 </div>
 <div id="game" hidden>
   <canvas id="c"></canvas>
-  <div id="hud"><div id="pos"></div><div id="hp"><i id="hpbar"></i></div><div id="inv"></div><div id="score"></div></div>
-  <button id="exit">🚪</button>
+  <div id="hud"><div id="pos"></div><div id="hp"><i id="hpbar"></i></div><div id="hg"><i id="hgbar"></i></div><div id="score"></div></div>
+  <canvas id="mm" width="90" height="90"></canvas>
+  <div id="feed"></div>
+  <button id="exit">🚪</button><button id="emote">😀</button>
   <div id="toast"></div>
-  <button id="mine" class="act">⛏️</button>
-  <button id="atk" class="act">🔫</button>
-  <div id="panel" hidden>
-    <div class="card">
-      <div class="ph"><b id="ptitle"></b><button id="pclose">✕</button></div>
-      <ul id="plist"></ul>
-      <button id="leave" class="danger">Odadan ayrıl</button>
-    </div>
-  </div>
+  <div id="selname"></div>
+  <div id="hotbar"><div id="hslots"></div><button id="bagbtn">🎒</button></div>
+  <button id="use" class="act">✋</button><button id="sprint" class="act">💨</button>
+  <button id="mine" class="act">⛏️</button><button id="atk" class="act">🔫</button>
+  <div id="panel" hidden><div class="card"><div class="ph"><b id="ptitle"></b><button id="pclose">✕</button></div><ul id="plist"></ul><button id="leave" class="danger">Odadan ayrıl</button></div></div>
+  <div id="bag" hidden><div class="card"><div class="ph"><span class="tabs"><button id="tb1" class="on">Çanta</button><button id="tb2">Craft</button></span><button id="bclose">✕</button></div>
+   <div id="bagview"><div id="grid"></div><div class="sep">Hızlı slotlar</div><div id="grid2"></div></div><div id="clist" hidden></div></div></div>
 </div>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="firebase-config.js?v=3"></script>
-<script src="game.js?v=3"></script>
+<script src="firebase-config.js?v=4"></script>
+<script src="js/data.js?v=4"></script>
+<script src="js/world.js?v=4"></script>
+<script src="js/inventory.js?v=4"></script>
+<script src="js/actions.js?v=4"></script>
+<script src="js/render.js?v=4"></script>
+<script src="js/lobby.js?v=4"></script>
+<script src="js/main.js?v=4"></script>
 </body>
 </html>
