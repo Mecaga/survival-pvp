@@ -8,20 +8,35 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="lobby">
+<div id="login" class="screen">
   <h1>Survival PvP</h1>
-  <p id="hello"></p>
+  <p class="sub">Odun topla, maden kır, hayatta kal.</p>
+  <input id="nick" maxlength="12" placeholder="Oyuncu adın" autocomplete="off" style="text-transform:none;letter-spacing:0">
+  <button id="enter" class="big">Giriş</button>
+</div>
+<div id="menu" class="screen" hidden>
+  <h1>Ana menü</h1>
+  <p id="hello" class="sub"></p>
   <button id="create" class="big">Oda kur</button>
-  <div class="row"><input id="code" maxlength="4" placeholder="Oda kodu" autocapitalize="characters"><button id="join">Katıl</button></div>
+  <h2>Odaya katıl</h2>
+  <div class="row"><input id="code" maxlength="4" placeholder="Oda kodu" autocapitalize="characters" autocomplete="off"><button id="join">Katıl</button></div>
   <h2>Açık odalar</h2>
   <ul id="rooms"><li class="empty">Henüz oda yok. İlk odayı sen kur.</li></ul>
 </div>
 <div id="game" hidden>
   <canvas id="c"></canvas>
-  <div id="hud"><div id="pos"></div><div id="hp"><i id="hpbar"></i></div><div id="inv"></div></div>
-  <div id="roomtag"></div>
+  <div id="hud"><div id="pos"></div><div id="hp"><i id="hpbar"></i></div><div id="inv"></div><div id="score"></div></div>
+  <button id="exit">🚪</button>
   <div id="toast"></div>
-  <button id="atk">🔫</button>
+  <button id="mine" class="act">⛏️</button>
+  <button id="atk" class="act">🔫</button>
+  <div id="panel" hidden>
+    <div class="card">
+      <div class="ph"><b id="ptitle"></b><button id="pclose">✕</button></div>
+      <ul id="plist"></ul>
+      <button id="leave" class="danger">Odadan ayrıl</button>
+    </div>
+  </div>
 </div>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
