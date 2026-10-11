@@ -45,7 +45,7 @@ function start(c,host,t0){
  listen(base.child('feed').limitToLast(5),'child_added',s=>{const v=s.val();if(Date.now()-v.t>6000)return;
   feedMsg('💥 '+v.a+' → '+v.b)});
  if(!host)listen(base.child('meta'),'value',s=>{if(!s.exists()&&running){leave(false);alert('Oda sahibi ayrıldı, oda kapandı.')}});
- show('game');$('panel').hidden=true;$('bag').hidden=true;$('stn').hidden=true;$('sprint').style.opacity=.55;resize();sizeMM();add('apple',2);renderInv();
+ show('game');$('panel').hidden=true;$('bag').hidden=true;$('stn').hidden=true;$('chatbar').hidden=true;$('sprint').style.opacity=.55;resize();sizeMM();add('apple',2);renderInv();
  timer=setInterval(push,100);running=true;prev=performance.now();requestAnimationFrame(loop);
 }
 function push(){pRef.update({x:+me.x.toFixed(2),y:+me.y.toFixed(2),hp:me.hp,d:me.d,a:deadUntil?0:1})}
