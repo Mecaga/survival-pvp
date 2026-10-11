@@ -13,3 +13,5 @@ function solid(x,y){
 }
 function canStand(x,y){for(const a of[-PR,PR])for(const c of[-PR,PR])if(solid(Math.round(x+a),Math.round(y+c)))return false;return true}
 function move(dx,dy){if(canStand(me.x+dx,me.y))me.x+=dx;if(canStand(me.x,me.y+dy))me.y+=dy}
+// yerde duran odun/taş: elle toplanır, 4 dk sonra yeniden belirir
+function groundAt(x,y){if(tileAt(x,y))return null;const r=hash(x+313,y+717);return r<.025?'wood':r<.045?'stone':null}
