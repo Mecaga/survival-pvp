@@ -34,3 +34,4 @@ canvas{display:block;width:100%;height:100%}
 #plist li{display:flex;justify-content:space-between;padding:9px 4px;border-bottom:1px solid #ffffff14}
 #plist span:last-child{color:#9bb8a3;font-size:13px}
 .danger{width:100%;background:#c0392b}
+#err{position:fixed;left:0;right:0;top:0;z-index:99;background:#c0392b;color:#fff;font-size:12px;padding:calc(env(safe-area-inset-top) + 6px) 10px 6px;-webkit-user-select:text;user-select:text}
