@@ -1,4 +1,6 @@
-const $=id=>document.getElementById(id), db=firebase.database();
+const $=id=>document.getElementById(id);
+window.onerror=(m,s,l)=>{const e=$('err');e.textContent='Hata: '+m+' ('+String(s||'').split('/').pop()+':'+l+')';e.hidden=false};
+let db=null;try{db=firebase.database()}catch(e){window.onerror('Firebase yüklenemedi: '+e.message)}
 const S=36, SPEED=4.5, BSPEED=12, BLIFE=900, SHOT_CD=380, MINE_CD=300, DEAD_MS=2000;
 const HP={tree:3,stone:4,iron:6,diamond:8}, DROP={tree:'wood',stone:'stone',iron:'iron',diamond:'diamond'};
 const ICON={wood:'🪵',stone:'🪨',iron:'🟠',diamond:'💎'};
@@ -7,6 +9,7 @@ const show=id=>{['login','menu','game'].forEach(s=>$(s).hidden=s!==id)};
 // ---- Giriş & menü ----
 let name=localStorage.getItem('spn')||'';
 $('nick').value=name;
+$('nick').addEventListener('keydown',e=>{if(e.key==='Enter')$('enter').onclick()});
 $('enter').onclick=()=>{
   name=$('nick').value.trim().slice(0,12);if(!name){$('nick').focus();return}
   localStorage.setItem('spn',name);$('hello').textContent='Hoş geldin, '+name;show('menu');
@@ -15,12 +18,13 @@ const rand4=()=>Math.random().toString(36).slice(2,6).toUpperCase();
 $('create').onclick=()=>start(rand4(),true);
 $('join').onclick=()=>joinCode($('code').value.trim().toUpperCase());
 async function joinCode(c){
+  if(!db)return alert('Sunucuya bağlanılamadı, sayfayı yenile.');
   if(c.length!==4)return alert('Oda kodu 4 karakter olmalı.');
   const s=await db.ref('rooms/'+c+'/meta').once('value');
   if(!s.exists())return alert('Bu kodla açık bir oda yok.');
   start(c,false);
 }
-db.ref('rooms').on('value',s=>{
+if(db)db.ref('rooms').on('value',s=>{
   const ul=$('rooms');ul.innerHTML='';let n=0;
   s.forEach(r=>{const p=r.child('players').numChildren();if(!p||!r.child('meta').exists())return;n++;
     const li=document.createElement('li');li.innerHTML=`<span><b>${r.key}</b> · ${p} oyuncu</span>`;
