@@ -2,92 +2,136 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Karakter ve Kutu Testi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mobil Uyumlu Karakter Testi</title>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
             background: #1a1a1a; 
             font-family: sans-serif;
+            touch-action: none;
         }
         #info {
             position: absolute;
-            top: 10px;
+            top: 15px;
             width: 100%;
             text-align: center;
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             pointer-events: none;
+            padding: 0 10px;
+            box-sizing: border-box;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            z-index: 10;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid white;
+            color: white;
+            padding: 14px 22px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            user-select: none;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .btn:active {
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0.95);
         }
     </style>
 </head>
 <body>
-    <div id="info">Karakteri hareket ettirmek için <b>A / D</b> veya <b>Sol / Sağ Ok</b> tuşlarını kullanın.</div>
+    <div id="info">Karakteri hareket ettirmek için alttaki butonları kullanın.</div>
+    
+    <!-- Mobil Dokunmatik Kontrol Butonları -->
+    <div id="controls">
+        <button class="btn" id="leftBtn">◀ Sol</button>
+        <button class="btn" id="midBtn">● Orta</button>
+        <button class="btn" id="rightBtn">Sağ ▶</button>
+    </div>
 
     <!-- Three.js Kütüphanesi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
-        // 1. Sahne, Kamera ve Renderer Kurulumu
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Mobil performans için pixel ratio sınırı
         document.body.appendChild(renderer.domElement);
 
-        // 2. Işıklandırma
+        // Işıklandırma
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambientLight);
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(5, 10, 7);
         scene.add(dirLight);
 
-        // 3. Ortadaki Kutu (Target Box)
+        // Ortadaki Kutu
         const boxGeo = new THREE.BoxGeometry(1, 1, 1);
         const boxMat = new THREE.MeshStandardMaterial({ color: 0x3498db });
         const centerBox = new THREE.Mesh(boxGeo, boxMat);
         centerBox.position.set(0, 0, 0);
         scene.add(centerBox);
 
-        // 4. Karakter (deneme.png görselini kullanan şeffaf düzlem)
+        let character;
+        let targetX = 0;
+
+        // Resmi Yükleme ve Orijinal Oranını (Aspect Ratio) Koruma
         const textureLoader = new THREE.TextureLoader();
-        const characterTexture = textureLoader.load('deneme.png');
+        textureLoader.load('deneme.png', (texture) => {
+            const image = texture.image;
+            const aspect = image.width / image.height; // Resmin en/boy oranı
+            
+            const height = 1.4; // Sahnedeki sabit yüksekliği
+            const width = height * aspect; // Genişliği orana göre otomatik ayarla (Resim asla bozulmaz/ezilmez)
 
-        const charGeo = new THREE.PlaneGeometry(1.2, 1.2);
-        const charMat = new THREE.MeshBasicMaterial({ 
-            map: characterTexture, 
-            transparent: true, // Şeffaf arka plan desteği
-            side: THREE.DoubleSide 
+            const charGeo = new THREE.PlaneGeometry(width, height);
+            const charMat = new THREE.MeshBasicMaterial({ 
+                map: texture, 
+                transparent: true, // Şeffaf arka plan
+                side: THREE.DoubleSide 
+            });
+            
+            character = new THREE.Mesh(charGeo, charMat);
+            character.position.set(0, 0, 2); // Kutunun önünde
+            scene.add(character);
         });
-        const character = new THREE.Mesh(charGeo, charMat);
-        character.position.set(0, 0, 2); // Kutunun biraz önünde konumlandırdık
-        scene.add(character);
 
-        // Kamera Pozisyonu
         camera.position.set(0, 1.5, 4.5);
         camera.lookAt(0, 0, 0);
 
-        // 5. Hareket Kontrol Değişkenleri
-        let targetX = 0; // -2: Sol, 0: Orta, 2: Sağ
+        // Dokunmatik Buton Olayları (Mobilde parmakla basınca çalışır)
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetX = -1.3; });
+        document.getElementById('midBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetX = 0; });
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetX = 1.3; });
 
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-                targetX = -1.5; // Sol konum
-            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-                targetX = 1.5;  // Sağ konum
-            } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === 'w' || e.key === 'W') {
-                targetX = 0;    // Orta konum
-            }
-        });
+        // Bilgisayardan fareyle test etmek isteyenler için tıklama desteği de ekledik
+        document.getElementById('leftBtn').addEventListener('click', () => { targetX = -1.3; });
+        document.getElementById('midBtn').addEventListener('click', () => { targetX = 0; });
+        document.getElementById('rightBtn').addEventListener('click', () => { targetX = 1.3; });
 
-        // 6. Animasyon Döngüsü
+        // Animasyon Döngüsü
         function animate() {
             requestAnimationFrame(animate);
 
-            // Karakterin hedefe doğru yumuşakça (lerp ile) kayması
-            character.position.x += (targetX - character.position.x) * 0.1;
-
-            // Ortadaki kutuyu hafifçe döndürerek canlılık katalım
+            // Karakter varsa hedefe yumuşakça kaydır
+            if (character) {
+                character.position.x += (targetX - character.position.x) * 0.1;
+            }
             centerBox.rotation.y += 0.01;
 
             renderer.render(scene, camera);
@@ -95,7 +139,7 @@
 
         animate();
 
-        // Ekran Boyutu Değişimine Uyum
+        // Ekran Boyutu veya Telefon Yan çevrilirse (Orientation Change) uyum sağla
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
