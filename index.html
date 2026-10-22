@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mobil Uyumlu Karakter Testi</title>
+    <title>Resimli Küp Testi</title>
     <style>
         body { 
             margin: 0; 
@@ -53,13 +53,12 @@
     </style>
 </head>
 <body>
-    <div id="info">Karakteri hareket ettirmek için alttaki butonları kullanın.</div>
+    <div id="info">Küpün üstündeki resmi görmek için butonlarla döndürün.</div>
     
-    <!-- Mobil Dokunmatik Kontrol Butonları -->
     <div id="controls">
-        <button class="btn" id="leftBtn">◀ Sol</button>
-        <button class="btn" id="midBtn">● Orta</button>
-        <button class="btn" id="rightBtn">Sağ ▶</button>
+        <button class="btn" id="leftBtn">◄ Sol</button>
+        <button class="btn" id="midBtn">● Sıfırla</button>
+        <button class="btn" id="rightBtn">Sağ ►</button>
     </div>
 
     <!-- Three.js Kütüphanesi -->
@@ -70,76 +69,62 @@
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Mobil performans için pixel ratio sınırı
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
         // Işıklandırma
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
         dirLight.position.set(5, 10, 7);
         scene.add(dirLight);
 
-        // Ortadaki Kutu
-        const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-        const boxMat = new THREE.MeshStandardMaterial({ color: 0x3498db });
-        const centerBox = new THREE.Mesh(boxGeo, boxMat);
-        centerBox.position.set(0, 0, 0);
-        scene.add(centerBox);
+        let cube;
+        let targetRotationY = 0;
 
-        let character;
-        let targetX = 0;
-
-        // Resmi Yükleme ve Orijinal Oranını (Aspect Ratio) Koruma
+        // Doku (Texture) Yükleme ve Küpe Giydirme
         const textureLoader = new THREE.TextureLoader();
         textureLoader.load('deneme.png', (texture) => {
-            const image = texture.image;
-            const aspect = image.width / image.height; // Resmin en/boy oranı
+            const boxGeo = new THREE.BoxGeometry(1.8, 1.8, 1.8);
             
-            const height = 1.4; // Sahnedeki sabit yüksekliği
-            const width = height * aspect; // Genişliği orana göre otomatik ayarla (Resim asla bozulmaz/ezilmez)
-
-            const charGeo = new THREE.PlaneGeometry(width, height);
-            const charMat = new THREE.MeshBasicMaterial({ 
+            // Küpün materyaline resmi kaplıyoruz
+            const boxMat = new THREE.MeshStandardMaterial({ 
                 map: texture, 
-                transparent: true, // Şeffaf arka plan
-                side: THREE.DoubleSide 
+                transparent: true // Resim şeffafsa küpün aralarından ışık geçmesini/şeffaf görünmesini sağlar
             });
             
-            character = new THREE.Mesh(charGeo, charMat);
-            character.position.set(0, 0, 2); // Kutunun önünde
-            scene.add(character);
+            cube = new THREE.Mesh(boxGeo, boxMat);
+            cube.position.set(0, 0, 0);
+            scene.add(cube);
         });
 
-        camera.position.set(0, 1.5, 4.5);
+        camera.position.set(0, 1, 3.5);
         camera.lookAt(0, 0, 0);
 
-        // Dokunmatik Buton Olayları (Mobilde parmakla basınca çalışır)
-        document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetX = -1.3; });
-        document.getElementById('midBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetX = 0; });
-        document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetX = 1.3; });
+        // Buton Kontrolleri
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetRotationY -= Math.PI / 2; });
+        document.getElementById('midBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetRotationY = 0; });
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetRotationY += Math.PI / 2; });
 
-        // Bilgisayardan fareyle test etmek isteyenler için tıklama desteği de ekledik
-        document.getElementById('leftBtn').addEventListener('click', () => { targetX = -1.3; });
-        document.getElementById('midBtn').addEventListener('click', () => { targetX = 0; });
-        document.getElementById('rightBtn').addEventListener('click', () => { targetX = 1.3; });
+        document.getElementById('leftBtn').addEventListener('click', () => { targetRotationY -= Math.PI / 2; });
+        document.getElementById('midBtn').addEventListener('click', () => { targetRotationY = 0; });
+        document.getElementById('rightBtn').addEventListener('click', () => { targetRotationY += Math.PI / 2; });
 
         // Animasyon Döngüsü
         function animate() {
             requestAnimationFrame(animate);
 
-            // Karakter varsa hedefe yumuşakça kaydır
-            if (character) {
-                character.position.x += (targetX - character.position.x) * 0.1;
+            if (cube) {
+                // Küpü hedeflenen açıya yumuşakça döndür
+                cube.rotation.y += (targetRotationY - cube.rotation.y) * 0.1;
+                cube.rotation.x = 0.2; // Resmi rahat görebilmek için küpü hafif öne eğdik
             }
-            centerBox.rotation.y += 0.01;
 
             renderer.render(scene, camera);
         }
 
         animate();
 
-        // Ekran Boyutu veya Telefon Yan çevrilirse (Orientation Change) uyum sağla
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
