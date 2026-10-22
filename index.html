@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MCPE Envanter & Item Testi</title>
+    <title>MCPE 3 Slot Envanter & Atma Testi</title>
     <style>
         * {
             box-sizing: border-box;
@@ -29,29 +29,29 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.9);
         }
 
-        /* --- MCPE HOTBAR (HIZLI ERİŞİM BARI) --- */
+        /* --- 3 SLOTLU HOTBAR CONTAINER --- */
         #hotbar-container {
             position: absolute;
-            bottom: 12px;
+            bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             align-items: center;
-            gap: 4px;
-            background: rgba(0, 0, 0, 0.55);
-            padding: 5px;
-            border-radius: 8px;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px;
+            border-radius: 10px;
             border: 2px solid #555;
             z-index: 10;
         }
         .hotbar-slot {
-            width: 44px;
-            height: 44px;
+            width: 52px;
+            height: 52px;
             background: rgba(139, 139, 139, 0.4);
             border: 3px solid #3c3c3c;
             border-right-color: #8b8b8b;
             border-bottom-color: #8b8b8b;
-            border-radius: 4px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -60,25 +60,23 @@
         }
         .hotbar-slot.active {
             border: 3px solid #ffffff;
-            box-shadow: 0 0 10px rgba(255,255,255,0.8);
-            background: rgba(200, 200, 200, 0.4);
+            box-shadow: 0 0 12px rgba(255,255,255,0.9);
+            background: rgba(200, 200, 200, 0.45);
         }
         .slot-img {
-            width: 32px;
-            height: 32px;
+            width: 38px;
+            height: 38px;
             object-fit: contain;
             image-rendering: pixelated;
         }
 
-        /* --- ÇANTA BUTONU --- */
-        #bag-btn {
-            width: 44px;
-            height: 44px;
-            background: #4a6b22;
-            border: 3px solid #2d4213;
-            border-radius: 6px;
+        /* --- BUTONLAR (ÇANTA & AT) --- */
+        .action-btn {
+            height: 52px;
+            padding: 0 14px;
+            border-radius: 8px;
             color: white;
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -86,11 +84,19 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.4);
         }
-        #bag-btn:active {
-            transform: scale(0.95);
+        #bag-btn {
+            background: #4a6b22;
+            border: 3px solid #2d4213;
+        }
+        #drop-btn {
+            background: #a93226;
+            border: 3px solid #641e16;
+        }
+        .action-btn:active {
+            transform: scale(0.94);
         }
 
-        /* --- MCPE ENVANTER PANELİ (MODAL) --- */
+        /* --- ENVANTER PANELİ --- */
         #inventory-overlay {
             position: absolute;
             top: 0;
@@ -105,8 +111,8 @@
             backdrop-filter: blur(4px);
         }
         #inventory-window {
-            width: 90%;
-            max-width: 420px;
+            width: 88%;
+            max-width: 380px;
             background: #c6c6c6;
             border: 4px solid #ffffff;
             border-right-color: #555555;
@@ -136,11 +142,9 @@
         }
         .inv-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            max-height: 250px;
-            overflow-y: auto;
-            padding: 4px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 6px;
             background: #8b8b8b;
             border: 3px solid #373737;
             border-right-color: #ffffff;
@@ -164,19 +168,20 @@
     </style>
 </head>
 <body>
-    <div id="info">Çantayı açmak için <b>"..."</b> butonuna dokunun veya <b>E</b> tuşuna basın.</div>
+    <div id="info">Eşyayı ele almak için çantaya, yere atmak için <b>At (Drop)</b> butonuna bas.</div>
     
-    <!-- Hotbar -->
+    <!-- 3 Slotlu Hotbar ve Aksiyon Butonları -->
     <div id="hotbar-container">
-        <div id="hotbar-slots" style="display: flex; gap: 4px;"></div>
-        <div id="bag-btn">...</div>
+        <div id="hotbar-slots" style="display: flex; gap: 6px;"></div>
+        <div class="action-btn" id="bag-btn">...</div>
+        <div class="action-btn" id="drop-btn">At 🗑️</div>
     </div>
 
-    <!-- Envanter Ekranı -->
+    <!-- Envanter Paneli -->
     <div id="inventory-overlay">
         <div id="inventory-window">
             <div class="inv-header">
-                <span>Envanter / Eşyalar</span>
+                <span>Eşya Deposu</span>
                 <button class="close-btn" id="close-inv">X</button>
             </div>
             <div class="inv-grid" id="inv-grid"></div>
@@ -195,7 +200,6 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        // Işıklar
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
         scene.add(ambientLight);
 
@@ -206,19 +210,19 @@
         groundBlock.position.set(0, -0.8, 0);
         scene.add(groundBlock);
 
-        // 2. Envanter Verileri ve Eşyalar
+        // 2. Depo Eşya Listesi
         const items = [
             { id: 'deneme', name: 'Özel Eşya', icon: 'deneme.png' },
             { id: 'wood', name: 'Tahta', icon: 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/block/oak_planks.png' },
             { id: 'diamond', name: 'Elmas', icon: 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/item/diamond.png' },
-            { id: 'sword', name: 'Kılıç', icon: 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/item/diamond_sword.png' },
-            { id: 'apple', name: 'Elma', icon: 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/item/apple.png' }
+            { id: 'sword', name: 'Kılıç', icon: 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/item/diamond_sword.png' }
         ];
 
-        let hotbarData = ['deneme.png', null, null, null, null, null, null, null, null];
+        // 3 Slotlu Hotbar Dizisi
+        let hotbarData = ['deneme.png', null, null]; 
         let activeSlotIndex = 0;
 
-        // 3. 3D MCPE Düşen Eşya Nesnesi
+        // 3D MCPE Düşen Eşya Nesnesi
         let mcpeItemMesh = null;
         const textureLoader = new THREE.TextureLoader();
         const clock = new THREE.Clock();
@@ -253,16 +257,15 @@
         camera.position.set(0, 0.8, 2.5);
         camera.lookAt(0, 0, 0);
 
-        // Initial 3D Item
         update3DItem(hotbarData[activeSlotIndex]);
 
-        // 4. UI Rendering (Hotbar & Envanter)
+        // 3. UI İşlemleri (Hotbar & Çanta)
         const hotbarSlotsEl = document.getElementById('hotbar-slots');
         const invGridEl = document.getElementById('inv-grid');
 
         function renderHotbar() {
             hotbarSlotsEl.innerHTML = '';
-            for (let i = 0; i < 9; i++) {
+            for (let i = 0; i < 3; i++) { // Tam 3 Slot
                 const slot = document.createElement('div');
                 slot.className = `hotbar-slot ${i === activeSlotIndex ? 'active' : ''}`;
                 
@@ -294,7 +297,7 @@
                 img.className = 'slot-img';
                 slot.appendChild(img);
 
-                // Çantadaki eşyaya tıklayınca eldeki aktif slota yerleştir
+                // Çantadaki eşyaya tıklayınca seçili Hotbar slotuna ekle
                 slot.addEventListener('click', () => {
                     hotbarData[activeSlotIndex] = item.icon;
                     renderHotbar();
@@ -306,7 +309,15 @@
             });
         }
 
-        // Envanter Aç/Kapa
+        // Eşya Atma (Drop) Fonksiyonu
+        function dropCurrentItem() {
+            if (hotbarData[activeSlotIndex]) {
+                hotbarData[activeSlotIndex] = null; // Elindekini sil / yere at
+                renderHotbar();
+                update3DItem(null);
+            }
+        }
+
         const overlay = document.getElementById('inventory-overlay');
         function toggleInventory(show) {
             overlay.style.display = show ? 'flex' : 'none';
@@ -314,22 +325,20 @@
 
         document.getElementById('bag-btn').addEventListener('click', () => toggleInventory(true));
         document.getElementById('close-inv').addEventListener('click', () => toggleInventory(false));
+        document.getElementById('drop-btn').addEventListener('click', dropCurrentItem);
 
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'e' || e.key === 'E') {
-                toggleInventory(overlay.style.display !== 'flex');
-            }
+            if (e.key === 'e' || e.key === 'E') toggleInventory(overlay.style.display !== 'flex');
+            if (e.key === 'q' || e.key === 'Q') dropCurrentItem(); // Q ile eşya atma
         });
 
-        // 5. Animasyon Döngüsü
+        // 4. Animasyon Döngüsü
         function animate() {
             requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
 
             if (mcpeItemMesh) {
-                // MCPE Billboarding (Kameraya bakma)
                 mcpeItemMesh.quaternion.copy(camera.quaternion);
-                // Havada süzülme hareketi
                 mcpeItemMesh.position.y = 0.3 + Math.sin(elapsedTime * 3) * 0.08;
             }
 
