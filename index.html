@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Karakter ve Kutu Testi</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #1a1a1a; 
+            font-family: sans-serif;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 16px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Karakteri hareket ettirmek için <b>A / D</b> veya <b>Sol / Sağ Ok</b> tuşlarını kullanın.</div>
+
+    <!-- Three.js Kütüphanesi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        // 1. Sahne, Kamera ve Renderer Kurulumu
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 2. Işıklandırma
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // 3. Ortadaki Kutu (Target Box)
+        const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+        const boxMat = new THREE.MeshStandardMaterial({ color: 0x3498db });
+        const centerBox = new THREE.Mesh(boxGeo, boxMat);
+        centerBox.position.set(0, 0, 0);
+        scene.add(centerBox);
+
+        // 4. Karakter (deneme.png görselini kullanan şeffaf düzlem)
+        const textureLoader = new THREE.TextureLoader();
+        const characterTexture = textureLoader.load('deneme.png');
+
+        const charGeo = new THREE.PlaneGeometry(1.2, 1.2);
+        const charMat = new THREE.MeshBasicMaterial({ 
+            map: characterTexture, 
+            transparent: true, // Şeffaf arka plan desteği
+            side: THREE.DoubleSide 
+        });
+        const character = new THREE.Mesh(charGeo, charMat);
+        character.position.set(0, 0, 2); // Kutunun biraz önünde konumlandırdık
+        scene.add(character);
+
+        // Kamera Pozisyonu
+        camera.position.set(0, 1.5, 4.5);
+        camera.lookAt(0, 0, 0);
+
+        // 5. Hareket Kontrol Değişkenleri
+        let targetX = 0; // -2: Sol, 0: Orta, 2: Sağ
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                targetX = -1.5; // Sol konum
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                targetX = 1.5;  // Sağ konum
+            } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === 'w' || e.key === 'W') {
+                targetX = 0;    // Orta konum
+            }
+        });
+
+        // 6. Animasyon Döngüsü
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Karakterin hedefe doğru yumuşakça (lerp ile) kayması
+            character.position.x += (targetX - character.position.x) * 0.1;
+
+            // Ortadaki kutuyu hafifçe döndürerek canlılık katalım
+            centerBox.rotation.y += 0.01;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Ekran Boyutu Değişimine Uyum
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
