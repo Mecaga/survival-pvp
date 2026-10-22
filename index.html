@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MCPE Ev & Ok Tuşları Testi</title>
+    <title>MCPE Karakter & Eşya Toplama</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,57 +17,74 @@
             font-family: sans-serif;
             touch-action: none;
         }
-        #info {
+        #score-board {
             position: absolute;
             top: 15px;
-            width: 100%;
-            text-align: center;
-            color: white;
-            font-size: 14px;
-            pointer-events: none;
-            z-index: 5;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
-        }
-
-        /* --- AŞAĞIDAKİ OK TUŞLARI (KAMERA DÖNDÜRME) --- */
-        #arrow-controls {
-            position: absolute;
-            bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
-            display: flex;
-            gap: 20px;
-            z-index: 10;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #555;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 5;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            pointer-events: none;
         }
-        .arrow-btn {
+
+        /* --- MOBİL KONTROL BUTONLARI --- */
+        #controls {
+            position: absolute;
+            bottom: 25px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .control-group {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+        }
+        .ctrl-btn {
             width: 60px;
             height: 60px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 3px solid #ffffff;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid white;
             color: white;
-            font-size: 26px;
+            font-size: 22px;
             font-weight: bold;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             backdrop-filter: blur(4px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
         }
-        .arrow-btn:active {
-            background: rgba(255, 255, 255, 0.4);
+        .ctrl-btn:active {
+            background: rgba(255, 255, 255, 0.6);
             transform: scale(0.92);
         }
     </style>
 </head>
 <body>
-    <div id="info">Evin etrafında dönüp her tarafını görmek için ok tuşlarına basın.</div>
+    <div id="score-board">Toplanan Eşya: <span id="score">0</span> / 5</div>
     
-    <!-- Ok Tuşları -->
-    <div id="arrow-controls">
-        <div class="arrow-btn" id="left-arrow">◀</div>
-        <div class="arrow-btn" id="right-arrow">►</div>
+    <!-- Kontrol Butonları -->
+    <div id="controls">
+        <div class="control-group">
+            <div class="ctrl-btn" id="turn-left">◀</div>
+            <div class="ctrl-btn" id="turn-right">►</div>
+        </div>
+        <div class="control-group">
+            <div class="ctrl-btn" id="move-back">⬇</div>
+            <div class="ctrl-btn" id="move-forward">⬆</div>
+        </div>
     </div>
 
     <!-- Three.js -->
@@ -91,134 +108,172 @@
         dirLight.position.set(10, 20, 15);
         scene.add(dirLight);
 
-        // 2. Blok Materyalleri (Tahta, Taş, Cam vb.)
-        const woodMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B }); // Ahşap
-        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x7F7F7F }); // Taş
-        const glassMat = new THREE.MeshStandardMaterial({ color: 0xadd8e6, transparent: true, opacity: 0.6 }); // Cam
-        const roofMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 }); // Çatı Ahşabı
+        // 2. Evi İnşa Etme
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x7F7F7F });
+        const glassMat = new THREE.MeshStandardMaterial({ color: 0xadd8e6, transparent: true, opacity: 0.6 });
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 });
 
-        // Doku Yükleyici (deneme.png için)
-        const textureLoader = new THREE.TextureLoader();
-        let customMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // Varsayılan
-
-        textureLoader.load('deneme.png', (texture) => {
-            customMat = new THREE.MeshBasicMaterial({ 
-                map: texture, 
-                transparent: true,
-                side: THREE.DoubleSide
-            });
-            buildHouse(); // Resim yüklenince evi inşa et
-        }, undefined, () => {
-            // Görsel yüklenemezse varsayılan malzemeyle evi yine de kur
-            buildHouse();
-        });
-
-        // 3. MCPE 1 Ev Oluşturma Fonksiyonu
         function buildHouse() {
             const blockSize = 1;
-
-            // Zemin Çimi / Taş Taban
-            for (let x = -3; x <= 3; x++) {
-                for (let z = -3; z <= 3; z++) {
+            // Zemin
+            for (let x = -4; x <= 4; x++) {
+                for (let z = -4; z <= 4; z++) {
                     const stone = new THREE.Mesh(new THREE.BoxGeometry(blockSize, blockSize, blockSize), stoneMat);
                     stone.position.set(x, -0.5, z);
                     scene.add(stone);
                 }
             }
-
-            // Duvarlar ve Camlar (3x3 Ev alanı, 2 blok yükseklik)
+            // Duvarlar
             for (let x = -2; x <= 2; x++) {
                 for (let z = -2; z <= 2; z++) {
-                    // Sadece dış duvarlar
                     if (Math.abs(x) === 2 || Math.abs(z) === 2) {
-                        // Kapı boşluğu (Ön taraf z = 2, x = 0)
-                        if (z === 2 && x === 0) continue; 
-
+                        if (z === 2 && x === 0) continue; // Kapı
                         for (let y = 0.5; y <= 1.5; y++) {
-                            // Pencereler (Yan duvarların üst sırasına cam koy)
                             let mat = woodMat;
                             if (y === 1.5 && (x === -2 || x === 2)) mat = glassMat;
-
-                            const wallBlock = new THREE.Mesh(new THREE.BoxGeometry(blockSize, blockSize, blockSize), mat);
-                            wallBlock.position.set(x, y, z);
-                            scene.add(wallBlock);
+                            const wall = new THREE.Mesh(new THREE.BoxGeometry(blockSize, blockSize, blockSize), mat);
+                            wall.position.set(x, y, z);
+                            scene.add(wall);
                         }
                     }
                 }
             }
-
-            // Çatı Yapısı
+            // Çatı
             for (let x = -2; x <= 2; x++) {
                 for (let z = -2; z <= 2; z++) {
-                    const roofBlock = new THREE.Mesh(new THREE.BoxGeometry(blockSize, 0.4, blockSize), roofMat);
-                    roofBlock.position.set(x, 2.2, z);
-                    scene.add(roofBlock);
+                    const roof = new THREE.Mesh(new THREE.BoxGeometry(blockSize, 0.4, blockSize), roofMat);
+                    roof.position.set(x, 2.2, z);
+                    scene.add(roof);
                 }
             }
-
-            // --- deneme.png Görselinin Ev Üstünde Kullanımı ---
-            
-            // A) Çatının üstündeki Tabela / Bayrak Bloğu
-            const signGeo = new THREE.PlaneGeometry(1.2, 1.2);
-            const signMesh = new THREE.Mesh(signGeo, customMat);
-            signMesh.position.set(0, 3.1, 0);
-            scene.add(signMesh);
-
-            // B) Kapı Yanındaki Dekoratif Gösterge Bloğu
-            const customBlockGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-            const customBlock = new THREE.Mesh(customBlockGeo, customMat);
-            customBlock.position.set(1.2, 0.5, 2.2);
-            scene.add(customBlock);
         }
+        buildHouse();
 
-        // 4. Ok Tuşları ile Kamerayı Evin Etrafında Döndürme
-        let cameraAngle = 0; // Başlangıç açısı
-        const radius = 8;     // Evden uzaklık
-        const cameraHeight = 3.5;
+        // 3. Karakter Oluşturma (Oyuncu)
+        const playerGeo = new THREE.BoxGeometry(0.6, 1.2, 0.4);
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c }); // Kırmızı gövdeli karakter
+        const player = new THREE.Mesh(playerGeo, playerMat);
+        player.position.set(0, 0.6, 5); // Evin önünde başlar
+        scene.add(player);
 
-        function updateCameraPosition() {
-            camera.position.x = Math.sin(cameraAngle) * radius;
-            camera.position.z = Math.cos(cameraAngle) * radius;
-            camera.position.y = cameraHeight;
-            camera.lookAt(0, 1, 0); // Evin merkezine bak
-        }
+        // 4. Eşya Spawner Sistemi (deneme.png)
+        const textureLoader = new THREE.TextureLoader();
+        let spawnedItems = [];
+        let score = 0;
+        let itemMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide });
 
-        updateCameraPosition();
-
-        // Sol / Sağ Ok Buton Dinleyicileri
-        const step = 0.35; // Her basışta dönecek açı miktarı
-
-        function rotateLeft() {
-            cameraAngle -= step;
-            updateCameraPosition();
-        }
-
-        function rotateRight() {
-            cameraAngle += step;
-            updateCameraPosition();
-        }
-
-        // Dokunmatik ve Tıklama Desteği
-        document.getElementById('left-arrow').addEventListener('touchstart', (e) => { e.preventDefault(); rotateLeft(); });
-        document.getElementById('right-arrow').addEventListener('touchstart', (e) => { e.preventDefault(); rotateRight(); });
-        document.getElementById('left-arrow').addEventListener('click', rotateLeft);
-        document.getElementById('right-arrow').addEventListener('click', rotateRight);
-
-        // Klavyedeki Sol/Sağ Ok Tuşları Desteği
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') rotateLeft();
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') rotateRight();
+        textureLoader.load('deneme.png', (texture) => {
+            itemMaterial = new THREE.MeshBasicMaterial({ 
+                map: texture, 
+                transparent: true, 
+                side: THREE.DoubleSide 
+            });
+            createSpawnedItems();
+        }, undefined, () => {
+            createSpawnedItems(); // Resim yüklenemezse beyaz karelerle başlat
         });
 
-        // 5. Render Döngüsü
+        const itemPositions = [
+            { x: -3, z: -3 },
+            { x: 3, z: -3 },
+            { x: -3, z: 3 },
+            { x: 4, z: 1 },
+            { x: 0, z: -4 }
+        ];
+
+        function createSpawnedItems() {
+            itemPositions.forEach(pos => {
+                const itemGeo = new THREE.PlaneGeometry(0.8, 0.8);
+                const itemMesh = new THREE.Mesh(itemGeo, itemMaterial);
+                itemMesh.position.set(pos.x, 0.4, pos.z);
+                scene.add(itemMesh);
+                spawnedItems.push(itemMesh);
+            });
+        }
+
+        // 5. Kontrol ve Hareket Mantığı
+        let moveForward = false;
+        let moveBack = false;
+        let turnLeft = false;
+        let turnRight = false;
+
+        const moveSpeed = 0.06;
+        const rotSpeed = 0.04;
+
+        // Buton Dinleyicileri (Dokunma ve Fare)
+        function bindButton(id, onDown, onUp) {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(); });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); onUp(); });
+            el.addEventListener('mousedown', onDown);
+            el.addEventListener('mouseup', onUp);
+        }
+
+        bindButton('move-forward', () => moveForward = true, () => moveForward = false);
+        bindButton('move-back', () => moveBack = true, () => moveBack = false);
+        bindButton('turn-left', () => turnLeft = true, () => turnLeft = false);
+        bindButton('turn-right', () => turnRight = true, () => turnRight = false);
+
+        // Klavye Desteği (W, A, S, D veya Ok Tuşları)
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w') moveForward = true;
+            if (e.key === 'ArrowDown' || e.key === 's') moveBack = true;
+            if (e.key === 'ArrowLeft' || e.key === 'a') turnLeft = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') turnRight = true;
+        });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w') moveForward = false; // Keyup için ayrı
+        }); // Basitçe bırakma mantığı için keyup event:
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w') moveForward = false;
+            if (e.key === 'ArrowDown' || e.key === 's') moveBack = false;
+            if (e.key === 'ArrowLeft' || e.key === 'a') turnLeft = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') turnRight = false;
+        });
+
+        // 6. Animasyon ve Oyun Döngüsü
+        const clock = new THREE.Clock();
+
         function animate() {
             requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // Karakter Dönüşü
+            if (turnLeft) player.rotation.y += rotSpeed;
+            if (turnRight) player.rotation.y -= rotSpeed;
+
+            // Karakter İleri/Geri Hareketi
+            let direction = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+            if (moveForward) player.position.addScaledVector(direction, moveSpeed);
+            if (moveBack) player.position.addScaledVector(direction, -moveSpeed);
+
+            // Kamera Takibi (Üçüncü Şahıs Görünüm - Arkadan Takip)
+            const camOffset = new THREE.Vector3(0, 2.5, 4.5).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+            camera.position.copy(player.position).add(camOffset);
+            camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 0.5, 0)));
+
+            // Eşya Süzülmesi ve Toplanma Kontrolü
+            spawnedItems.forEach((item, index) => {
+                // MCPE Billboarding (kameraya bakma) ve süzülme
+                item.quaternion.copy(camera.quaternion);
+                item.position.y = 0.4 + Math.sin(elapsedTime * 3 + index) * 0.1;
+
+                // Oyuncu ile eşya arasındaki mesafe kontrolü (Toplama)
+                const distance = player.position.distanceTo(item.position);
+                if (distance < 1.0) {
+                    scene.remove(item); // Sahneden kaldır
+                    spawnedItems.splice(index, 1); // Listeden çıkar
+                    score++;
+                    document.getElementById('score').innerText = score;
+                }
+            });
+
             renderer.render(scene, camera);
         }
 
         animate();
 
-        // Ekran Boyutu Değişimi
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
