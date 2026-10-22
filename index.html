@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Resimli Küp Testi</title>
+    <title>MCPE Tarzı Item Testi</title>
     <style>
         body { 
             margin: 0; 
@@ -53,12 +53,11 @@
     </style>
 </head>
 <body>
-    <div id="info">Küpün üstündeki resmi görmek için butonlarla döndürün.</div>
+    <div id="info">MCPE Tarzı Item: Kameraya bakan ve havada süzülen 2D eşya efekti.</div>
     
     <div id="controls">
-        <button class="btn" id="leftBtn">◄ Sol</button>
-        <button class="btn" id="midBtn">● Sıfırla</button>
-        <button class="btn" id="rightBtn">Sağ ►</button>
+        <button class="btn" id="leftBtn">◄ Sola Dön</button>
+        <button class="btn" id="rightBtn">Sağa Dön ►</button>
     </div>
 
     <!-- Three.js Kütüphanesi -->
@@ -75,49 +74,67 @@
         // Işıklandırma
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
         dirLight.position.set(5, 10, 7);
         scene.add(dirLight);
 
-        let cube;
-        let targetRotationY = 0;
+        // Referans için zemine ufak bir blok koyalım ki item'ın havada süzüldüğü anlaşılsın
+        const blockGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        const blockMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+        const groundBlock = new THREE.Mesh(blockGeo, blockMat);
+        groundBlock.position.set(0, -0.8, 0);
+        scene.add(groundBlock);
 
-        // Doku (Texture) Yükleme ve Küpe Giydirme
+        let mcpeItem;
+        let clock = new THREE.Clock();
+        let cameraAngle = 0; // Kamerayı döndürmek için açı
+
+        // Doku yükleme ve MCPE Item (Plane) oluşturma
         const textureLoader = new THREE.TextureLoader();
         textureLoader.load('deneme.png', (texture) => {
-            const boxGeo = new THREE.BoxGeometry(1.8, 1.8, 1.8);
+            const image = texture.image;
+            const aspect = image.width / image.height;
             
-            // Küpün materyaline resmi kaplıyoruz
-            const boxMat = new THREE.MeshStandardMaterial({ 
+            const height = 1.0; 
+            const width = height * aspect; // Oranı bozmadan boyutlandırma
+
+            const itemGeo = new THREE.PlaneGeometry(width, height);
+            const itemMat = new THREE.MeshBasicMaterial({ 
                 map: texture, 
-                transparent: true // Resim şeffafsa küpün aralarından ışık geçmesini/şeffaf görünmesini sağlar
+                transparent: true, // Şeffaf arka plan
+                side: THREE.DoubleSide    // Arkadan da görünmesini sağlar
             });
             
-            cube = new THREE.Mesh(boxGeo, boxMat);
-            cube.position.set(0, 0, 0);
-            scene.add(cube);
+            mcpeItem = new THREE.Mesh(itemGeo, itemMat);
+            mcpeItem.position.set(0, 0.3, 0); // Bloğun hemen üstü
+            scene.add(mcpeItem);
         });
 
-        camera.position.set(0, 1, 3.5);
-        camera.lookAt(0, 0, 0);
+        camera.position.set(0, 1, 3);
 
-        // Buton Kontrolleri
-        document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetRotationY -= Math.PI / 2; });
-        document.getElementById('midBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetRotationY = 0; });
-        document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); targetRotationY += Math.PI / 2; });
-
-        document.getElementById('leftBtn').addEventListener('click', () => { targetRotationY -= Math.PI / 2; });
-        document.getElementById('midBtn').addEventListener('click', () => { targetRotationY = 0; });
-        document.getElementById('rightBtn').addEventListener('click', () => { targetRotationY += Math.PI / 2; });
+        // Butonlarla kamerayı etrafında döndürüp item'ın her an oyuncuya baktığını test edelim
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); cameraAngle -= 0.5; });
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); cameraAngle += 0.5; });
+        document.getElementById('leftBtn').addEventListener('click', () => { cameraAngle -= 0.5; });
+        document.getElementById('rightBtn').addEventListener('click', () => { cameraAngle += 0.5; });
 
         // Animasyon Döngüsü
         function animate() {
             requestAnimationFrame(animate);
 
-            if (cube) {
-                // Küpü hedeflenen açıya yumuşakça döndür
-                cube.rotation.y += (targetRotationY - cube.rotation.y) * 0.1;
-                cube.rotation.x = 0.2; // Resmi rahat görebilmek için küpü hafif öne eğdik
+            const elapsedTime = clock.getElapsedTime();
+
+            // Kamerayı yavaşça hareket ettirelim
+            camera.position.x = Math.sin(cameraAngle) * 3;
+            camera.position.z = Math.cos(cameraAngle) * 3;
+            camera.lookAt(0, 0, 0);
+
+            if (mcpeItem) {
+                // 1. MCPE Kuralı: Item HER ZAMAN kameraya baksın (Billboarding)
+                mcpeItem.quaternion.copy(camera.quaternion);
+
+                // 2. MCPE Kuralı: Havada yukarı aşağı hafifçe süzülme (Bobbing efekti)
+                mcpeItem.position.y = 0.3 + Math.sin(elapsedTime * 3) * 0.1;
             }
 
             renderer.render(scene, camera);
