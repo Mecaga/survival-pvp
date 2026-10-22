@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MCPE 3 Slot Envanter & Atma Testi</title>
+    <title>MCPE 3 Slot Envanter & Hizalanmış Item</title>
     <style>
         * {
             box-sizing: border-box;
@@ -168,7 +168,7 @@
     </style>
 </head>
 <body>
-    <div id="info">Eşyayı ele almak için çantaya, yere atmak için <b>At (Drop)</b> butonuna bas.</div>
+    <div id="info">Eşya tam olarak bloğun üst yüzeyine hizalandı.</div>
     
     <!-- 3 Slotlu Hotbar ve Aksiyon Butonları -->
     <div id="hotbar-container">
@@ -203,12 +203,15 @@
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
         scene.add(ambientLight);
 
-        // Zemin Bloğu
+        // Zemin Bloğu (Yüksekliği 0.8, Y konumu -0.8 -> Üst Yüzeyi Y = -0.4 noktasıdır)
         const blockGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
         const blockMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
         const groundBlock = new THREE.Mesh(blockGeo, blockMat);
         groundBlock.position.set(0, -0.8, 0);
         scene.add(groundBlock);
+
+        // Bloğun üst yüzeyinin Y yüksekliği
+        const blockTopY = -0.4; 
 
         // 2. Depo Eşya Listesi
         const items = [
@@ -218,12 +221,12 @@
             { id: 'sword', name: 'Kılıç', icon: 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/item/diamond_sword.png' }
         ];
 
-        // 3 Slotlu Hotbar Dizisi
         let hotbarData = ['deneme.png', null, null]; 
         let activeSlotIndex = 0;
 
         // 3D MCPE Düşen Eşya Nesnesi
         let mcpeItemMesh = null;
+        let itemHeight = 0.7; // Eşyanın yüksekliği
         const textureLoader = new THREE.TextureLoader();
         const clock = new THREE.Clock();
 
@@ -238,10 +241,12 @@
                 if (mcpeItemMesh) scene.remove(mcpeItemMesh);
 
                 const aspect = texture.image.width / texture.image.height;
-                const height = 0.9;
-                const width = height * aspect;
+                const width = itemHeight * aspect;
 
-                const itemGeo = new THREE.PlaneGeometry(width, height);
+                const itemGeo = new THREE.PlaneGeometry(width, itemHeight);
+                // Resmi alt merkezinden bağımlı yapmak için geometriyi yukarı kaydırıyoruz
+                itemGeo.translate(0, itemHeight / 2, 0);
+
                 const itemMat = new THREE.MeshBasicMaterial({ 
                     map: texture, 
                     transparent: true, 
@@ -249,13 +254,14 @@
                 });
 
                 mcpeItemMesh = new THREE.Mesh(itemGeo, itemMat);
-                mcpeItemMesh.position.set(0, 0.3, 0);
+                // Başlangıç pozisyonu tam bloğun üst yüzeyi
+                mcpeItemMesh.position.set(0, blockTopY, 0);
                 scene.add(mcpeItemMesh);
             });
         }
 
-        camera.position.set(0, 0.8, 2.5);
-        camera.lookAt(0, 0, 0);
+        camera.position.set(0, 0.4, 2.2);
+        camera.lookAt(0, -0.2, 0);
 
         update3DItem(hotbarData[activeSlotIndex]);
 
@@ -265,7 +271,7 @@
 
         function renderHotbar() {
             hotbarSlotsEl.innerHTML = '';
-            for (let i = 0; i < 3; i++) { // Tam 3 Slot
+            for (let i = 0; i < 3; i++) {
                 const slot = document.createElement('div');
                 slot.className = `hotbar-slot ${i === activeSlotIndex ? 'active' : ''}`;
                 
@@ -297,7 +303,6 @@
                 img.className = 'slot-img';
                 slot.appendChild(img);
 
-                // Çantadaki eşyaya tıklayınca seçili Hotbar slotuna ekle
                 slot.addEventListener('click', () => {
                     hotbarData[activeSlotIndex] = item.icon;
                     renderHotbar();
@@ -309,10 +314,9 @@
             });
         }
 
-        // Eşya Atma (Drop) Fonksiyonu
         function dropCurrentItem() {
             if (hotbarData[activeSlotIndex]) {
-                hotbarData[activeSlotIndex] = null; // Elindekini sil / yere at
+                hotbarData[activeSlotIndex] = null;
                 renderHotbar();
                 update3DItem(null);
             }
@@ -329,7 +333,7 @@
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'e' || e.key === 'E') toggleInventory(overlay.style.display !== 'flex');
-            if (e.key === 'q' || e.key === 'Q') dropCurrentItem(); // Q ile eşya atma
+            if (e.key === 'q' || e.key === 'Q') dropCurrentItem();
         });
 
         // 4. Animasyon Döngüsü
@@ -338,8 +342,12 @@
             const elapsedTime = clock.getElapsedTime();
 
             if (mcpeItemMesh) {
+                // Kameraya bakma (Billboarding)
                 mcpeItemMesh.quaternion.copy(camera.quaternion);
-                mcpeItemMesh.position.y = 0.3 + Math.sin(elapsedTime * 3) * 0.08;
+
+                // Bloğun tam üst yüzeyinden başlayarak tatlı bir süzülme hareketi
+                const floatOffset = (Math.sin(elapsedTime * 3) + 1) * 0.04; // 0 ile 0.08 arası hafif süzülme
+                mcpeItemMesh.position.y = blockTopY + floatOffset;
             }
 
             renderer.render(scene, camera);
