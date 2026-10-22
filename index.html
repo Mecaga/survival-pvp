@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MCPE 3 Slot Envanter & Hizalanmış Item</title>
+    <title>MCPE Ev & Ok Tuşları Testi</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,7 +14,7 @@
             margin: 0; 
             overflow: hidden; 
             background: #1a1a1a; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: sans-serif;
             touch-action: none;
         }
         #info {
@@ -29,334 +29,196 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.9);
         }
 
-        /* --- 3 SLOTLU HOTBAR CONTAINER --- */
-        #hotbar-container {
+        /* --- AŞAĞIDAKİ OK TUŞLARI (KAMERA DÖNDÜRME) --- */
+        #arrow-controls {
             position: absolute;
-            bottom: 15px;
+            bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 6px;
-            border-radius: 10px;
-            border: 2px solid #555;
+            gap: 20px;
             z-index: 10;
         }
-        .hotbar-slot {
-            width: 52px;
-            height: 52px;
-            background: rgba(139, 139, 139, 0.4);
-            border: 3px solid #3c3c3c;
-            border-right-color: #8b8b8b;
-            border-bottom-color: #8b8b8b;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            cursor: pointer;
-        }
-        .hotbar-slot.active {
+        .arrow-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.6);
             border: 3px solid #ffffff;
-            box-shadow: 0 0 12px rgba(255,255,255,0.9);
-            background: rgba(200, 200, 200, 0.45);
-        }
-        .slot-img {
-            width: 38px;
-            height: 38px;
-            object-fit: contain;
-            image-rendering: pixelated;
-        }
-
-        /* --- BUTONLAR (ÇANTA & AT) --- */
-        .action-btn {
-            height: 52px;
-            padding: 0 14px;
-            border-radius: 8px;
             color: white;
-            font-size: 16px;
+            font-size: 26px;
             font-weight: bold;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-        }
-        #bag-btn {
-            background: #4a6b22;
-            border: 3px solid #2d4213;
-        }
-        #drop-btn {
-            background: #a93226;
-            border: 3px solid #641e16;
-        }
-        .action-btn:active {
-            transform: scale(0.94);
-        }
-
-        /* --- ENVANTER PANELİ --- */
-        #inventory-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.75);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             backdrop-filter: blur(4px);
         }
-        #inventory-window {
-            width: 88%;
-            max-width: 380px;
-            background: #c6c6c6;
-            border: 4px solid #ffffff;
-            border-right-color: #555555;
-            border-bottom-color: #555555;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
-            color: #333;
-        }
-        .inv-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            border-bottom: 2px solid #8b8b8b;
-            padding-bottom: 6px;
-            font-weight: bold;
-        }
-        .close-btn {
-            background: #c0392b;
-            color: white;
-            border: none;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .inv-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            padding: 6px;
-            background: #8b8b8b;
-            border: 3px solid #373737;
-            border-right-color: #ffffff;
-            border-bottom-color: #ffffff;
-            border-radius: 4px;
-        }
-        .inv-slot {
-            aspect-ratio: 1;
-            background: #8b8b8b;
-            border: 3px solid #373737;
-            border-right-color: #ffffff;
-            border-bottom-color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .inv-slot:active {
-            background: #aaa;
+        .arrow-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.92);
         }
     </style>
 </head>
 <body>
-    <div id="info">Eşya tam olarak bloğun üst yüzeyine hizalandı.</div>
+    <div id="info">Evin etrafında dönüp her tarafını görmek için ok tuşlarına basın.</div>
     
-    <!-- 3 Slotlu Hotbar ve Aksiyon Butonları -->
-    <div id="hotbar-container">
-        <div id="hotbar-slots" style="display: flex; gap: 6px;"></div>
-        <div class="action-btn" id="bag-btn">...</div>
-        <div class="action-btn" id="drop-btn">At 🗑️</div>
-    </div>
-
-    <!-- Envanter Paneli -->
-    <div id="inventory-overlay">
-        <div id="inventory-window">
-            <div class="inv-header">
-                <span>Eşya Deposu</span>
-                <button class="close-btn" id="close-inv">X</button>
-            </div>
-            <div class="inv-grid" id="inv-grid"></div>
-        </div>
+    <!-- Ok Tuşları -->
+    <div id="arrow-controls">
+        <div class="arrow-btn" id="left-arrow">◀</div>
+        <div class="arrow-btn" id="right-arrow">►</div>
     </div>
 
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
-        // 1. Sahne ve Kamera Kurulumu
+        // 1. Sahne ve Kamera
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        scene.background = new THREE.Color(0x1a1a1a);
+
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+        // Işıklandırma
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
 
-        // Zemin Bloğu (Yüksekliği 0.8, Y konumu -0.8 -> Üst Yüzeyi Y = -0.4 noktasıdır)
-        const blockGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-        const blockMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
-        const groundBlock = new THREE.Mesh(blockGeo, blockMat);
-        groundBlock.position.set(0, -0.8, 0);
-        scene.add(groundBlock);
+        // 2. Blok Materyalleri (Tahta, Taş, Cam vb.)
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B }); // Ahşap
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x7F7F7F }); // Taş
+        const glassMat = new THREE.MeshStandardMaterial({ color: 0xadd8e6, transparent: true, opacity: 0.6 }); // Cam
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 }); // Çatı Ahşabı
 
-        // Bloğun üst yüzeyinin Y yüksekliği
-        const blockTopY = -0.4; 
-
-        // 2. Depo Eşya Listesi
-        const items = [
-            { id: 'deneme', name: 'Özel Eşya', icon: 'deneme.png' },
-            { id: 'wood', name: 'Tahta', icon: 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/block/oak_planks.png' },
-            { id: 'diamond', name: 'Elmas', icon: 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/item/diamond.png' },
-            { id: 'sword', name: 'Kılıç', icon: 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/item/diamond_sword.png' }
-        ];
-
-        let hotbarData = ['deneme.png', null, null]; 
-        let activeSlotIndex = 0;
-
-        // 3D MCPE Düşen Eşya Nesnesi
-        let mcpeItemMesh = null;
-        let itemHeight = 0.7; // Eşyanın yüksekliği
+        // Doku Yükleyici (deneme.png için)
         const textureLoader = new THREE.TextureLoader();
-        const clock = new THREE.Clock();
+        let customMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // Varsayılan
 
-        function update3DItem(textureUrl) {
-            if (!textureUrl) {
-                if (mcpeItemMesh) scene.remove(mcpeItemMesh);
-                mcpeItemMesh = null;
-                return;
-            }
-
-            textureLoader.load(textureUrl, (texture) => {
-                if (mcpeItemMesh) scene.remove(mcpeItemMesh);
-
-                const aspect = texture.image.width / texture.image.height;
-                const width = itemHeight * aspect;
-
-                const itemGeo = new THREE.PlaneGeometry(width, itemHeight);
-                // Resmi alt merkezinden bağımlı yapmak için geometriyi yukarı kaydırıyoruz
-                itemGeo.translate(0, itemHeight / 2, 0);
-
-                const itemMat = new THREE.MeshBasicMaterial({ 
-                    map: texture, 
-                    transparent: true, 
-                    side: THREE.DoubleSide 
-                });
-
-                mcpeItemMesh = new THREE.Mesh(itemGeo, itemMat);
-                // Başlangıç pozisyonu tam bloğun üst yüzeyi
-                mcpeItemMesh.position.set(0, blockTopY, 0);
-                scene.add(mcpeItemMesh);
+        textureLoader.load('deneme.png', (texture) => {
+            customMat = new THREE.MeshBasicMaterial({ 
+                map: texture, 
+                transparent: true,
+                side: THREE.DoubleSide
             });
-        }
-
-        camera.position.set(0, 0.4, 2.2);
-        camera.lookAt(0, -0.2, 0);
-
-        update3DItem(hotbarData[activeSlotIndex]);
-
-        // 3. UI İşlemleri (Hotbar & Çanta)
-        const hotbarSlotsEl = document.getElementById('hotbar-slots');
-        const invGridEl = document.getElementById('inv-grid');
-
-        function renderHotbar() {
-            hotbarSlotsEl.innerHTML = '';
-            for (let i = 0; i < 3; i++) {
-                const slot = document.createElement('div');
-                slot.className = `hotbar-slot ${i === activeSlotIndex ? 'active' : ''}`;
-                
-                if (hotbarData[i]) {
-                    const img = document.createElement('img');
-                    img.src = hotbarData[i];
-                    img.className = 'slot-img';
-                    slot.appendChild(img);
-                }
-
-                slot.addEventListener('click', () => {
-                    activeSlotIndex = i;
-                    renderHotbar();
-                    update3DItem(hotbarData[activeSlotIndex]);
-                });
-
-                hotbarSlotsEl.appendChild(slot);
-            }
-        }
-
-        function renderInventory() {
-            invGridEl.innerHTML = '';
-            items.forEach((item) => {
-                const slot = document.createElement('div');
-                slot.className = 'inv-slot';
-                
-                const img = document.createElement('img');
-                img.src = item.icon;
-                img.className = 'slot-img';
-                slot.appendChild(img);
-
-                slot.addEventListener('click', () => {
-                    hotbarData[activeSlotIndex] = item.icon;
-                    renderHotbar();
-                    update3DItem(hotbarData[activeSlotIndex]);
-                    toggleInventory(false);
-                });
-
-                invGridEl.appendChild(slot);
-            });
-        }
-
-        function dropCurrentItem() {
-            if (hotbarData[activeSlotIndex]) {
-                hotbarData[activeSlotIndex] = null;
-                renderHotbar();
-                update3DItem(null);
-            }
-        }
-
-        const overlay = document.getElementById('inventory-overlay');
-        function toggleInventory(show) {
-            overlay.style.display = show ? 'flex' : 'none';
-        }
-
-        document.getElementById('bag-btn').addEventListener('click', () => toggleInventory(true));
-        document.getElementById('close-inv').addEventListener('click', () => toggleInventory(false));
-        document.getElementById('drop-btn').addEventListener('click', dropCurrentItem);
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'e' || e.key === 'E') toggleInventory(overlay.style.display !== 'flex');
-            if (e.key === 'q' || e.key === 'Q') dropCurrentItem();
+            buildHouse(); // Resim yüklenince evi inşa et
+        }, undefined, () => {
+            // Görsel yüklenemezse varsayılan malzemeyle evi yine de kur
+            buildHouse();
         });
 
-        // 4. Animasyon Döngüsü
-        function animate() {
-            requestAnimationFrame(animate);
-            const elapsedTime = clock.getElapsedTime();
+        // 3. MCPE 1 Ev Oluşturma Fonksiyonu
+        function buildHouse() {
+            const blockSize = 1;
 
-            if (mcpeItemMesh) {
-                // Kameraya bakma (Billboarding)
-                mcpeItemMesh.quaternion.copy(camera.quaternion);
-
-                // Bloğun tam üst yüzeyinden başlayarak tatlı bir süzülme hareketi
-                const floatOffset = (Math.sin(elapsedTime * 3) + 1) * 0.04; // 0 ile 0.08 arası hafif süzülme
-                mcpeItemMesh.position.y = blockTopY + floatOffset;
+            // Zemin Çimi / Taş Taban
+            for (let x = -3; x <= 3; x++) {
+                for (let z = -3; z <= 3; z++) {
+                    const stone = new THREE.Mesh(new THREE.BoxGeometry(blockSize, blockSize, blockSize), stoneMat);
+                    stone.position.set(x, -0.5, z);
+                    scene.add(stone);
+                }
             }
 
+            // Duvarlar ve Camlar (3x3 Ev alanı, 2 blok yükseklik)
+            for (let x = -2; x <= 2; x++) {
+                for (let z = -2; z <= 2; z++) {
+                    // Sadece dış duvarlar
+                    if (Math.abs(x) === 2 || Math.abs(z) === 2) {
+                        // Kapı boşluğu (Ön taraf z = 2, x = 0)
+                        if (z === 2 && x === 0) continue; 
+
+                        for (let y = 0.5; y <= 1.5; y++) {
+                            // Pencereler (Yan duvarların üst sırasına cam koy)
+                            let mat = woodMat;
+                            if (y === 1.5 && (x === -2 || x === 2)) mat = glassMat;
+
+                            const wallBlock = new THREE.Mesh(new THREE.BoxGeometry(blockSize, blockSize, blockSize), mat);
+                            wallBlock.position.set(x, y, z);
+                            scene.add(wallBlock);
+                        }
+                    }
+                }
+            }
+
+            // Çatı Yapısı
+            for (let x = -2; x <= 2; x++) {
+                for (let z = -2; z <= 2; z++) {
+                    const roofBlock = new THREE.Mesh(new THREE.BoxGeometry(blockSize, 0.4, blockSize), roofMat);
+                    roofBlock.position.set(x, 2.2, z);
+                    scene.add(roofBlock);
+                }
+            }
+
+            // --- deneme.png Görselinin Ev Üstünde Kullanımı ---
+            
+            // A) Çatının üstündeki Tabela / Bayrak Bloğu
+            const signGeo = new THREE.PlaneGeometry(1.2, 1.2);
+            const signMesh = new THREE.Mesh(signGeo, customMat);
+            signMesh.position.set(0, 3.1, 0);
+            scene.add(signMesh);
+
+            // B) Kapı Yanındaki Dekoratif Gösterge Bloğu
+            const customBlockGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const customBlock = new THREE.Mesh(customBlockGeo, customMat);
+            customBlock.position.set(1.2, 0.5, 2.2);
+            scene.add(customBlock);
+        }
+
+        // 4. Ok Tuşları ile Kamerayı Evin Etrafında Döndürme
+        let cameraAngle = 0; // Başlangıç açısı
+        const radius = 8;     // Evden uzaklık
+        const cameraHeight = 3.5;
+
+        function updateCameraPosition() {
+            camera.position.x = Math.sin(cameraAngle) * radius;
+            camera.position.z = Math.cos(cameraAngle) * radius;
+            camera.position.y = cameraHeight;
+            camera.lookAt(0, 1, 0); // Evin merkezine bak
+        }
+
+        updateCameraPosition();
+
+        // Sol / Sağ Ok Buton Dinleyicileri
+        const step = 0.35; // Her basışta dönecek açı miktarı
+
+        function rotateLeft() {
+            cameraAngle -= step;
+            updateCameraPosition();
+        }
+
+        function rotateRight() {
+            cameraAngle += step;
+            updateCameraPosition();
+        }
+
+        // Dokunmatik ve Tıklama Desteği
+        document.getElementById('left-arrow').addEventListener('touchstart', (e) => { e.preventDefault(); rotateLeft(); });
+        document.getElementById('right-arrow').addEventListener('touchstart', (e) => { e.preventDefault(); rotateRight(); });
+        document.getElementById('left-arrow').addEventListener('click', rotateLeft);
+        document.getElementById('right-arrow').addEventListener('click', rotateRight);
+
+        // Klavyedeki Sol/Sağ Ok Tuşları Desteği
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') rotateLeft();
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') rotateRight();
+        });
+
+        // 5. Render Döngüsü
+        function animate() {
+            requestAnimationFrame(animate);
             renderer.render(scene, camera);
         }
 
-        renderHotbar();
-        renderInventory();
         animate();
 
+        // Ekran Boyutu Değişimi
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
