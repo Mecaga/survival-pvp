@@ -27,19 +27,22 @@
   </script>
 
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
     body, html { background-color: #0a0a0c !important; color: #f4f4f5; margin: 0; padding: 0; overflow: hidden; width: 100vw; height: 100vh; }
+    
     canvas.pixelated {
       image-rendering: pixelated;
       image-rendering: crisp-edges;
       -ms-interpolation-mode: nearest-neighbor;
     }
+    
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #18181b; }
     ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
     
     /* Sol Raf Kapanma Animasyonu */
     #shelfPanel {
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s ease;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s ease, min-width 0.3s ease;
     }
     #shelfPanel.closed {
       transform: translateX(-100%);
@@ -61,7 +64,7 @@
 <body class="bg-[#0a0a0c] text-gray-100 h-screen w-screen overflow-hidden flex flex-col font-sans select-none">
 
   <!-- ÜST NAVBAR -->
-  <header class="bg-mcpanel border-b border-zinc-800 px-4 py-2 flex items-center justify-between shrink-0 h-14 z-30">
+  <header class="bg-mcpanel border-b border-zinc-800 px-4 py-2 flex items-center justify-between shrink-0 h-14 z-30 w-full">
     <div class="flex items-center gap-3">
       <div class="bg-red-600 text-white font-bold px-2.5 py-1 rounded text-xs tracking-wider flex items-center gap-1.5 shadow">
         <i data-lucide="box" class="w-4 h-4"></i> MC SKIN STUDIO
@@ -77,7 +80,7 @@
   </header>
 
   <!-- ANA ÇALIŞMA ALANI CONTAINER -->
-  <div class="flex-1 flex overflow-hidden relative w-full h-full">
+  <div class="flex-1 flex overflow-hidden relative w-full h-[calc(100vh-3.5rem)]">
 
     <!-- SOL TARAF: KOSTÜM RAFI -->
     <aside id="shelfPanel" class="w-72 sm:w-80 bg-mcpanel border-r border-zinc-800 flex flex-col p-3 gap-3 shrink-0 z-20 relative h-full">
@@ -102,7 +105,7 @@
       <div id="costumeShelfList" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
     </aside>
 
-    <!-- SAĞ/ORTA ÇALIŞMA ALANI (TAM GENİŞLİK FLEX-1) -->
+    <!-- SAĞ/ORTA ÇALIŞMA ALANI -->
     <main class="flex-1 bg-[#0a0a0c] flex flex-col relative overflow-hidden h-full">
 
       <!-- ÜST MOD SEÇİMİ (3D GÖRÜNÜM / 2D GÖRÜNÜM) -->
@@ -216,7 +219,7 @@
       { id: 3, name: "Zümrüt Muhafız", color: "#10b981" }
     ];
 
-    // --- MİNECRAFT UV MAPPING (DOĞRU ORANLAR) ---
+    // --- MİNECRAFT 64x64 UV MAP KOORDİNATLARI ---
     function setBoxUVs(geometry, u, v, w, h, d, textureWidth = 64, textureHeight = 64) {
       const uvAttribute = geometry.attributes.uv;
       const x0 = u / textureWidth;
@@ -413,8 +416,6 @@
         return mesh;
       }
 
-      // Karakter Oranları ve Pozisyonları (Minecraft 1.8+ Skin Mimarisi)
-      // Genişlik, Yükseklik, Derinlik, X, Y, Z, U, V
       characterGroup.add(createPartWithUV(8, 8, 8, 0, 20, 0, 0, 0));       // Kafa
       characterGroup.add(createPartWithUV(8, 12, 4, 0, 10, 0, 16, 16));   // Gövde
       characterGroup.add(createPartWithUV(4, 12, 4, -6, 10, 0, 40, 16));  // Sağ Kol
