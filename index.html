@@ -67,7 +67,7 @@
       overflow: hidden;
     }
 
-    /* Sağ Üst 3D Panel Çekmece */
+    /* Sağ Üst 3D Panel Çekmece (İlk Açılışta Kapalı) */
     #floatingPanel {
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
     }
@@ -150,11 +150,11 @@
         </div>
       </div>
 
-      <!-- VIEWPORT BÖLGESİ -->
-      <div class="flex-1 flex w-full relative items-center justify-center overflow-hidden">
+      <!-- VIEWPORT BÖLGESİ (TAM BOYUT KORUMALI) -->
+      <div class="flex-1 flex w-full relative items-center justify-center overflow-hidden" style="height: calc(100% - 3.5rem);">
 
         <!-- 3D ANA KARAKTER GÖRÜNÜMÜ -->
-        <div id="container3D" class="w-full h-full flex-1 relative bg-[#0f0f12]">
+        <div id="container3D" class="w-full h-full absolute inset-0 bg-[#0f0f12] flex items-center justify-center">
           <canvas id="canvas3D" class="w-full h-full block"></canvas>
           <div class="absolute bottom-4 left-4 text-[11px] text-zinc-400 bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur pointer-events-none border border-zinc-800 z-10">
             Sol tık: Döndür | Sağ tık: Kaydır | Tekerlek: Yakınlaş
@@ -162,7 +162,7 @@
         </div>
 
         <!-- 2D KOSTÜM DOKU ŞABLONU -->
-        <div id="panel2D" class="w-full h-full flex-1 hidden flex-col items-center justify-center p-4 bg-[#0f0f12]/95 z-10 backdrop-blur">
+        <div id="panel2D" class="w-full h-full absolute inset-0 hidden flex-col items-center justify-center p-4 bg-[#0f0f12]/95 z-10 backdrop-blur">
           <div class="text-xs text-zinc-400 mb-2 font-semibold">2D Kostüm Şablonu (Bölge Sınır Rehberli)</div>
           <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black shadow-2xl">
             <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[480px] md:h-[480px] cursor-default rounded"></canvas>
@@ -195,7 +195,7 @@
         </div>
       </aside>
 
-      <!-- ALT SADELEŞTİRİLMİŞ EYLEM PANELİ (KULLAN, SİL, DIŞA/İÇERİ AKTAR) -->
+      <!-- ALT SADELEŞTİRİLMİŞ EYLEM PANELİ (KULLAN, SİL, AKTAR) -->
       <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-zinc-900/95 border border-zinc-700/80 px-5 py-2.5 rounded-2xl shadow-2xl flex flex-col items-center gap-2 backdrop-blur">
         
         <!-- ÜST SIRASI: KULLAN & SİL -->
@@ -238,7 +238,6 @@
 
     let isPanelOpen = false;
     let activeCostumeId = 1;
-    let mini3DScenes = [];
 
     function createCostumeCanvas(initializer) {
       const c = document.createElement('canvas');
@@ -377,7 +376,6 @@
     function renderCostumeShelf() {
       const shelfList = document.getElementById('costumeShelfList');
       shelfList.innerHTML = '';
-      mini3DScenes = [];
 
       costumes.forEach(c => {
         const isActive = c.id === activeCostumeId;
@@ -386,12 +384,12 @@
           isActive ? 'bg-blue-600/20 border-blue-500 ring-1 ring-blue-500' : 'bg-zinc-900/80 border-zinc-800 hover:bg-zinc-800/60'
         }`;
 
-        const miniCanvasId = `miniCanvas_${c.id}`;
+        const thumbId = `thumb_${c.id}`;
 
         card.innerHTML = `
           <div class="flex items-center gap-3">
             <div class="w-14 h-14 rounded-lg bg-zinc-950 border border-zinc-800 overflow-hidden relative shrink-0 flex items-center justify-center">
-              <canvas id="${miniCanvasId}" class="w-full h-full block"></canvas>
+              <canvas id="${thumbId}" width="64" height="64" class="pixelated w-full h-full block"></canvas>
             </div>
             <div>
               <div class="font-bold text-xs text-zinc-200">${c.name}</div>
@@ -409,52 +407,18 @@
         };
 
         shelfList.appendChild(card);
-        setTimeout(() => initMini3DCard(miniCanvasId, c.canvas), 10);
+
+        // Minyatür 2D Önizlemeyi Çiz (Webgl çökmesini önler)
+        setTimeout(() => {
+          const thumbCanvas = document.getElementById(thumbId);
+          if (thumbCanvas) {
+            const tCtx = thumbCanvas.getContext('2d');
+            tCtx.imageSmoothingEnabled = false;
+            tCtx.clearRect(0, 0, 64, 64);
+            tCtx.drawImage(c.canvas, 0, 0);
+          }
+        }, 10);
       });
-    }
-
-    function initMini3DCard(canvasId, costumeCanvas) {
-      const canvas = document.getElementById(canvasId);
-      if (!canvas) return;
-
-      const mScene = new THREE.Scene();
-      mScene.background = new THREE.Color(0x0f0f12);
-
-      const mCam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      mCam.position.set(0, 0.2, 4.2);
-
-      const mRen = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-      mRen.setSize(56, 56);
-
-      mScene.add(new THREE.AmbientLight(0xffffff, 0.8));
-      const dir = new THREE.DirectionalLight(0xffffff, 0.5);
-      dir.position.set(2, 3, 2);
-      mScene.add(dir);
-
-      const mTexture = new THREE.CanvasTexture(costumeCanvas);
-      mTexture.magFilter = THREE.NearestFilter;
-      mTexture.minFilter = THREE.NearestFilter;
-      const mat = new THREE.MeshBasicMaterial({ map: mTexture, transparent: true });
-
-      const mGroup = new THREE.Group();
-
-      function createMiniPart(w, h, d, x, y, z, u, v, pw, ph, pd) {
-        const geo = new THREE.BoxGeometry(w, h, d);
-        setBoxUVs(geo, u, v, pw, ph, pd, 64, 64);
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.set(x, y, z);
-        return mesh;
-      }
-
-      mGroup.add(createMiniPart(0.6, 0.6, 0.6, 0, 0.6, 0, 0, 0, 8, 8, 8));
-      mGroup.add(createMiniPart(0.6, 0.9, 0.3, 0, -0.15, 0, 16, 16, 8, 12, 4));
-      mGroup.add(createMiniPart(0.3, 0.9, 0.3, -0.45, -0.15, 0, 40, 16, 4, 12, 4));
-      mGroup.add(createMiniPart(0.3, 0.9, 0.3, 0.45, -0.15, 0, 32, 48, 4, 12, 4));
-      mGroup.add(createMiniPart(0.3, 0.9, 0.3, -0.15, -1.05, 0, 0, 16, 4, 12, 4));
-      mGroup.add(createMiniPart(0.3, 0.9, 0.3, 0.15, -1.05, 0, 16, 48, 4, 12, 4));
-
-      mScene.add(mGroup);
-      mini3DScenes.push({ scene: mScene, camera: mCam, renderer: mRen, group: mGroup, texture: mTexture });
     }
 
     // --- THREE.JS ANA 3D SAHNE ---
@@ -467,11 +431,14 @@
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x0f0f12);
 
-      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      const width = container.clientWidth || window.innerWidth;
+      const height = container.clientHeight || window.innerHeight;
+
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
       camera.position.set(0, 1.2, 4.5);
 
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true });
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+      renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -514,12 +481,6 @@
         requestAnimationFrame(animate);
         controls.update();
         renderer.render(scene, camera);
-
-        mini3DScenes.forEach(m => {
-          if (m.group) m.group.rotation.y += 0.02;
-          if (m.texture) m.texture.needsUpdate = true;
-          if (m.renderer && m.scene && m.camera) m.renderer.render(m.scene, m.camera);
-        });
       }
       animate();
     }
@@ -531,9 +492,12 @@
     function onWindowResize() {
       const container = document.getElementById('container3D');
       if (!container || !renderer || !camera) return;
-      camera.aspect = container.clientWidth / container.clientHeight;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (width === 0 || height === 0) return;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setSize(width, height);
     }
     window.addEventListener('resize', onWindowResize);
 
@@ -543,7 +507,7 @@
       syncActiveCanvasToEditor();
       update3DTexture();
       renderCostumeShelf();
-      onWindowResize();
+      setTimeout(onWindowResize, 50);
 
       const shelfPanel = document.getElementById('shelfPanel');
       const closeShelfBtn = document.getElementById('closeShelfBtn');
@@ -595,7 +559,7 @@
         panel2D.classList.add('hidden');
         panel2D.classList.remove('flex');
         container3D.classList.remove('hidden');
-        onWindowResize();
+        setTimeout(onWindowResize, 50);
       };
 
       btnMode2D.onclick = () => {
@@ -604,7 +568,6 @@
         container3D.classList.add('hidden');
         panel2D.classList.remove('hidden');
         panel2D.classList.add('flex');
-        onWindowResize();
       };
 
       // Kullan / Sil / Aktar Butonları
@@ -642,6 +605,19 @@
         a.download = 'character_3d.png';
         a.href = renderer.domElement.toDataURL('image/png');
         a.click();
+      };
+
+      document.getElementById('addCostumeBtn').onclick = () => {
+        const newId = Date.now();
+        const newCanvas = createCostumeCanvas(tCtx => {
+          tCtx.fillStyle = '#2563eb';
+          tCtx.fillRect(16, 16, 24, 12);
+        });
+        costumes.push({ id: newId, name: `Kostüm ${costumes.length + 1}`, canvas: newCanvas });
+        activeCostumeId = newId;
+        syncActiveCanvasToEditor();
+        update3DTexture();
+        renderCostumeShelf();
       };
 
       document.getElementById('importInput').onchange = (e) => {
