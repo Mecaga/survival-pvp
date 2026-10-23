@@ -2,7 +2,7 @@
 <html lang="tr" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Minecraft 64x64 Skin Studio</title>
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -28,14 +28,19 @@
 
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body, html { 
+    
+    /* Tam Ekran Kilitlenme ve Taşma Önleme */
+    html, body { 
       background-color: #0f0f12 !important; 
       color: #f4f4f5; 
       margin: 0; 
       padding: 0; 
-      overflow: hidden; 
       width: 100vw; 
       height: 100vh;
+      overflow: hidden;
+      position: fixed;
+      top: 0;
+      left: 0;
     }
     
     canvas.pixelated {
@@ -52,6 +57,7 @@
     #shelfPanel {
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s ease;
       flex-shrink: 0;
+      height: 100%;
     }
     #shelfPanel.closed {
       transform: translateX(-100%);
@@ -80,7 +86,7 @@
     }
   </style>
 </head>
-<body class="bg-[#0f0f12] text-gray-100 h-screen w-screen overflow-hidden flex flex-col font-sans select-none">
+<body class="bg-[#0f0f12] text-gray-100 flex flex-col font-sans select-none">
 
   <!-- ÜST NAVBAR -->
   <header class="bg-mcpanel border-b border-zinc-800 px-4 py-2 flex items-center justify-between shrink-0 h-14 z-30 w-full">
@@ -110,7 +116,7 @@
   <div class="flex-1 flex overflow-hidden relative w-full" style="height: calc(100vh - 3.5rem);">
 
     <!-- SOL TARAF: KOSTÜM RAFI (3D ÖNİZLEMELİ) -->
-    <aside id="shelfPanel" class="w-72 sm:w-80 bg-mcpanel border-r border-zinc-800 flex flex-col p-3 gap-3 z-25 h-full">
+    <aside id="shelfPanel" class="w-72 sm:w-80 bg-mcpanel border-r border-zinc-800 flex flex-col p-3 gap-3 z-25">
       <div class="flex items-center justify-between pb-2 border-b border-zinc-800 shrink-0">
         <div class="flex items-center gap-2 text-xs font-bold text-zinc-300 uppercase tracking-wider">
           <i data-lucide="shirt" class="w-4 h-4 text-blue-400"></i>
@@ -174,11 +180,7 @@
 
       <!-- SAĞ ÜST KÖŞE: AÇILIR/KAPANIR 3D PANEL ÇEKMECESİ -->
       <aside id="floatingPanel" class="absolute top-3 right-3 w-80 sm:w-96 bg-mcpanel/95 backdrop-blur-md border border-zinc-700/80 rounded-2xl shadow-2xl flex flex-col z-25 overflow-hidden">
-        <div class="p-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
-          <div class="flex items-center gap-2 text-xs font-semibold text-zinc-200">
-            <i data-lucide="box" class="w-4 h-4 text-blue-400"></i>
-            <span>3D Karakter Önizleme</span>
-          </div>
+        <div class="p-3 border-b border-zinc-800 flex items-center justify-end bg-zinc-900/80">
           <button id="closeFloatingPanelBtn" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 transition" title="Kapat">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
@@ -187,10 +189,10 @@
         <div class="p-3 bg-zinc-900/90 flex flex-col gap-2">
           <div class="flex items-center justify-between bg-zinc-800/80 p-2 rounded-xl border border-zinc-700/60">
             <span class="text-xs text-zinc-300 font-medium flex items-center gap-1.5">
-              <i data-lucide="bed" class="w-4 h-4 text-purple-400"></i> Yatakta Yat (Sırt Üstü)
+              <i data-lucide="bed" class="w-4 h-4 text-purple-400"></i> Yatak Modu
             </span>
-            <button id="toggleSleepBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition shadow">
-              <span id="sleepBtnText">Yatak Modu</span>
+            <button id="toggleSleepBtn" class="bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-lg text-xs font-medium transition shadow flex items-center justify-center" title="Yat / Kalk">
+              <i data-lucide="power" class="w-3.5 h-3.5"></i>
             </button>
           </div>
 
@@ -289,11 +291,10 @@
       { id: 3, name: "Zümrüt Muhafız", color: "#10b981" }
     ];
 
-    // --- MİNECRAFT 64x64 HASSAS UV DİLİMLEME (HER UZUV KENDİ BÖLGESİNİ ALIR) ---
+    // --- MİNECRAFT 64x64 HASSAS UV DİLİMLEME ---
     function setBoxUVs(geometry, u, v, w, h, d, textureWidth = 64, textureHeight = 64) {
       const uvAttribute = geometry.attributes.uv;
 
-      // Minecraft 64x64 standart yüzey haritalandırma koordinatları (Right, Left, Top, Bottom, Front, Back)
       const faces = [
         { x: u,         y: v + d,     w: d, h: h }, // 0: Right
         { x: u + d + w, y: v + d,     w: d, h: h }, // 1: Left
@@ -488,13 +489,12 @@
         return mesh;
       }
 
-      // Minecraft Standart 3D Uzuv Hiyerarşisi (Doğru UV piksel koordinatları ile)
-      characterGroup.add(createPartWithUV(0.8, 0.8, 0.8, 0, 0.8, 0, 0, 0, 8, 8, 8));       // Kafa (u:0, v:0)
-      characterGroup.add(createPartWithUV(0.8, 1.2, 0.4, 0, -0.2, 0, 16, 16, 8, 12, 4));    // Gövde (u:16, v:16)
-      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.6, -0.2, 0, 40, 16, 4, 12, 4)); // Sağ Kol (u:40, v:16)
-      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.6, -0.2, 0, 32, 48, 4, 12, 4));  // Sol Kol (u:32, v:48)
-      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.2, -1.4, 0, 0, 16, 4, 12, 4));  // Sağ Bacak (u:0, v:16)
-      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.2, -1.4, 0, 16, 48, 4, 12, 4));   // Sol Bacak (u:16, v:48)
+      characterGroup.add(createPartWithUV(0.8, 0.8, 0.8, 0, 0.8, 0, 0, 0, 8, 8, 8));       // Kafa
+      characterGroup.add(createPartWithUV(0.8, 1.2, 0.4, 0, -0.2, 0, 16, 16, 8, 12, 4));    // Gövde
+      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.6, -0.2, 0, 40, 16, 4, 12, 4)); // Sağ Kol
+      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.6, -0.2, 0, 32, 48, 4, 12, 4));  // Sol Kol
+      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.2, -1.4, 0, 0, 16, 4, 12, 4));  // Sağ Bacak
+      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.2, -1.4, 0, 16, 48, 4, 12, 4));   // Sol Bacak
 
       scene.add(characterGroup);
 
@@ -571,15 +571,12 @@
       // Yatak Modu
       document.getElementById('toggleSleepBtn').onclick = () => {
         isBedMode = !isBedMode;
-        const btnText = document.getElementById('sleepBtnText');
         if (isBedMode) {
           characterGroup.rotation.x = -Math.PI / 2;
           characterGroup.position.set(0, -0.5, 0);
-          btnText.innerText = "Ayakta";
         } else {
           characterGroup.rotation.x = 0;
           characterGroup.position.set(0, 0, 0);
-          btnText.innerText = "Yatak Modu";
         }
       };
 
