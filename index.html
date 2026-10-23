@@ -17,7 +17,7 @@
       theme: {
         extend: {
           colors: {
-            mcbg: '#0f0f12',
+            mcbg: '#0a0a0c',
             mcpanel: '#18181c',
             mcaccent: '#2563eb',
           }
@@ -27,37 +27,25 @@
   </script>
 
   <style>
+    body, html { background-color: #0a0a0c !important; color: #f4f4f5; margin: 0; padding: 0; overflow: hidden; }
     canvas.pixelated {
       image-rendering: pixelated;
       image-rendering: crisp-edges;
       -ms-interpolation-mode: nearest-neighbor;
     }
-    
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #18181b;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #3f3f46;
-      border-radius: 3px;
-    }
-
-    .shelf-transition {
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #18181b; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+    .shelf-transition { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     .grid-overlay {
       background-size: 16px 16px;
       background-image: 
-        linear-gradient(to right, rgba(0, 255, 255, 0.12) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 255, 255, 0.12) 1px, transparent 1px);
+        linear-gradient(to right, rgba(0, 255, 255, 0.15) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 255, 255, 0.15) 1px, transparent 1px);
     }
   </style>
 </head>
-<body class="bg-mcbg text-gray-100 h-screen w-screen overflow-hidden flex flex-col font-sans select-none">
+<body class="bg-[#0a0a0c] text-gray-100 h-screen w-screen overflow-hidden flex flex-col font-sans select-none">
 
   <!-- ÜST NAVBAR -->
   <header class="bg-mcpanel border-b border-zinc-800 px-4 py-2 flex items-center justify-between shrink-0 h-14 z-30">
@@ -68,7 +56,7 @@
       <h1 class="text-sm font-semibold text-zinc-300 hidden sm:block">Kostüm Rafı & 3D Voxel Düzenleyici</h1>
     </div>
 
-    <!-- Üst Bar Büyütme/Kapatılmış Rafı Açma -->
+    <!-- Kapatılan Rafı Açma Butonu -->
     <button id="openShelfBtn" class="hidden bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition shadow border border-blue-400">
       <i data-lucide="panel-left-open" class="w-4 h-4"></i>
       <span>▶ Kostüm Rafını Aç</span>
@@ -78,7 +66,7 @@
   <!-- ANA ÇALIŞMA ALANI CONTAINER -->
   <div class="flex-1 flex overflow-hidden relative">
 
-    <!-- SOL TARAF: KOSTÜM RAFI (ORTALANMIŞ 3D MODELLER & SOLA KAYARAK KAPANMA) -->
+    <!-- SOL TARAF: KOSTÜM RAFI -->
     <aside id="shelfPanel" class="w-72 sm:w-80 bg-mcpanel border-r border-zinc-800 flex flex-col p-3 gap-3 shrink-0 z-20 shelf-transition relative">
       <div class="flex items-center justify-between pb-2 border-b border-zinc-800">
         <div class="flex items-center gap-2 text-xs font-bold text-zinc-300 uppercase tracking-wider">
@@ -91,7 +79,6 @@
             <i data-lucide="plus" class="w-3.5 h-3.5"></i> Ekle
           </button>
           
-          <!-- SOLA KAYDIRARAK KAPATMA BUTONU -->
           <button id="closeShelfBtn" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded-lg text-xs font-bold border border-zinc-700 transition" title="Rafı Kapat">
             ◀ Kapat
           </button>
@@ -99,13 +86,11 @@
       </div>
 
       <!-- Raf İçindeki Kostüm Listesi -->
-      <div id="costumeShelfList" class="flex-1 overflow-y-auto space-y-3 pr-1">
-        <!-- Dinamik Kartlar ve Ortalanmış 3D Modellere Dönüşüm -->
-      </div>
+      <div id="costumeShelfList" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
     </aside>
 
     <!-- SAĞ/ORTA ÇALIŞMA ALANI -->
-    <main class="flex-1 bg-zinc-950 flex flex-col relative overflow-hidden">
+    <main class="flex-1 bg-[#0a0a0c] flex flex-col relative overflow-hidden">
 
       <!-- ÜST MOD SEÇİMİ (3D GÖRÜNÜM / 2D GÖRÜNÜM) -->
       <div class="absolute top-4 right-4 z-20 flex gap-2">
@@ -121,17 +106,17 @@
       <div class="flex-1 flex w-full h-full relative items-center justify-center">
 
         <!-- 3D CANLI KARAKTER GÖRÜNÜMÜ -->
-        <div id="container3D" class="w-full h-full relative">
+        <div id="container3D" class="w-full h-full relative bg-[#0a0a0c]">
           <canvas id="canvas3D" class="w-full h-full block"></canvas>
-          <div class="absolute bottom-16 left-4 text-[11px] text-zinc-400 bg-black/50 px-3 py-1.5 rounded-lg backdrop-blur pointer-events-none border border-zinc-800">
+          <div class="absolute bottom-16 left-4 text-[11px] text-zinc-400 bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur pointer-events-none border border-zinc-800">
             Sol tık: Döndür | Sağ tık: Kaydır | Tekerlek: Yakınlaş
           </div>
         </div>
 
-        <!-- 2D KOSTÜM DOKU ŞABLONU (ÇİZİM ALANI) -->
-        <div id="panel2D" class="w-full h-full hidden flex-col items-center justify-center p-4 bg-zinc-950/90 z-10 backdrop-blur">
+        <!-- 2D KOSTÜM DOKU ŞABLONU -->
+        <div id="panel2D" class="w-full h-full hidden flex-col items-center justify-center p-4 bg-[#0a0a0c]/95 z-10 backdrop-blur">
           <div class="text-xs text-zinc-400 mb-2 font-semibold">2D Kostüm Şablonu (64x64 Pixel)</div>
-          <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black/80 shadow-2xl grid-overlay">
+          <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black shadow-2xl grid-overlay">
             <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] md:w-[480px] md:h-[480px] cursor-crosshair rounded"></canvas>
             <canvas id="gridCanvas" width="512" height="512" class="absolute top-0 left-0 pointer-events-none w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] md:w-[480px] md:h-[480px]"></canvas>
           </div>
@@ -139,8 +124,8 @@
 
       </div>
 
-      <!-- ALT ANA EYLEM PANELİ (KULLAN, DÜZENLE, SİL & DİĞER ARAÇLAR) -->
-      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-zinc-900/90 border border-zinc-700/80 px-5 py-2.5 rounded-2xl shadow-2xl flex flex-col items-center gap-2 backdrop-blur">
+      <!-- ALT ANA EYLEM PANELİ -->
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-zinc-900/95 border border-zinc-700/80 px-5 py-2.5 rounded-2xl shadow-2xl flex flex-col items-center gap-2 backdrop-blur">
         
         <!-- VARSAYILAN KONTROL BUTONLARI -->
         <div id="defaultActionBtns" class="flex items-center gap-3">
@@ -157,7 +142,7 @@
           </button>
         </div>
 
-        <!-- DÜZENLEME MODU ARAÇLARI (DÜZENLE'YE BASINCA AÇILIR) -->
+        <!-- DÜZENLEME MODU ARAÇLARI -->
         <div id="editToolBar" class="hidden flex items-center gap-3 border-b border-zinc-800 pb-2 mb-1">
           <input type="color" id="primaryColor" value="#208ea3" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent">
           
@@ -178,7 +163,7 @@
           </button>
         </div>
 
-        <!-- EN ALT BÖLÜM: DOKU DIŞA AKTAR / İÇERİ AKTAR -->
+        <!-- EN ALT: DIŞA AKTAR / İÇERİ AKTAR -->
         <div class="flex items-center gap-3 pt-1 border-t border-zinc-800/80 w-full justify-center">
           <button id="btnExport2D" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium rounded-xl border border-zinc-700 transition active:scale-95 flex items-center gap-1.5">
             <i data-lucide="download" class="w-3.5 h-3.5 text-green-400"></i> Dışa Aktar (2D Doku)
@@ -200,7 +185,6 @@
   <script>
     lucide.createIcons();
 
-    // CANVASES & SİSTEM DEĞİŞKENLERİ
     const skinCanvas = document.getElementById('skinCanvas');
     const ctx = skinCanvas.getContext('2d', { willReadFrequently: true });
     const gridCanvas = document.getElementById('gridCanvas');
@@ -219,7 +203,35 @@
       { id: 3, name: "Zümrüt Muhafız", color: "#10b981" }
     ];
 
-    // --- SOL RAF MİNİ 3D MODELLERİ TAM ORTALA VE ÇİZ ---
+    // --- MİNECRAFT UV MAPPING FONKSİYONU ---
+    function setBoxUVs(geometry, u, v, w, h, d, textureWidth = 64, textureHeight = 64) {
+      const uvAttribute = geometry.attributes.uv;
+      const x0 = u / textureWidth;
+      const x1 = (u + d) / textureWidth;
+      const x2 = (u + d + w) / textureWidth;
+      const x3 = (u + 2 * d + w) / textureWidth;
+      const x4 = (u + 2 * d + 2 * w) / textureWidth;
+
+      const y0 = 1 - (v + h + d) / textureHeight;
+      const y1 = 1 - (v + d) / textureHeight;
+      const y2 = 1 - v / textureHeight;
+
+      const uvs = [
+        x1, y1,  x0, y1,  x1, y2,  x0, y2, // Right
+        x3, y1,  x2, y1,  x3, y2,  x2, y2, // Left
+        x2, y1,  x1, y1,  x2, y0,  x1, y0, // Top
+        x3, y0,  x2, y0,  x3, y1,  x2, y1, // Bottom
+        x2, y1,  x1, y1,  x2, y2,  x1, y2, // Front
+        x4, y1,  x3, y1,  x4, y2,  x3, y2  // Back
+      ];
+
+      for (let i = 0; i < uvs.length; i++) {
+        uvAttribute.setX(i, uvs[i]);
+      }
+      uvAttribute.needsUpdate = true;
+    }
+
+    // --- SOL RAF MİNİ 3D MODELLERİ ---
     function renderCostumeShelf() {
       const shelfList = document.getElementById('costumeShelfList');
       shelfList.innerHTML = '';
@@ -266,7 +278,7 @@
       mScene.background = new THREE.Color(0x0a0a0c);
 
       const mCam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      mCam.position.set(0, 1.2, 22); // Tam merkeze hizalandı
+      mCam.position.set(0, 1.2, 22);
 
       const mRen = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
       mRen.setSize(56, 56);
@@ -281,26 +293,24 @@
         const geo = new THREE.BoxGeometry(w, h, d);
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.set(x, y, z);
-
         const edges = new THREE.EdgesGeometry(geo);
         const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff }));
         mesh.add(line);
         return mesh;
       }
 
-      // Tam Ortalanmış Uzuvlar
-      mGroup.add(createMiniPart(4, 4, 4, 0, 5, 0));    // Kafa
-      mGroup.add(createMiniPart(4, 6, 2, 0, 0, 0));    // Gövde
-      mGroup.add(createMiniPart(2, 6, 2, -3, 0, 0));   // Sol Kol
-      mGroup.add(createMiniPart(2, 6, 2, 3, 0, 0));    // Sağ Kol
-      mGroup.add(createMiniPart(2, 6, 2, -1, -6, 0));  // Sol Bacak
-      mGroup.add(createMiniPart(2, 6, 2, 1, -6, 0));   // Sağ Bacak
+      mGroup.add(createMiniPart(4, 4, 4, 0, 5, 0));
+      mGroup.add(createMiniPart(4, 6, 2, 0, 0, 0));
+      mGroup.add(createMiniPart(2, 6, 2, -3, 0, 0));
+      mGroup.add(createMiniPart(2, 6, 2, 3, 0, 0));
+      mGroup.add(createMiniPart(2, 6, 2, -1, -6, 0));
+      mGroup.add(createMiniPart(2, 6, 2, 1, -6, 0));
 
       mScene.add(mGroup);
       mini3DScenes.push({ scene: mScene, camera: mCam, renderer: mRen, group: mGroup });
     }
 
-    // --- DOKU ÇİZİM VERİLERİ (C* TÜRK BAYRAĞI DAHİL) ---
+    // --- DOKU ÇİZİMİ ---
     function drawDefaultSkinData() {
       ctx.clearRect(0, 0, 64, 64);
 
@@ -314,7 +324,7 @@
       ctx.fillStyle = cEyeW; ctx.fillRect(9, 13, 2, 1); ctx.fillRect(13, 13, 2, 1);
       ctx.fillStyle = cEyeB; ctx.fillRect(10, 13, 1, 1); ctx.fillRect(13, 13, 1, 1);
 
-      // Gövde & Türk Bayrağı
+      // Gövde & Türk Bayrağı C*
       ctx.fillStyle = cShirt; ctx.fillRect(20, 16, 8, 4); ctx.fillRect(28, 16, 8, 4); ctx.fillRect(16, 20, 24, 12);
       ctx.fillStyle = cRed; ctx.fillRect(32, 20, 8, 12);
       ctx.fillStyle = cWhite; ctx.fillRect(34, 23, 3, 5);
@@ -329,10 +339,23 @@
       ctx.fillStyle = cShirt; ctx.fillRect(36, 48, 4, 4); ctx.fillRect(40, 48, 4, 4); ctx.fillRect(32, 52, 16, 4);
       ctx.fillStyle = cFace; ctx.fillRect(32, 56, 16, 8);
 
+      updateGridOverlay();
       update3DTexture();
     }
 
-    // --- THREE.JS MAIN 3D MODEL ---
+    function updateGridOverlay() {
+      gridCtx.clearRect(0, 0, 512, 512);
+      const scale = 512 / 64;
+      gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      gridCtx.lineWidth = 0.5;
+
+      for (let i = 0; i <= 64; i++) {
+        gridCtx.beginPath(); gridCtx.moveTo(i * scale, 0); gridCtx.lineTo(i * scale, 512); gridCtx.stroke();
+        gridCtx.beginPath(); gridCtx.moveTo(0, i * scale); gridCtx.lineTo(512, i * scale); gridCtx.stroke();
+      }
+    }
+
+    // --- THREE.JS ANA 3D SAHNE ---
     let scene, camera, renderer, controls, skinTexture, characterGroup;
 
     function init3D() {
@@ -353,53 +376,37 @@
       controls.enableDamping = true;
       controls.target.set(0, 16, 0);
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+      scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      dirLight.position.set(20, 40, 20);
+      scene.add(dirLight);
 
       skinTexture = new THREE.CanvasTexture(skinCanvas);
       skinTexture.magFilter = THREE.NearestFilter;
       skinTexture.minFilter = THREE.NearestFilter;
 
-      const skinMaterial = new THREE.MeshBasicMaterial({ map: skinTexture, transparent: true, side: THREE.DoubleSide });
+      const skinMaterial = new THREE.MeshStandardMaterial({ map: skinTexture, roughness: 0.8, metalness: 0.1 });
       characterGroup = new THREE.Group();
 
-      function createBoxPart(w, h, d, x, y, z, u, v) {
-        const geometry = new THREE.BoxGeometry(w, h, d);
-        const uvAttr = geometry.attributes.uv;
-        const tw = 64, th = 64;
-
-        const faces = [
-          { u: u + d + w, v: v + d, w: d, h: h },
-          { u: u, v: v + d, w: d, h: h },
-          { u: u + d, v: v, w: w, h: d },
-          { u: u + d + w, v: v, w: w, h: d },
-          { u: u + d, v: v + d, w: w, h: h },
-          { u: u + d + w + d, v: v + d, w: w, h: h }
-        ];
-
-        let index = 0;
-        for (let i = 0; i < 6; i++) {
-          const f = faces[i];
-          const u0 = f.u / tw, v0 = 1 - (f.v + f.h) / th;
-          const u1 = (f.u + f.w) / tw, v1 = 1 - f.v / th;
-          uvAttr.setXY(index, u0, v1); uvAttr.setXY(index + 1, u1, v1);
-          uvAttr.setXY(index + 2, u0, v0); uvAttr.setXY(index + 3, u1, v0);
-          index += 4;
-        }
-
-        const mesh = new THREE.Mesh(geometry, skinMaterial);
+      function createPartWithUV(w, h, d, x, y, z, u, v) {
+        const geo = new THREE.BoxGeometry(w, h, d);
+        setBoxUVs(geo, u, v, w, h, d);
+        const mesh = new THREE.Mesh(geo, skinMaterial);
         mesh.position.set(x, y, z);
-        const edges = new THREE.EdgesGeometry(geometry);
+
+        const edges = new THREE.EdgesGeometry(geo);
         const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 }));
         mesh.add(line);
         return mesh;
       }
 
-      characterGroup.add(createBoxPart(8, 8, 8, 0, 28, 0, 0, 0));
-      characterGroup.add(createBoxPart(8, 12, 4, 0, 18, 0, 16, 16));
-      characterGroup.add(createBoxPart(4, 12, 4, -6, 18, 0, 40, 16));
-      characterGroup.add(createBoxPart(4, 12, 4, 6, 18, 0, 32, 48));
-      characterGroup.add(createBoxPart(4, 12, 4, -2, 6, 0, 0, 16));
-      characterGroup.add(createBoxPart(4, 12, 4, 2, 6, 0, 16, 48));
+      // Ana Karakter Uzuvları
+      characterGroup.add(createPartWithUV(8, 8, 8, 0, 28, 0, 0, 0));      // Kafa
+      characterGroup.add(createPartWithUV(8, 12, 4, 0, 18, 0, 16, 16));   // Gövde
+      characterGroup.add(createPartWithUV(4, 12, 4, -6, 18, 0, 40, 16));  // Sağ Kol
+      characterGroup.add(createPartWithUV(4, 12, 4, 6, 18, 0, 32, 48));   // Sol Kol
+      characterGroup.add(createPartWithUV(4, 12, 4, -2, 6, 0, 0, 16));    // Sağ Bacak
+      characterGroup.add(createPartWithUV(4, 12, 4, 2, 6, 0, 16, 48));    // Sol Bacak
 
       scene.add(characterGroup);
 
@@ -420,7 +427,7 @@
       if (skinTexture) skinTexture.needsUpdate = true;
     }
 
-    // --- PENCERE KAPATMA & MOD ETKİLEŞİMLERİ ---
+    // --- ETKİLEŞİMLER VE ÇİZİM ---
     document.addEventListener('DOMContentLoaded', () => {
       init3D();
       drawDefaultSkinData();
@@ -463,7 +470,45 @@
         panel2D.classList.add('flex');
       };
 
-      // Eylem Butonları (Kullan, Düzenle, Sil)
+      // Çizim Olayları
+      function getCanvasCoords(e) {
+        const rect = skinCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = Math.floor((clientX - rect.left) / (rect.width / 64));
+        const y = Math.floor((clientY - rect.top) / (rect.height / 64));
+        return { x: Math.max(0, Math.min(63, x)), y: Math.max(0, Math.min(63, y)) };
+      }
+
+      function applyTool(x, y) {
+        if (!isEditing) return;
+        if (currentTool === 'pencil') {
+          ctx.fillStyle = currentColor;
+          ctx.fillRect(x, y, 1, 1);
+        } else if (currentTool === 'eraser') {
+          ctx.clearRect(x, y, 1, 1);
+        } else if (currentTool === 'picker') {
+          const pixel = ctx.getImageData(x, y, 1, 1).data;
+          if (pixel[3] > 0) {
+            const hex = "#" + ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1);
+            currentColor = hex;
+            document.getElementById('primaryColor').value = hex;
+          }
+        }
+        update3DTexture();
+      }
+
+      skinCanvas.addEventListener('mousedown', (e) => { isDrawing = true; const c = getCanvasCoords(e); applyTool(c.x, c.y); });
+      skinCanvas.addEventListener('mousemove', (e) => { if (isDrawing) { const c = getCanvasCoords(e); applyTool(c.x, c.y); } });
+      window.addEventListener('mouseup', () => isDrawing = false);
+
+      // Araç Seçimi
+      document.getElementById('toolPencil').onclick = () => currentTool = 'pencil';
+      document.getElementById('toolEraser').onclick = () => currentTool = 'eraser';
+      document.getElementById('toolPicker').onclick = () => currentTool = 'picker';
+      document.getElementById('primaryColor').addEventListener('input', (e) => currentColor = e.target.value);
+
+      // Düzenleme / Kullan / Sil
       const defaultActionBtns = document.getElementById('defaultActionBtns');
       const editToolBar = document.getElementById('editToolBar');
       const btnStartEdit = document.getElementById('btnStartEdit');
@@ -482,16 +527,16 @@
         editToolBar.classList.add('hidden');
         defaultActionBtns.classList.remove('hidden');
         btnMode3D.click();
-        alert('Kostüm değişiklikleri kaydedildi!');
+        alert('Kostüm kaydedildi!');
       };
 
       document.getElementById('btnUseCostume').onclick = () => {
         update3DTexture();
-        alert('Kostüm başarıyla giydirildi!');
+        alert('Kostüm aktif kılındı!');
       };
 
       document.getElementById('btnDeleteCostume').onclick = () => {
-        if (costumes.length <= 1) return alert('En az bir kostüm olmalıdır!');
+        if (costumes.length <= 1) return alert('En az bir kostüm kalmalıdır!');
         costumes = costumes.filter(c => c.id !== activeCostumeId);
         activeCostumeId = costumes[0].id;
         renderCostumeShelf();
