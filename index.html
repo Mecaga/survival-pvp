@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Minecraft 64x64 Skin Studio & Kostüm Rafı</title>
+  <title>Minecraft 64x64 Skin Studio</title>
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Three.js for 3D Preview -->
+  <!-- Three.js & OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -20,7 +20,6 @@
             mcbg: '#0f0f12',
             mcpanel: '#18181c',
             mcaccent: '#2563eb',
-            mcaccenthover: '#1d4ed8',
           }
         }
       }
@@ -28,14 +27,12 @@
   </script>
 
   <style>
-    /* Pixel art rendering */
     canvas.pixelated {
       image-rendering: pixelated;
       image-rendering: crisp-edges;
       -ms-interpolation-mode: nearest-neighbor;
     }
     
-    /* Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -48,20 +45,21 @@
       border-radius: 3px;
     }
 
-    /* Floating Panel Drawer Transition */
-    #floatingPanel {
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    .shelf-transition {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    #floatingPanel.panel-closed {
-      transform: translateX(110%);
-      opacity: 0;
-      pointer-events: none;
+
+    .grid-overlay {
+      background-size: 16px 16px;
+      background-image: 
+        linear-gradient(to right, rgba(0, 255, 255, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 255, 255, 0.12) 1px, transparent 1px);
     }
   </style>
 </head>
 <body class="bg-mcbg text-gray-100 h-screen w-screen overflow-hidden flex flex-col font-sans select-none">
 
-  <!-- TOP HEADER NAVBAR -->
+  <!-- ÜST NAVBAR -->
   <header class="bg-mcpanel border-b border-zinc-800 px-4 py-2 flex items-center justify-between shrink-0 h-14 z-30">
     <div class="flex items-center gap-3">
       <div class="bg-red-600 text-white font-bold px-2.5 py-1 rounded text-xs tracking-wider flex items-center gap-1.5 shadow">
@@ -70,158 +68,139 @@
       <h1 class="text-sm font-semibold text-zinc-300 hidden sm:block">Kostüm Rafı & 3D Voxel Düzenleyici</h1>
     </div>
 
-    <!-- Right Header Actions -->
-    <div class="flex items-center gap-2">
-      <button id="downloadSkinTopBtn" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 border border-zinc-700 transition">
-        <i data-lucide="download" class="w-3.5 h-3.5 text-green-400"></i>
-        <span class="hidden md:inline">Doku İndir</span>
-      </button>
-
-      <button id="toggleCornerPanelBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition shadow-lg border border-blue-400">
-        <i data-lucide="box" class="w-4 h-4"></i>
-        <span>3D Panel</span>
-        <i data-lucide="chevron-left" id="panelChevron" class="w-3.5 h-3.5 transition-transform duration-300"></i>
-      </button>
-    </div>
+    <!-- Üst Bar Büyütme/Kapatılmış Rafı Açma -->
+    <button id="openShelfBtn" class="hidden bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition shadow border border-blue-400">
+      <i data-lucide="panel-left-open" class="w-4 h-4"></i>
+      <span>▶ Kostüm Rafını Aç</span>
+    </button>
   </header>
 
-  <!-- MAIN WORKSPACE CONTAINER -->
+  <!-- ANA ÇALIŞMA ALANI CONTAINER -->
   <div class="flex-1 flex overflow-hidden relative">
 
-    <!-- SOL TARAF: KOSTÜM RAFI (3D ŞEKLİNDE AŞAĞI-YUKARI KARTLAR) -->
-    <aside class="w-72 sm:w-80 bg-mcpanel border-r border-zinc-800 flex flex-col p-3 gap-3 shrink-0 z-20 overflow-y-auto">
+    <!-- SOL TARAF: KOSTÜM RAFI (ORTALANMIŞ 3D MODELLER & SOLA KAYARAK KAPANMA) -->
+    <aside id="shelfPanel" class="w-72 sm:w-80 bg-mcpanel border-r border-zinc-800 flex flex-col p-3 gap-3 shrink-0 z-20 shelf-transition relative">
       <div class="flex items-center justify-between pb-2 border-b border-zinc-800">
         <div class="flex items-center gap-2 text-xs font-bold text-zinc-300 uppercase tracking-wider">
           <i data-lucide="shirt" class="w-4 h-4 text-blue-400"></i>
           <span>Kostüm Rafı</span>
         </div>
-        <button id="addCostumeBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow transition active:scale-95">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Yeni
-        </button>
+        
+        <div class="flex items-center gap-2">
+          <button id="addCostumeBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow transition active:scale-95">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Ekle
+          </button>
+          
+          <!-- SOLA KAYDIRARAK KAPATMA BUTONU -->
+          <button id="closeShelfBtn" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded-lg text-xs font-bold border border-zinc-700 transition" title="Rafı Kapat">
+            ◀ Kapat
+          </button>
+        </div>
       </div>
 
       <!-- Raf İçindeki Kostüm Listesi -->
-      <div id="costumeShelfList" class="flex flex-col gap-3">
-        <!-- Dinamik Kostüm Kartları ve 3D Mini Önizlemeleri Buraya Yüklenir -->
+      <div id="costumeShelfList" class="flex-1 overflow-y-auto space-y-3 pr-1">
+        <!-- Dinamik Kartlar ve Ortalanmış 3D Modellere Dönüşüm -->
       </div>
     </aside>
 
-    <!-- ARAÇ ÇUBUĞU (TOOLBAR) -->
-    <aside class="w-14 bg-mcpanel border-r border-zinc-800 flex flex-col items-center py-3 gap-2.5 shrink-0 z-10">
-      <button data-tool="pencil" class="tool-btn active bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-500 transition relative group" title="Kalem (Pencil)">
-        <i data-lucide="pencil" class="w-5 h-5"></i>
-      </button>
+    <!-- SAĞ/ORTA ÇALIŞMA ALANI -->
+    <main class="flex-1 bg-zinc-950 flex flex-col relative overflow-hidden">
 
-      <button data-tool="eraser" class="tool-btn text-zinc-400 hover:text-white hover:bg-zinc-800 p-2.5 rounded-xl transition relative group" title="Silgi (Eraser)">
-        <i data-lucide="eraser" class="w-5 h-5"></i>
-      </button>
-
-      <button data-tool="bucket" class="tool-btn text-zinc-400 hover:text-white hover:bg-zinc-800 p-2.5 rounded-xl transition relative group" title="Boya Kovası (Fill Bucket)">
-        <i data-lucide="paint-bucket" class="w-5 h-5"></i>
-      </button>
-
-      <button data-tool="picker" class="tool-btn text-zinc-400 hover:text-white hover:bg-zinc-800 p-2.5 rounded-xl transition relative group" title="Renk Seçici (Eyedropper)">
-        <i data-lucide="pipette" class="w-5 h-5"></i>
-      </button>
-
-      <hr class="w-8 border-zinc-800 my-1" />
-
-      <div class="flex flex-col items-center gap-1">
-        <input type="color" id="primaryColor" value="#208ea3" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0 p-0" title="Aktif Renk" />
-      </div>
-
-      <button id="toggleGridBtn" class="text-blue-400 hover:bg-zinc-800 p-2.5 rounded-xl transition mt-auto" title="Izgara Çizgilerini Aç/Kapat">
-        <i data-lucide="grid" class="w-5 h-5"></i>
-      </button>
-
-      <button id="resetSkinBtn" class="text-red-400 hover:bg-zinc-800 p-2.5 rounded-xl transition" title="Varsayılan Skine Dön">
-        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-      </button>
-    </aside>
-
-    <!-- ORTA ÇALIŞMA ALANI (2D UV CANVAS EDITÖRÜ) -->
-    <main class="flex-1 bg-zinc-950 flex flex-col justify-center items-center p-4 relative overflow-auto">
-      
-      <div class="absolute top-3 left-4 bg-zinc-900/90 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs text-zinc-400 flex items-center gap-2 backdrop-blur z-0">
-        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-        <span>64x64 UV Haritası (Net Piksel Ayraçları)</span>
-      </div>
-
-      <!-- Canvas Container -->
-      <div class="relative shadow-2xl rounded-lg border-2 border-zinc-700 bg-zinc-900 p-1 flex items-center justify-center">
-        <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] md:w-[480px] md:h-[480px] cursor-crosshair rounded bg-black/40"></canvas>
-        <canvas id="gridCanvas" width="512" height="512" class="absolute top-1 left-1 pointer-events-none w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] md:w-[480px] md:h-[480px]"></canvas>
-      </div>
-
-      <!-- Legend Bar -->
-      <div class="mt-4 flex flex-wrap gap-2 justify-center text-[11px] text-zinc-400">
-        <span class="flex items-center gap-1 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Kafa</span>
-        <span class="flex items-center gap-1 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Gövde & Türk Bayrağı C*</span>
-        <span class="flex items-center gap-1 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800"><span class="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block"></span> Kollar</span>
-        <span class="flex items-center gap-1 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span> Bacaklar</span>
-      </div>
-    </main>
-
-    <!-- SAĞ FLOATING CORNER PANEL (3D ÖNİZLEME) -->
-    <aside id="floatingPanel" class="absolute top-3 right-3 bottom-3 w-80 sm:w-96 bg-mcpanel/95 backdrop-blur-md border border-zinc-700/80 rounded-2xl shadow-2xl flex flex-col z-20 overflow-hidden">
-      
-      <!-- Panel Header -->
-      <div class="p-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
-        <div class="flex items-center gap-2 text-xs font-semibold text-zinc-200">
-          <i data-lucide="box" class="w-4 h-4 text-blue-400"></i>
-          <span>3D Karakter Önizleme</span>
-        </div>
-        <button id="closePanelBtn" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 transition" title="Kapat">
-          <i data-lucide="x" class="w-4 h-4"></i>
+      <!-- ÜST MOD SEÇİMİ (3D GÖRÜNÜM / 2D GÖRÜNÜM) -->
+      <div class="absolute top-4 right-4 z-20 flex gap-2">
+        <button id="btnMode3D" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400 transition active:scale-95 flex items-center gap-1.5">
+          <i data-lucide="box" class="w-4 h-4"></i> 3D Görünüm
+        </button>
+        <button id="btnMode2D" class="px-4 py-2 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold text-xs rounded-xl shadow-lg border border-zinc-700 transition active:scale-95 flex items-center gap-1.5">
+          <i data-lucide="edit-3" class="w-4 h-4"></i> 2D Görünüm
         </button>
       </div>
 
-      <!-- 3D WebGL Canvas -->
-      <div id="canvas3DContainer" class="flex-1 bg-zinc-950/80 relative overflow-hidden">
-        <canvas id="canvas3D" class="w-full h-full block"></canvas>
-        <div class="absolute bottom-2 left-2 right-2 text-[10px] text-zinc-400 bg-black/70 px-2 py-1 rounded-md backdrop-blur text-center pointer-events-none border border-zinc-800">
-          Sol tık: Döndür | Sağ tık: Kaydır | Tekerlek: Yakınlaş
+      <!-- VIEWPORT BÖLGESİ -->
+      <div class="flex-1 flex w-full h-full relative items-center justify-center">
+
+        <!-- 3D CANLI KARAKTER GÖRÜNÜMÜ -->
+        <div id="container3D" class="w-full h-full relative">
+          <canvas id="canvas3D" class="w-full h-full block"></canvas>
+          <div class="absolute bottom-16 left-4 text-[11px] text-zinc-400 bg-black/50 px-3 py-1.5 rounded-lg backdrop-blur pointer-events-none border border-zinc-800">
+            Sol tık: Döndür | Sağ tık: Kaydır | Tekerlek: Yakınlaş
+          </div>
         </div>
+
+        <!-- 2D KOSTÜM DOKU ŞABLONU (ÇİZİM ALANI) -->
+        <div id="panel2D" class="w-full h-full hidden flex-col items-center justify-center p-4 bg-zinc-950/90 z-10 backdrop-blur">
+          <div class="text-xs text-zinc-400 mb-2 font-semibold">2D Kostüm Şablonu (64x64 Pixel)</div>
+          <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black/80 shadow-2xl grid-overlay">
+            <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] md:w-[480px] md:h-[480px] cursor-crosshair rounded"></canvas>
+            <canvas id="gridCanvas" width="512" height="512" class="absolute top-0 left-0 pointer-events-none w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] md:w-[480px] md:h-[480px]"></canvas>
+          </div>
+        </div>
+
       </div>
 
-      <!-- Fast Controls -->
-      <div class="p-3 border-t border-zinc-800 bg-zinc-900/90 flex flex-col gap-2">
-        <div class="flex items-center justify-between bg-zinc-800/80 p-2 rounded-xl border border-zinc-700/60">
-          <span class="text-xs text-zinc-300 font-medium flex items-center gap-1.5">
-            <i data-lucide="bed" class="w-4 h-4 text-purple-400"></i> Yatakta Yat (Sırt Üstü)
-          </span>
-          <button id="toggleSleepBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition shadow">
-            <span id="sleepBtnText">Yatak Modu</span>
+      <!-- ALT ANA EYLEM PANELİ (KULLAN, DÜZENLE, SİL & DİĞER ARAÇLAR) -->
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-zinc-900/90 border border-zinc-700/80 px-5 py-2.5 rounded-2xl shadow-2xl flex flex-col items-center gap-2 backdrop-blur">
+        
+        <!-- VARSAYILAN KONTROL BUTONLARI -->
+        <div id="defaultActionBtns" class="flex items-center gap-3">
+          <button id="btnUseCostume" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95 flex items-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i> Kullan
+          </button>
+          
+          <button id="btnStartEdit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95 flex items-center gap-1.5">
+            <i data-lucide="pencil" class="w-4 h-4"></i> Düzenle
+          </button>
+          
+          <button id="btnDeleteCostume" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95 flex items-center gap-1.5">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> Sil
           </button>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 mt-1">
-          <button id="downloadSnapshotBtn" class="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition shadow">
-            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
-            <span>3D Poz İndir</span>
+        <!-- DÜZENLEME MODU ARAÇLARI (DÜZENLE'YE BASINCA AÇILIR) -->
+        <div id="editToolBar" class="hidden flex items-center gap-3 border-b border-zinc-800 pb-2 mb-1">
+          <input type="color" id="primaryColor" value="#208ea3" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent">
+          
+          <button id="toolPencil" class="px-2.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow flex items-center gap-1">
+            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Kalem
+          </button>
+          
+          <button id="toolEraser" class="px-2.5 py-1.5 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 text-xs font-bold rounded-lg transition flex items-center gap-1">
+            <i data-lucide="eraser" class="w-3.5 h-3.5"></i> Silgi
           </button>
 
-          <button id="downloadSkinBtn" class="bg-green-700 hover:bg-green-600 text-white p-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition shadow">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            <span>Doku İndir</span>
+          <button id="toolPicker" class="px-2.5 py-1.5 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 text-xs font-bold rounded-lg transition flex items-center gap-1">
+            <i data-lucide="pipette" class="w-3.5 h-3.5"></i> Damlalık
+          </button>
+
+          <button id="btnSaveEdit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow ml-2 transition active:scale-95 flex items-center gap-1.5">
+            <i data-lucide="save" class="w-4 h-4"></i> Kaydet
           </button>
         </div>
 
-        <label class="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-zinc-200 p-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 border border-zinc-700 transition">
-          <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-400"></i>
-          <span>Harici Skin Yükle (.png)</span>
-          <input type="file" id="uploadInput" accept="image/png" class="hidden" />
-        </label>
+        <!-- EN ALT BÖLÜM: DOKU DIŞA AKTAR / İÇERİ AKTAR -->
+        <div class="flex items-center gap-3 pt-1 border-t border-zinc-800/80 w-full justify-center">
+          <button id="btnExport2D" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium rounded-xl border border-zinc-700 transition active:scale-95 flex items-center gap-1.5">
+            <i data-lucide="download" class="w-3.5 h-3.5 text-green-400"></i> Dışa Aktar (2D Doku)
+          </button>
+
+          <label class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium rounded-xl border border-zinc-700 transition active:scale-95 cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-400"></i> İçeri Aktar (2D Doku)
+            <input type="file" id="importInput" accept="image/png" class="hidden">
+          </label>
+        </div>
 
       </div>
-    </aside>
+
+    </main>
 
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
+  <!-- JAVASCRIPT LOJİĞİ -->
   <script>
     lucide.createIcons();
 
+    // CANVASES & SİSTEM DEĞİŞKENLERİ
     const skinCanvas = document.getElementById('skinCanvas');
     const ctx = skinCanvas.getContext('2d', { willReadFrequently: true });
     const gridCanvas = document.getElementById('gridCanvas');
@@ -230,9 +209,7 @@
     let currentTool = 'pencil';
     let currentColor = '#208ea3';
     let isDrawing = false;
-    let showGrid = true;
-    let isBedMode = false;
-    let isPanelOpen = true;
+    let isEditing = false;
     let activeCostumeId = 1;
     let mini3DScenes = [];
 
@@ -242,7 +219,7 @@
       { id: 3, name: "Zümrüt Muhafız", color: "#10b981" }
     ];
 
-    // --- SOL RAFI VE CANLI 3D KARTLARI YÜKLE ---
+    // --- SOL RAF MİNİ 3D MODELLERİ TAM ORTALA VE ÇİZ ---
     function renderCostumeShelf() {
       const shelfList = document.getElementById('costumeShelfList');
       shelfList.innerHTML = '';
@@ -259,8 +236,8 @@
 
         card.innerHTML = `
           <div class="flex items-center gap-3">
-            <div class="w-14 h-14 rounded-lg bg-zinc-950 border border-zinc-800 overflow-hidden relative shrink-0">
-              <canvas id="${miniCanvasId}" class="w-full h-full"></canvas>
+            <div class="w-14 h-14 rounded-lg bg-zinc-950 border border-zinc-800 overflow-hidden relative shrink-0 flex items-center justify-center">
+              <canvas id="${miniCanvasId}" class="w-full h-full block"></canvas>
             </div>
             <div>
               <div class="font-bold text-xs text-zinc-200">${c.name}</div>
@@ -272,6 +249,7 @@
 
         card.onclick = () => {
           activeCostumeId = c.id;
+          drawDefaultSkinData();
           renderCostumeShelf();
         };
 
@@ -288,7 +266,7 @@
       mScene.background = new THREE.Color(0x0a0a0c);
 
       const mCam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      mCam.position.set(10, 10, 22);
+      mCam.position.set(0, 1.2, 22); // Tam merkeze hizalandı
 
       const mRen = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
       mRen.setSize(56, 56);
@@ -310,155 +288,55 @@
         return mesh;
       }
 
-      mGroup.add(createMiniPart(4, 4, 4, 0, 8, 0));   // Head
-      mGroup.add(createMiniPart(4, 6, 2, 0, 3, 0));   // Torso
-      mGroup.add(createMiniPart(2, 6, 2, -3, 3, 0));  // R-Arm
-      mGroup.add(createMiniPart(2, 6, 2, 3, 3, 0));   // L-Arm
-      mGroup.add(createMiniPart(2, 6, 2, -1, -3, 0)); // R-Leg
-      mGroup.add(createMiniPart(2, 6, 2, 1, -3, 0));  // L-Leg
+      // Tam Ortalanmış Uzuvlar
+      mGroup.add(createMiniPart(4, 4, 4, 0, 5, 0));    // Kafa
+      mGroup.add(createMiniPart(4, 6, 2, 0, 0, 0));    // Gövde
+      mGroup.add(createMiniPart(2, 6, 2, -3, 0, 0));   // Sol Kol
+      mGroup.add(createMiniPart(2, 6, 2, 3, 0, 0));    // Sağ Kol
+      mGroup.add(createMiniPart(2, 6, 2, -1, -6, 0));  // Sol Bacak
+      mGroup.add(createMiniPart(2, 6, 2, 1, -6, 0));   // Sağ Bacak
 
       mScene.add(mGroup);
       mini3DScenes.push({ scene: mScene, camera: mCam, renderer: mRen, group: mGroup });
     }
 
-    // --- YÜKLENEN 64x64 SKİN ŞABLONU ---
-    function loadDefaultUploadedSkin() {
+    // --- DOKU ÇİZİM VERİLERİ (C* TÜRK BAYRAĞI DAHİL) ---
+    function drawDefaultSkinData() {
       ctx.clearRect(0, 0, 64, 64);
 
-      const cHair = '#52341d';
-      const cFace = '#cba07a';
-      const cEyeW = '#ffffff';
-      const cEyeB = '#4b382a';
-      const cShirt = '#208ea3';
-      const cShirtDark = '#176979';
-      const cPants = '#3b3175';
-      const cPantsDark = '#2b2358';
-      const cRed = '#cc182b';
-      const cWhite = '#ffffff';
+      const cHair = '#52341d', cFace = '#cba07a', cEyeW = '#ffffff', cEyeB = '#4b382a';
+      const cShirt = '#208ea3', cShirtDark = '#176979', cPants = '#3b3175', cPantsDark = '#2b2358';
+      const cRed = '#cc182b', cWhite = '#ffffff';
 
-      // 1. HEAD (0,0 -> 32,16)
-      ctx.fillStyle = cHair;
-      ctx.fillRect(8, 0, 8, 8);
-      ctx.fillRect(16, 0, 8, 8);
-      ctx.fillRect(0, 8, 32, 8);
-
-      ctx.fillStyle = cFace;
-      ctx.fillRect(8, 10, 8, 6);
+      // Kafa
+      ctx.fillStyle = cHair; ctx.fillRect(8, 0, 8, 8); ctx.fillRect(16, 0, 8, 8); ctx.fillRect(0, 8, 32, 8);
+      ctx.fillStyle = cFace; ctx.fillRect(8, 10, 8, 6);
       ctx.fillStyle = cEyeW; ctx.fillRect(9, 13, 2, 1); ctx.fillRect(13, 13, 2, 1);
       ctx.fillStyle = cEyeB; ctx.fillRect(10, 13, 1, 1); ctx.fillRect(13, 13, 1, 1);
 
-      // 2. TORSO & TURKISH FLAG (16,16 -> 40,32)
-      ctx.fillStyle = cShirt;
-      ctx.fillRect(20, 16, 8, 4);
-      ctx.fillRect(28, 16, 8, 4);
-      ctx.fillRect(16, 20, 24, 12);
+      // Gövde & Türk Bayrağı
+      ctx.fillStyle = cShirt; ctx.fillRect(20, 16, 8, 4); ctx.fillRect(28, 16, 8, 4); ctx.fillRect(16, 20, 24, 12);
+      ctx.fillStyle = cRed; ctx.fillRect(32, 20, 8, 12);
+      ctx.fillStyle = cWhite; ctx.fillRect(34, 23, 3, 5);
+      ctx.fillStyle = cRed; ctx.fillRect(35, 24, 2, 3);
+      ctx.fillStyle = cWhite; ctx.fillRect(37, 25, 1, 1);
 
-      ctx.fillStyle = cRed;
-      ctx.fillRect(32, 20, 8, 12);
-      ctx.fillStyle = cWhite;
-      ctx.fillRect(34, 23, 3, 5);
-      ctx.fillStyle = cRed;
-      ctx.fillRect(35, 24, 2, 3);
-      ctx.fillStyle = cWhite;
-      ctx.fillRect(37, 25, 1, 1);
+      // Kollar & Bacaklar
+      ctx.fillStyle = cShirtDark; ctx.fillRect(44, 16, 4, 4); ctx.fillRect(48, 16, 4, 4); ctx.fillRect(40, 20, 16, 4);
+      ctx.fillStyle = cFace; ctx.fillRect(40, 24, 16, 8);
+      ctx.fillStyle = cPantsDark; ctx.fillRect(4, 16, 4, 4); ctx.fillRect(8, 16, 4, 4); ctx.fillRect(0, 20, 16, 12);
+      ctx.fillStyle = cPants; ctx.fillRect(20, 48, 4, 4); ctx.fillRect(24, 48, 4, 4); ctx.fillRect(16, 52, 16, 12);
+      ctx.fillStyle = cShirt; ctx.fillRect(36, 48, 4, 4); ctx.fillRect(40, 48, 4, 4); ctx.fillRect(32, 52, 16, 4);
+      ctx.fillStyle = cFace; ctx.fillRect(32, 56, 16, 8);
 
-      // 3. RIGHT ARM (40,16 -> 56,32)
-      ctx.fillStyle = cShirtDark;
-      ctx.fillRect(44, 16, 4, 4); ctx.fillRect(48, 16, 4, 4);
-      ctx.fillRect(40, 20, 16, 4);
-      ctx.fillStyle = cFace;
-      ctx.fillRect(40, 24, 16, 8);
-
-      // 4. RIGHT LEG (0,16 -> 16,32)
-      ctx.fillStyle = cPantsDark;
-      ctx.fillRect(4, 16, 4, 4); ctx.fillRect(8, 16, 4, 4);
-      ctx.fillRect(0, 20, 16, 12);
-
-      // 5. LEFT LEG (16,48 -> 32,64)
-      ctx.fillStyle = cPants;
-      ctx.fillRect(20, 48, 4, 4); ctx.fillRect(24, 48, 4, 4);
-      ctx.fillRect(16, 52, 16, 12);
-
-      // 6. LEFT ARM (32,48 -> 48,64)
-      ctx.fillStyle = cShirt;
-      ctx.fillRect(36, 48, 4, 4); ctx.fillRect(40, 48, 4, 4);
-      ctx.fillRect(32, 52, 16, 4);
-      ctx.fillStyle = cFace;
-      ctx.fillRect(32, 56, 16, 8);
-
-      updateGridOverlay();
-      if (typeof update3DTexture === 'function') update3DTexture();
-    }
-
-    function updateGridOverlay() {
-      gridCtx.clearRect(0, 0, 512, 512);
-      if (!showGrid) return;
-
-      const scale = 512 / 64;
-      gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-      gridCtx.lineWidth = 0.5;
-
-      for (let i = 0; i <= 64; i++) {
-        gridCtx.beginPath(); gridCtx.moveTo(i * scale, 0); gridCtx.lineTo(i * scale, 512); gridCtx.stroke();
-        gridCtx.beginPath(); gridCtx.moveTo(0, i * scale); gridCtx.lineTo(512, i * scale); gridCtx.stroke();
-      }
-
-      const regions = [
-        { x: 0, y: 0, w: 32, h: 16, color: '#f59e0b', label: 'KAFA' },
-        { x: 0, y: 16, w: 16, h: 16, color: '#a855f7', label: 'SAĞ BACAK' },
-        { x: 16, y: 16, w: 24, h: 16, color: '#3b82f6', label: 'GÖVDE / BAYRAK C*' },
-        { x: 40, y: 16, w: 16, h: 16, color: '#14b8a6', label: 'SAĞ KOL' },
-        { x: 16, y: 48, w: 16, h: 16, color: '#a855f7', label: 'SOL BACAK' },
-        { x: 32, y: 48, w: 16, h: 16, color: '#14b8a6', label: 'SOL KOL' }
-      ];
-
-      regions.forEach(r => {
-        gridCtx.strokeStyle = r.color;
-        gridCtx.lineWidth = 2;
-        gridCtx.strokeRect(r.x * scale, r.y * scale, r.w * scale, r.h * scale);
-        gridCtx.fillStyle = r.color;
-        gridCtx.font = 'bold 9px sans-serif';
-        gridCtx.fillText(r.label, r.x * scale + 4, r.y * scale + 12);
-      });
-    }
-
-    // --- CANVAS ÇİZİM İŞLEMLERİ ---
-    function getCanvasCoords(e) {
-      const rect = skinCanvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      const x = Math.floor((clientX - rect.left) / (rect.width / 64));
-      const y = Math.floor((clientY - rect.top) / (rect.height / 64));
-      return { x: Math.max(0, Math.min(63, x)), y: Math.max(0, Math.min(63, y)) };
-    }
-
-    function applyTool(x, y) {
-      if (currentTool === 'pencil') {
-        ctx.fillStyle = currentColor;
-        ctx.fillRect(x, y, 1, 1);
-      } else if (currentTool === 'eraser') {
-        ctx.clearRect(x, y, 1, 1);
-      } else if (currentTool === 'picker') {
-        const pixel = ctx.getImageData(x, y, 1, 1).data;
-        if (pixel[3] > 0) {
-          const hex = "#" + ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1);
-          currentColor = hex;
-          document.getElementById('primaryColor').value = hex;
-        }
-      }
       update3DTexture();
     }
 
-    skinCanvas.addEventListener('mousedown', (e) => { isDrawing = true; const c = getCanvasCoords(e); applyTool(c.x, c.y); });
-    skinCanvas.addEventListener('mousemove', (e) => { if (isDrawing) { const c = getCanvasCoords(e); applyTool(c.x, c.y); } });
-    window.addEventListener('mouseup', () => isDrawing = false);
-
-    // --- THREE.JS 3D VOXEL MODEL & WIREFRAME ---
-    let scene, camera, renderer, controls;
-    let skinTexture, characterGroup;
+    // --- THREE.JS MAIN 3D MODEL ---
+    let scene, camera, renderer, controls, skinTexture, characterGroup;
 
     function init3D() {
-      const container = document.getElementById('canvas3DContainer');
+      const container = document.getElementById('container3D');
       const canvas = document.getElementById('canvas3D');
 
       scene = new THREE.Scene();
@@ -475,8 +353,7 @@
       controls.enableDamping = true;
       controls.target.set(0, 16, 0);
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
-      scene.add(ambientLight);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.85));
 
       skinTexture = new THREE.CanvasTexture(skinCanvas);
       skinTexture.magFilter = THREE.NearestFilter;
@@ -502,34 +379,27 @@
         let index = 0;
         for (let i = 0; i < 6; i++) {
           const f = faces[i];
-          const u0 = f.u / tw;
-          const v0 = 1 - (f.v + f.h) / th;
-          const u1 = (f.u + f.w) / tw;
-          const v1 = 1 - f.v / th;
-
-          uvAttr.setXY(index, u0, v1);
-          uvAttr.setXY(index + 1, u1, v1);
-          uvAttr.setXY(index + 2, u0, v0);
-          uvAttr.setXY(index + 3, u1, v0);
+          const u0 = f.u / tw, v0 = 1 - (f.v + f.h) / th;
+          const u1 = (f.u + f.w) / tw, v1 = 1 - f.v / th;
+          uvAttr.setXY(index, u0, v1); uvAttr.setXY(index + 1, u1, v1);
+          uvAttr.setXY(index + 2, u0, v0); uvAttr.setXY(index + 3, u1, v0);
           index += 4;
         }
 
         const mesh = new THREE.Mesh(geometry, skinMaterial);
         mesh.position.set(x, y, z);
-
         const edges = new THREE.EdgesGeometry(geometry);
         const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 }));
         mesh.add(line);
-
         return mesh;
       }
 
-      characterGroup.add(createBoxPart(8, 8, 8, 0, 28, 0, 0, 0));      // Head
-      characterGroup.add(createBoxPart(8, 12, 4, 0, 18, 0, 16, 16));   // Torso
-      characterGroup.add(createBoxPart(4, 12, 4, -6, 18, 0, 40, 16));  // Right Arm
-      characterGroup.add(createBoxPart(4, 12, 4, 6, 18, 0, 32, 48));   // Left Arm
-      characterGroup.add(createBoxPart(4, 12, 4, -2, 6, 0, 0, 16));    // Right Leg
-      characterGroup.add(createBoxPart(4, 12, 4, 2, 6, 0, 16, 48));    // Left Leg
+      characterGroup.add(createBoxPart(8, 8, 8, 0, 28, 0, 0, 0));
+      characterGroup.add(createBoxPart(8, 12, 4, 0, 18, 0, 16, 16));
+      characterGroup.add(createBoxPart(4, 12, 4, -6, 18, 0, 40, 16));
+      characterGroup.add(createBoxPart(4, 12, 4, 6, 18, 0, 32, 48));
+      characterGroup.add(createBoxPart(4, 12, 4, -2, 6, 0, 0, 16));
+      characterGroup.add(createBoxPart(4, 12, 4, 2, 6, 0, 16, 48));
 
       scene.add(characterGroup);
 
@@ -538,7 +408,6 @@
         controls.update();
         renderer.render(scene, camera);
 
-        // Sol Raftaki Mini 3D Modellere Dönüş Hareketi Ver
         mini3DScenes.forEach(m => {
           if (m.group) m.group.rotation.y += 0.02;
           if (m.renderer && m.scene && m.camera) m.renderer.render(m.scene, m.camera);
@@ -551,103 +420,115 @@
       if (skinTexture) skinTexture.needsUpdate = true;
     }
 
-    // --- PANEL VE DÜĞME ETKİLEŞİMLERİ ---
-    const floatingPanel = document.getElementById('floatingPanel');
-    const toggleCornerPanelBtn = document.getElementById('toggleCornerPanelBtn');
-    const closePanelBtn = document.getElementById('closePanelBtn');
-    const panelChevron = document.getElementById('panelChevron');
-
-    function setPanelState(open) {
-      isPanelOpen = open;
-      if (isPanelOpen) {
-        floatingPanel.classList.remove('panel-closed');
-        panelChevron.style.transform = 'rotate(180deg)';
-      } else {
-        floatingPanel.classList.add('panel-closed');
-        panelChevron.style.transform = 'rotate(0deg)';
-      }
-    }
-
-    toggleCornerPanelBtn.addEventListener('click', () => setPanelState(!isPanelOpen));
-    closePanelBtn.addEventListener('click', () => setPanelState(false));
-
-    document.getElementById('toggleSleepBtn').addEventListener('click', () => {
-      isBedMode = !isBedMode;
-      const btnText = document.getElementById('sleepBtnText');
-      if (isBedMode) {
-        characterGroup.rotation.x = -Math.PI / 2;
-        characterGroup.position.set(0, 4, 0);
-        btnText.innerText = "Ayakta";
-      } else {
-        characterGroup.rotation.x = 0;
-        characterGroup.position.set(0, 0, 0);
-        btnText.innerText = "Yatak Modu";
-      }
-    });
-
-    document.querySelectorAll('.tool-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tool-btn').forEach(b => {
-          b.classList.remove('active', 'bg-blue-600', 'text-white');
-          b.classList.add('text-zinc-400');
-        });
-        btn.classList.add('active', 'bg-blue-600', 'text-white');
-        btn.classList.remove('text-zinc-400');
-        currentTool = btn.getAttribute('data-tool');
-      });
-    });
-
-    document.getElementById('addCostumeBtn').onclick = () => {
-      const newId = Date.now();
-      costumes.push({ id: newId, name: `Kostüm ${costumes.length + 1}`, color: "#f59e0b" });
-      activeCostumeId = newId;
-      renderCostumeShelf();
-    };
-
-    document.getElementById('primaryColor').addEventListener('input', (e) => currentColor = e.target.value);
-    document.getElementById('toggleGridBtn').addEventListener('click', () => { showGrid = !showGrid; updateGridOverlay(); });
-    document.getElementById('resetSkinBtn').addEventListener('click', () => { if (confirm('Sıfırlamak istediğinize emin misiniz?')) loadDefaultUploadedSkin(); });
-
-    function downloadSkin() {
-      const link = document.createElement('a');
-      link.download = 'skin_64x64.png';
-      link.href = skinCanvas.toDataURL('image/png');
-      link.click();
-    }
-
-    document.getElementById('downloadSkinBtn').addEventListener('click', downloadSkin);
-    document.getElementById('downloadSkinTopBtn').addEventListener('click', downloadSkin);
-
-    document.getElementById('downloadSnapshotBtn').addEventListener('click', () => {
-      renderer.render(scene, camera);
-      const link = document.createElement('a');
-      link.download = 'character_3d.png';
-      link.href = renderer.domElement.toDataURL('image/png');
-      link.click();
-    });
-
-    document.getElementById('uploadInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          ctx.clearRect(0, 0, 64, 64);
-          ctx.drawImage(img, 0, 0, 64, 64);
-          update3DTexture();
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
-    window.onload = function() {
-      loadDefaultUploadedSkin();
+    // --- PENCERE KAPATMA & MOD ETKİLEŞİMLERİ ---
+    document.addEventListener('DOMContentLoaded', () => {
       init3D();
+      drawDefaultSkinData();
       renderCostumeShelf();
-      setPanelState(true);
-    };
+
+      const shelfPanel = document.getElementById('shelfPanel');
+      const closeShelfBtn = document.getElementById('closeShelfBtn');
+      const openShelfBtn = document.getElementById('openShelfBtn');
+
+      closeShelfBtn.onclick = () => {
+        shelfPanel.style.transform = 'translateX(-100%)';
+        shelfPanel.style.marginLeft = '-20rem';
+        setTimeout(() => openShelfBtn.classList.remove('hidden'), 300);
+      };
+
+      openShelfBtn.onclick = () => {
+        shelfPanel.style.transform = 'translateX(0)';
+        shelfPanel.style.marginLeft = '0';
+        openShelfBtn.classList.add('hidden');
+      };
+
+      // Mod Butonları
+      const btnMode3D = document.getElementById('btnMode3D');
+      const btnMode2D = document.getElementById('btnMode2D');
+      const panel2D = document.getElementById('panel2D');
+      const container3D = document.getElementById('container3D');
+
+      btnMode3D.onclick = () => {
+        btnMode3D.className = "px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400 transition active:scale-95 flex items-center gap-1.5";
+        btnMode2D.className = "px-4 py-2 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold text-xs rounded-xl shadow-lg border border-zinc-700 transition active:scale-95 flex items-center gap-1.5";
+        panel2D.classList.add('hidden');
+        container3D.classList.remove('hidden');
+      };
+
+      btnMode2D.onclick = () => {
+        btnMode2D.className = "px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400 transition active:scale-95 flex items-center gap-1.5";
+        btnMode3D.className = "px-4 py-2 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold text-xs rounded-xl shadow-lg border border-zinc-700 transition active:scale-95 flex items-center gap-1.5";
+        container3D.classList.add('hidden');
+        panel2D.classList.remove('hidden');
+        panel2D.classList.add('flex');
+      };
+
+      // Eylem Butonları (Kullan, Düzenle, Sil)
+      const defaultActionBtns = document.getElementById('defaultActionBtns');
+      const editToolBar = document.getElementById('editToolBar');
+      const btnStartEdit = document.getElementById('btnStartEdit');
+      const btnSaveEdit = document.getElementById('btnSaveEdit');
+
+      btnStartEdit.onclick = () => {
+        isEditing = true;
+        defaultActionBtns.classList.add('hidden');
+        editToolBar.classList.remove('hidden');
+        btnMode2D.click();
+      };
+
+      btnSaveEdit.onclick = () => {
+        isEditing = false;
+        update3DTexture();
+        editToolBar.classList.add('hidden');
+        defaultActionBtns.classList.remove('hidden');
+        btnMode3D.click();
+        alert('Kostüm değişiklikleri kaydedildi!');
+      };
+
+      document.getElementById('btnUseCostume').onclick = () => {
+        update3DTexture();
+        alert('Kostüm başarıyla giydirildi!');
+      };
+
+      document.getElementById('btnDeleteCostume').onclick = () => {
+        if (costumes.length <= 1) return alert('En az bir kostüm olmalıdır!');
+        costumes = costumes.filter(c => c.id !== activeCostumeId);
+        activeCostumeId = costumes[0].id;
+        renderCostumeShelf();
+      };
+
+      document.getElementById('addCostumeBtn').onclick = () => {
+        const newId = Date.now();
+        costumes.push({ id: newId, name: `Kostüm ${costumes.length + 1}`, color: "#f59e0b" });
+        activeCostumeId = newId;
+        renderCostumeShelf();
+      };
+
+      // Dışa / İçeri Aktar
+      document.getElementById('btnExport2D').onclick = () => {
+        const a = document.createElement('a');
+        a.download = 'skin-texture-64x64.png';
+        a.href = skinCanvas.toDataURL('image/png');
+        a.click();
+      };
+
+      document.getElementById('importInput').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+              ctx.clearRect(0, 0, 64, 64);
+              ctx.drawImage(img, 0, 0, 64, 64);
+              update3DTexture();
+            };
+            img.src = event.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+    });
   </script>
 </body>
 </html>
