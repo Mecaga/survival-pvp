@@ -11,13 +11,17 @@
     <!-- OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
-        body { margin: 0; padding: 0; background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
+        body { margin: 0; padding: 0; background-color: #0b0f19; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
         .shelf-scroll::-webkit-scrollbar { width: 6px; }
         .shelf-scroll::-webkit-scrollbar-track { background: #1e293b; }
         .shelf-scroll::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
         canvas { touch-action: none; }
-        /* Smooth transitions for collapsible shelf */
-        .shelf-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .grid-overlay {
+            background-size: 8px 8px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+        }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col select-none">
@@ -25,23 +29,18 @@
     <!-- ÜST BAR / HEADER -->
     <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0">
         <div class="flex items-center gap-3">
-            <button id="btn-toggle-shelf" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-2 transition active:scale-95">
-                <span id="shelf-toggle-icon">◀</span> <span id="shelf-toggle-text">Rafı Gizle</span>
-            </button>
-            <div class="flex items-center gap-2">
-                <span class="text-xl">👕</span>
-                <h1 class="font-bold text-sm sm:text-base text-slate-100 tracking-wide">Minecraft Kostüm Stüdyosu</h1>
-            </div>
+            <span class="text-2xl">👕</span>
+            <h1 class="font-bold text-sm sm:text-base text-slate-100 tracking-wide">MC SKIN STUDIO</h1>
         </div>
         <div class="flex items-center gap-2">
-            <button id="btn-save-snapshot" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700 text-slate-200 transition active:scale-95 hidden sm:block">
-                📸 3D Resim
+            <button id="btn-save-snapshot" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs font-bold rounded-xl text-white transition active:scale-95 shadow-md">
+                📸 3D Poz İndir
             </button>
-            <button id="btn-download-texture" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700 text-slate-200 transition active:scale-95">
+            <button id="btn-download-texture" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold rounded-xl text-white transition active:scale-95 shadow-md">
                 💾 Doku İndir
             </button>
-            <label class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs font-semibold rounded-xl text-white cursor-pointer transition active:scale-95 shadow-md">
-                📂 Skin Yükle
+            <label class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-700 text-slate-200 cursor-pointer transition active:scale-95">
+                📂 Harici Skin Yükle
                 <input type="file" id="input-upload-skin" accept="image/png" class="hidden">
             </label>
         </div>
@@ -50,8 +49,8 @@
     <!-- BÖLÜNMÜŞ ANA EKRAN (SPLIT SCREEN) -->
     <main class="flex-1 flex overflow-hidden relative">
 
-        <!-- SOL TARAF: AÇILIR / KAPATILIR KOSTÜM RAFI -->
-        <section id="shelf-panel" class="w-80 sm:w-96 bg-slate-900/95 border-r border-slate-800 flex flex-col p-4 shrink-0 z-10 shelf-transition">
+        <!-- SOL TARAF: KOSTÜM RAFI (CANLI 3D MİNİ PREVIEW KARTLARI) -->
+        <section class="w-80 sm:w-96 bg-slate-900/95 border-r border-slate-800 flex flex-col p-4 shrink-0 z-10">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
                 <div class="flex items-center gap-2">
                     <span class="text-slate-400 text-xs">📦</span>
@@ -62,7 +61,7 @@
                 </button>
             </div>
 
-            <!-- KOSTÜM LİSTESİ (CANLI 3D ÖNİZLEMELİ KARTLAR) -->
+            <!-- KOSTÜM LİSTESİ -->
             <div id="costume-list" class="flex-1 overflow-y-auto shelf-scroll space-y-3 pr-1">
                 <!-- Dinamik Kartlar Eklenir -->
             </div>
@@ -74,17 +73,17 @@
             <!-- ÜST MOD DEĞİŞTİRME BUTONLARI -->
             <div class="absolute top-4 left-4 z-20 flex gap-2">
                 <button id="btn-mode-3d" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400 transition active:scale-95">
-                    🧊 3D İncele (360°)
+                    🧊 3D Panel (360°)
                 </button>
                 <button id="btn-mode-2d" class="px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs rounded-xl shadow-lg border border-slate-700 transition active:scale-95">
-                    ✏️ 2D Doku Düzenle
+                    ✏️ 2D Doku Şeması
                 </button>
-                <button id="btn-toggle-bed" class="px-3 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs rounded-xl shadow-lg border border-slate-700 transition active:scale-95">
+                <button id="btn-toggle-bed" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-lg transition active:scale-95">
                     🛏️ Yatak Modu
                 </button>
             </div>
 
-            <!-- ALT DÜZENLEME / EYLEM BAR BAR (KULLAN, DEĞİŞTİR, SİL) -->
+            <!-- ALT DÜZENLEME / EYLEM BAR (KULLAN, DEĞİŞTİR, SİL) -->
             <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 border border-slate-700 px-5 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md">
                 <button id="btn-use" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
                     ✓ Kullan
@@ -97,24 +96,28 @@
                 </button>
             </div>
 
-            <!-- VIEWPORT / VIEW CONTAINER -->
+            <!-- VIEWPORT CONTAINERS -->
             <div class="flex-1 flex w-full h-full relative">
                 
                 <!-- 2D ÇİZİM PANELİ -->
-                <div id="panel-2d" class="w-full md:w-1/2 h-full hidden flex-col items-center justify-center p-4 border-r border-slate-800 bg-slate-900/60 z-10 backdrop-blur-sm">
+                <div id="panel-2d" class="w-full md:w-1/2 h-full hidden flex-col items-center justify-center p-4 border-r border-slate-800 bg-slate-900/80 z-10 backdrop-blur-md">
                     <div class="mb-3 flex items-center gap-2 bg-slate-800 p-2 rounded-xl border border-slate-700 shadow-lg">
                         <input type="color" id="color-picker" value="#3b82f6" class="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent">
                         <button id="tool-pencil" class="px-3 py-1.5 bg-blue-600 text-white font-bold text-xs rounded-lg shadow transition">Kalem</button>
                         <button id="tool-eraser" class="px-3 py-1.5 bg-slate-700 text-slate-300 hover:bg-slate-600 font-bold text-xs rounded-lg transition">Silgi</button>
                         <button id="btn-save-2d" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow ml-2 transition active:scale-95">💾 Kaydet & Uygula</button>
                     </div>
-                    <div class="relative border-2 border-slate-700 rounded-xl overflow-hidden bg-black/60 shadow-2xl">
+                    <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black/80 shadow-2xl grid-overlay">
                         <canvas id="canvas-2d" width="512" height="512" class="cursor-crosshair"></canvas>
                     </div>
                 </div>
 
                 <!-- 3D CANLI MODEL VIEWPORT -->
-                <div id="container-3d" class="flex-1 h-full w-full relative"></div>
+                <div id="container-3d" class="flex-1 h-full w-full relative">
+                    <div class="absolute bottom-3 left-4 text-[11px] text-slate-400 bg-black/40 px-3 py-1 rounded-lg pointer-events-none backdrop-blur-sm z-10">
+                        Sol tık: Döndür | Sağ tık: Kaydır | Tekerlek: Yakınlaş
+                    </div>
+                </div>
             </div>
 
         </section>
@@ -127,10 +130,9 @@
         let activeCostumeId = 1;
         let isSleeping = false;
         let currentTool = 'pencil';
-        let activeMode = '3d';
-        let isShelfOpen = true;
+        let miniScenes = [];
 
-        // 64x64 Doku Çizim Tuvali
+        // 64x64 Standart UV Haritası Tuvali
         const offCanvas = document.createElement('canvas');
         offCanvas.width = 64; offCanvas.height = 64;
         const offCtx = offCanvas.getContext('2d');
@@ -152,14 +154,14 @@
             offCtx.fillStyle = baseColor;
             offCtx.fillRect(0, 0, 64, 64);
 
-            // Baş / Yüz
+            // Kafa / Yüz
             offCtx.fillStyle = '#ffdbac';
             offCtx.fillRect(8, 8, 8, 8);
             offCtx.fillStyle = '#1e293b';
             offCtx.fillRect(10, 11, 1, 1);
             offCtx.fillRect(13, 11, 1, 1);
 
-            // Gövde Türk Bayrağı Detayı
+            // Gövde Desen/Bayrak Detayı
             offCtx.fillStyle = '#dc2626';
             offCtx.fillRect(20, 20, 8, 12);
             offCtx.fillStyle = '#ffffff';
@@ -173,8 +175,8 @@
             displayCtx.imageSmoothingEnabled = false;
             displayCtx.drawImage(offCanvas, 0, 0, 512, 512);
 
-            // Piksel Izgara Çizgileri
-            displayCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            // Izgara Çizgileri
+            displayCtx.strokeStyle = 'rgba(0, 255, 255, 0.12)';
             displayCtx.lineWidth = 1;
             for (let i = 0; i <= 512; i += 8) {
                 displayCtx.beginPath(); displayCtx.moveTo(i, 0); displayCtx.lineTo(i, 512); displayCtx.stroke();
@@ -188,11 +190,11 @@
             }
         }
 
-        // --- THREE.JS 3D STÜDYO ---
+        // --- THREE.JS 3D MAIN STUDIO ---
         function init3D() {
             const container = document.getElementById('container-3d');
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0f172a);
+            scene.background = new THREE.Color(0x0b0f19);
 
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
             camera.position.set(0, 1.2, 4.5);
@@ -222,7 +224,7 @@
                 metalness: 0.1
             });
 
-            // Minecraft Steve Modeli
+            // Minecraft Steve Modeli + Turkuaz Kenar Çizgileri (EdgesGeometry)
             characterGroup = new THREE.Group();
 
             function createPart(w, h, d, x, y, z) {
@@ -230,8 +232,9 @@
                 const mesh = new THREE.Mesh(geo, textureMaterial);
                 mesh.position.set(x, y, z);
                 
+                // Belirgin Turkuaz Voxel Çizgileri
                 const edges = new THREE.EdgesGeometry(geo);
-                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 1 }));
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 }));
                 mesh.add(line);
                 return mesh;
             }
@@ -252,36 +255,81 @@
             requestAnimationFrame(animate);
             if (controls) controls.update();
             if (renderer && scene && camera) renderer.render(scene, camera);
+
+            // Sol Raftaki Canlı 3D Mini Önizlemeleri Döndür
+            miniScenes.forEach(m => {
+                if (m.group) m.group.rotation.y += 0.02;
+                if (m.renderer && m.scene && m.camera) m.renderer.render(m.scene, m.camera);
+            });
         }
 
-        // --- KOSTÜM RAFI YÖNETİMİ ---
+        // --- SOL KOSTÜM RAFI YÖNETİMİ & MİNİ 3D CANVASES ---
         function renderCostumeList() {
             const listEl = document.getElementById('costume-list');
             listEl.innerHTML = '';
+            miniScenes = [];
 
             costumes.forEach(c => {
                 const isActive = c.id === activeCostumeId;
                 const card = document.createElement('div');
-                card.className = `p-3.5 rounded-2xl border cursor-pointer transition flex items-center justify-between shadow-md ${
-                    isActive ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/60 border-slate-700/70 hover:bg-slate-800'
+                card.className = `p-3 rounded-2xl border cursor-pointer transition flex items-center justify-between shadow-md ${
+                    isActive ? 'bg-blue-600/20 border-blue-500 ring-2 ring-blue-500/50' : 'bg-slate-800/60 border-slate-700/70 hover:bg-slate-800'
                 }`;
+
+                const miniCanvasId = `mini-canvas-${c.id}`;
 
                 card.innerHTML = `
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-inner" style="background-color: ${c.color}">
-                            👕
+                        <div class="w-14 h-14 rounded-xl bg-slate-950 border border-slate-700 overflow-hidden relative">
+                            <canvas id="${miniCanvasId}" class="w-full h-full"></canvas>
                         </div>
                         <div>
                             <div class="font-bold text-xs text-slate-200">${c.name}</div>
                             <div class="text-[10px] text-slate-400">ID: #${c.id}</div>
                         </div>
                     </div>
-                    ${isActive ? '<span class="text-xs text-emerald-400 font-bold bg-emerald-950/80 px-2 py-1 rounded-lg border border-emerald-800">Aktif</span>' : ''}
+                    ${isActive ? '<span class="text-[10px] text-emerald-400 font-bold bg-emerald-950/80 px-2 py-1 rounded-lg border border-emerald-800">Aktif</span>' : ''}
                 `;
 
                 card.onclick = () => selectCostume(c.id);
                 listEl.appendChild(card);
+
+                // Canlı 3D Mini Sahne Başlat
+                setTimeout(() => initMini3D(miniCanvasId, c.color), 10);
             });
+        }
+
+        function initMini3D(canvasId, hexColor) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const mScene = new THREE.Scene();
+            mScene.background = new THREE.Color(0x090d16);
+
+            const mCam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+            mCam.position.set(0, 0.5, 3.2);
+
+            const mRen = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            mRen.setSize(56, 56);
+
+            const mLight = new THREE.DirectionalLight(0xffffff, 1);
+            mLight.position.set(2, 3, 2);
+            mScene.add(mLight);
+            mScene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+            const mGroup = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: hexColor, roughness: 0.5 });
+            const geo = new THREE.BoxGeometry(0.7, 1.4, 0.4);
+            const mesh = new THREE.Mesh(geo, mat);
+
+            const edges = new THREE.EdgesGeometry(geo);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff }));
+            mesh.add(line);
+
+            mGroup.add(mesh);
+            mScene.add(mGroup);
+
+            miniScenes.push({ scene: mScene, camera: mCam, renderer: mRen, group: mGroup });
         }
 
         function selectCostume(id) {
@@ -293,39 +341,18 @@
             renderCostumeList();
         }
 
-        // --- PENCERE AÇMA / KAPATMA & OLAY DİNLEYİCİLER ---
+        // --- ARAYÜZ VE OLAY DİNLEYİCİLERİ ---
         document.addEventListener('DOMContentLoaded', () => {
             init3D();
             createBaseTexture('#ef4444');
             renderCostumeList();
 
-            // RAF AÇMA / KAPAMA BUTONU
-            const btnToggleShelf = document.getElementById('btn-toggle-shelf');
-            const shelfPanel = document.getElementById('shelf-panel');
-            const shelfIcon = document.getElementById('shelf-toggle-icon');
-            const shelfText = document.getElementById('shelf-toggle-text');
-
-            btnToggleShelf.onclick = () => {
-                isShelfOpen = !isShelfOpen;
-                if (isShelfOpen) {
-                    shelfPanel.classList.remove('-ml-80', 'sm:-ml-96');
-                    shelfIcon.innerText = '◀';
-                    shelfText.innerText = 'Rafı Gizle';
-                } else {
-                    shelfPanel.classList.add('-ml-80', 'sm:-ml-96');
-                    shelfIcon.innerText = '▶';
-                    shelfText.innerText = 'Kostüm Rafını Aç';
-                }
-                setTimeout(onWindowResize, 300);
-            };
-
-            // Mod Butonları
+            // Mod Değiştirme
             const btn3D = document.getElementById('btn-mode-3d');
             const btn2D = document.getElementById('btn-mode-2d');
             const panel2D = document.getElementById('panel-2d');
 
             btn3D.onclick = () => {
-                activeMode = '3d';
                 btn3D.className = "px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400 transition active:scale-95";
                 btn2D.className = "px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs rounded-xl shadow-lg border border-slate-700 transition active:scale-95";
                 panel2D.classList.add('hidden');
@@ -333,7 +360,6 @@
             };
 
             btn2D.onclick = () => {
-                activeMode = '2d';
                 btn2D.className = "px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400 transition active:scale-95";
                 btn3D.className = "px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs rounded-xl shadow-lg border border-slate-700 transition active:scale-95";
                 panel2D.classList.remove('hidden');
@@ -361,7 +387,7 @@
 
             document.getElementById('btn-use').onclick = () => {
                 update3DTexture();
-                alert('Kostüm başarıyla uygulandı!');
+                alert('Kostüm başarıyla giydirildi!');
             };
 
             document.getElementById('btn-edit').onclick = () => btn2D.click();
@@ -411,7 +437,7 @@
             document.getElementById('btn-save-snapshot').onclick = () => {
                 renderer.render(scene, camera);
                 const a = document.createElement('a');
-                a.download = 'minecraft-costume-3d.png';
+                a.download = 'minecraft-3d-pose.png';
                 a.href = renderer.domElement.toDataURL('image/png');
                 a.click();
             };
