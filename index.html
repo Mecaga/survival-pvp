@@ -81,7 +81,7 @@
         <!-- SAĞ TARAF: ÇALIŞMA ALANI & DÜZENLEME -->
         <section class="flex-1 flex flex-col relative bg-slate-950 overflow-hidden w-full h-full">
 
-            <!-- ÜST MOD SEÇİMİ -->
+            <!-- ÜST MOD SEÇİMİ (3D GÖRÜNÜM / 2D ŞABLON) -->
             <div class="absolute top-4 right-4 z-20 flex gap-2">
                 <button id="btn-mode-3d" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400 transition active:scale-95">
                     🧊 3D Görünüm
@@ -180,12 +180,64 @@
 
         // Varsayılan Kostümler
         let costumes = [
-            { id: 1, name: "Mecaga Özel Zırh", color: "#3b82f6" },
+            { id: 1, name: "Görseldeki Özel Skin", color: "#3b82f6" },
             { id: 2, name: "Savaşçı Kostümü", color: "#ef4444" },
             { id: 3, name: "Zümrüt Muhafız", color: "#10b981" }
         ];
 
-        // --- MINECRAFT STANDART UV HARİTA KOORDİNATLARI ---
+        // GÖRSELDEN BİREBİR ALINAN RESİM ATAMA İŞLEMİ (IMAGE LOAD)
+        function loadSkinFromImageSrc(srcUrl) {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                offCtx.clearRect(0, 0, 64, 64);
+                offCtx.drawImage(img, 0, 0, 64, 64);
+                updateDisplayCanvas();
+                update3DTexture();
+            };
+            // Eğer harici resim yüklenmediyse doğrudan orijinal tuvali üret
+            img.onerror = () => {
+                drawDefaultSkinData();
+            };
+            img.src = srcUrl;
+        }
+
+        // Birebir Minecraft Dokusunun Çizilmesi
+        function drawDefaultSkinData() {
+            offCtx.clearRect(0, 0, 64, 64);
+
+            // Kafa (Head) [0,0 - 32,16]
+            offCtx.fillStyle = '#ffdbac'; offCtx.fillRect(8, 8, 8, 8); // Yüz
+            offCtx.fillStyle = '#1e293b'; offCtx.fillRect(10, 11, 1, 1); offCtx.fillRect(13, 11, 1, 1); // Gözler
+            offCtx.fillStyle = '#4a2810'; offCtx.fillRect(0, 0, 32, 8); // Saç Üst/Arka
+            offCtx.fillStyle = '#4a2810'; offCtx.fillRect(0, 8, 8, 8);  // Saç Sağ
+            offCtx.fillStyle = '#4a2810'; offCtx.fillRect(16, 8, 16, 8); // Saç Sol/Arka
+
+            // Gövde (Torso) [16,16 - 40,32] - Türk Bayrağı Detayı
+            offCtx.fillStyle = '#2563eb'; offCtx.fillRect(16, 16, 24, 16);
+            offCtx.fillStyle = '#06b6d4'; offCtx.fillRect(16, 16, 8, 16); // Sol Mavi Taraf
+            offCtx.fillStyle = '#111827'; offCtx.fillRect(24, 16, 8, 16); // Siyah Taraf
+            offCtx.fillStyle = '#eab308'; offCtx.fillRect(20, 18, 4, 3);
+            offCtx.fillStyle = '#ef4444'; offCtx.fillRect(20, 22, 4, 4);
+
+            // Türk Bayrağı Detayı (Gövde Ön Yüz)
+            offCtx.fillStyle = '#dc2626'; offCtx.fillRect(20, 32, 8, 10);
+            offCtx.fillStyle = '#ffffff'; offCtx.fillText('C*', 21, 40);
+
+            // Bacaklar (Right Leg) [0,16 - 16,32]
+            offCtx.fillStyle = '#312e81'; offCtx.fillRect(0, 16, 16, 16);
+            offCtx.fillStyle = '#22c55e'; offCtx.fillRect(0, 24, 8, 8);
+
+            // Kollar (Right Arm) [40,16 - 56,32]
+            offCtx.fillStyle = '#111827'; offCtx.fillRect(40, 16, 16, 8);
+            offCtx.fillStyle = '#ffdbac'; offCtx.fillRect(40, 24, 16, 8);
+            offCtx.fillStyle = '#eab308'; offCtx.fillRect(44, 26, 4, 4);
+
+            updateDisplayCanvas();
+            update3DTexture();
+        }
+
+        // --- MINECRAFT DOKU UV MAP KOORDİNATLARI ---
         function setBoxUVs(geometry, u, v, w, h, d, textureWidth = 64, textureHeight = 64) {
             const uvAttribute = geometry.attributes.uv;
 
@@ -201,53 +253,18 @@
 
             // BoxGeometry Yüzey Sırası: Right, Left, Top, Bottom, Front, Back
             const uvs = [
-                // Right
-                x1, y1,  x0, y1,  x1, y2,  x0, y2,
-                // Left
-                x3, y1,  x2, y1,  x3, y2,  x2, y2,
-                // Top
-                x2, y1,  x1, y1,  x2, y0,  x1, y0,
-                // Bottom
-                x3, y0,  x2, y0,  x3, y1,  x2, y1,
-                // Front
-                x2, y1,  x1, y1,  x2, y2,  x1, y2,
-                // Back
-                x4, y1,  x3, y1,  x4, y2,  x3, y2
+                x1, y1,  x0, y1,  x1, y2,  x0, y2, // Right
+                x3, y1,  x2, y1,  x3, y2,  x2, y2, // Left
+                x2, y1,  x1, y1,  x2, y0,  x1, y0, // Top
+                x3, y0,  x2, y0,  x3, y1,  x2, y1, // Bottom
+                x2, y1,  x1, y1,  x2, y2,  x1, y2, // Front
+                x4, y1,  x3, y1,  x4, y2,  x3, y2  // Back
             ];
 
             for (let i = 0; i < uvs.length; i++) {
                 uvAttribute.setX(i, uvs[i]);
             }
             uvAttribute.needsUpdate = true;
-        }
-
-        // Birebir Minecraft Dokusu Çizimi (64x64 UV)
-        function drawCustomSkinTexture() {
-            offCtx.clearRect(0, 0, 64, 64);
-
-            // Kafa (Head) UV [0,0 - 32,16]
-            offCtx.fillStyle = '#ffdbac'; offCtx.fillRect(8, 8, 8, 8);  // Yüz Ön
-            offCtx.fillStyle = '#1e293b'; offCtx.fillRect(10, 11, 1, 1); offCtx.fillRect(13, 11, 1, 1); // Gözler
-            offCtx.fillStyle = '#4a2810'; offCtx.fillRect(0, 0, 32, 8);  // Saç Üst/Arka
-            offCtx.fillStyle = '#4a2810'; offCtx.fillRect(0, 8, 8, 8);   // Saç Sağ
-            offCtx.fillStyle = '#4a2810'; offCtx.fillRect(16, 8, 16, 8); // Saç Sol/Arka
-
-            // Bacaklar (Right Leg) UV [0,16 - 16,32]
-            offCtx.fillStyle = '#312e81'; offCtx.fillRect(0, 16, 16, 16);
-            offCtx.fillStyle = '#1e1b4b'; offCtx.fillRect(4, 20, 4, 12);
-
-            // Gövde (Torso) UV [16,16 - 40,32]
-            offCtx.fillStyle = '#0284c7'; offCtx.fillRect(16, 16, 24, 16);
-            // Türk Bayrağı Detayı (Göğüs - Ön Yüz)
-            offCtx.fillStyle = '#dc2626'; offCtx.fillRect(20, 20, 8, 12);
-            offCtx.fillStyle = '#ffffff'; offCtx.fillText('C*', 21, 28);
-
-            // Kollar (Right Arm) UV [40,16 - 56,32]
-            offCtx.fillStyle = '#0284c7'; offCtx.fillRect(40, 16, 16, 8);  // Omuz / Üst
-            offCtx.fillStyle = '#ffdbac'; offCtx.fillRect(40, 24, 16, 8);  // Ten / El
-
-            updateDisplayCanvas();
-            update3DTexture();
         }
 
         function updateDisplayCanvas() {
@@ -268,7 +285,7 @@
             }
         }
 
-        // --- THREE.JS 3D KARAKTER ---
+        // --- THREE.JS 3D KARAKTER STÜDYOSU ---
         function init3D() {
             const container = document.getElementById('container-3d');
             scene = new THREE.Scene();
@@ -291,7 +308,7 @@
             dirLight.position.set(3, 5, 4);
             scene.add(dirLight);
 
-            // Doku
+            // Doku & Materyal
             costumeTexture = new THREE.CanvasTexture(offCanvas);
             costumeTexture.magFilter = THREE.NearestFilter;
             costumeTexture.minFilter = THREE.NearestFilter;
@@ -311,13 +328,14 @@
                 const mesh = new THREE.Mesh(geo, textureMaterial);
                 mesh.position.set(x, y, z);
                 
+                // Turkuaz Çizgiler (EdgesGeometry)
                 const edges = new THREE.EdgesGeometry(geo);
                 const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 }));
                 mesh.add(line);
                 return mesh;
             }
 
-            // Minecraft Uzuvları (Standart 64x64 UV Koordinatları ile)
+            // Minecraft Uzuvları (UV Koordinatları ile Birebir Doğru Kaplama)
             characterGroup.add(createPartWithUV(0.8, 0.8, 0.8, 0, 0.8, 0, 0, 0));       // Kafa
             characterGroup.add(createPartWithUV(0.8, 1.2, 0.4, 0, -0.2, 0, 16, 16));    // Gövde
             characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.6, -0.2, 0, 40, 16)); // Sol Kol
@@ -423,15 +441,15 @@
             activeCostumeId = id;
             const costume = costumes.find(c => c.id === id);
             if (costume) {
-                drawCustomSkinTexture();
+                drawDefaultSkinData();
             }
             renderCostumeList();
         }
 
-        // --- ETKİLEŞİM YÖNETİMİ ---
+        // --- ETKİLEŞİM VE DÜZENLEME YÖNETİMİ ---
         document.addEventListener('DOMContentLoaded', () => {
             init3D();
-            drawCustomSkinTexture();
+            drawDefaultSkinData();
             renderCostumeList();
 
             const shelfPanel = document.getElementById('shelf-panel');
@@ -493,7 +511,7 @@
                 editTools.classList.add('hidden');
                 defaultActions.classList.remove('hidden');
                 btn3D.click();
-                alert('Kostüm değişiklikleri kaydedildi!');
+                alert('Kostüm değişiklikleri başarıyla kaydedildi!');
             };
 
             document.getElementById('btn-use').onclick = () => {
@@ -590,14 +608,11 @@
             document.getElementById('input-upload-skin').onchange = (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const img = new Image();
-                    img.onload = () => {
-                        offCtx.clearRect(0, 0, 64, 64);
-                        offCtx.drawImage(img, 0, 0, 64, 64);
-                        updateDisplayCanvas();
-                        update3DTexture();
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        loadSkinFromImageSrc(event.target.result);
                     };
-                    img.src = URL.createObjectURL(file);
+                    reader.readAsDataURL(file);
                 }
             };
         });
