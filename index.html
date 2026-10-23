@@ -67,7 +67,7 @@
       overflow: hidden;
     }
 
-    /* Sağ Üst 3D Panel Çekmece (İlk Açılışta Kapalı) */
+    /* Sağ Üst 3D Panel Çekmece */
     #floatingPanel {
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
     }
@@ -161,11 +161,11 @@
           </div>
         </div>
 
-        <!-- 2D KOSTÜM DOKU ŞABLONU (RENKLİ ŞEFFAF BÖLGE REHBERLERİ İLE) -->
+        <!-- 2D KOSTÜM DOKU ŞABLONU -->
         <div id="panel2D" class="w-full h-full flex-1 hidden flex-col items-center justify-center p-4 bg-[#0f0f12]/95 z-10 backdrop-blur">
           <div class="text-xs text-zinc-400 mb-2 font-semibold">2D Kostüm Şablonu (Bölge Sınır Rehberli)</div>
           <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black shadow-2xl">
-            <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[480px] md:h-[480px] cursor-crosshair rounded"></canvas>
+            <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[480px] md:h-[480px] cursor-default rounded"></canvas>
             <canvas id="gridCanvas" width="512" height="512" class="absolute top-0 left-0 pointer-events-none w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[480px] md:h-[480px]"></canvas>
           </div>
         </div>
@@ -195,56 +195,21 @@
         </div>
       </aside>
 
-      <!-- ALT ANA EYLEM PANELİ -->
+      <!-- ALT SADELEŞTİRİLMİŞ EYLEM PANELİ (KULLAN, SİL, DIŞA/İÇERİ AKTAR) -->
       <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-zinc-900/95 border border-zinc-700/80 px-5 py-2.5 rounded-2xl shadow-2xl flex flex-col items-center gap-2 backdrop-blur">
         
-        <!-- VARSAYILAN KONTROL BUTONLARI -->
-        <div id="defaultActionBtns" class="flex items-center gap-3">
+        <!-- ÜST SIRASI: KULLAN & SİL -->
+        <div class="flex items-center gap-3">
           <button id="btnUseCostume" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95 flex items-center gap-1.5">
             <i data-lucide="check" class="w-4 h-4"></i> Kullan
           </button>
           
-          <button id="btnStartEdit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95 flex items-center gap-1.5">
-            <i data-lucide="pencil" class="w-4 h-4"></i> Düzenle
-          </button>
-          
-          <button id="btnDeleteCostume" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95 flex items-center gap-1.5">
+          <button id="btnDeleteCostume" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95 flex items-center gap-1.5">
             <i data-lucide="trash-2" class="w-4 h-4"></i> Sil
           </button>
         </div>
 
-        <!-- DÜZENLEME MODU ARAÇLARI -->
-        <div id="editToolBar" class="hidden flex items-center gap-2.5 border-b border-zinc-800 pb-2 mb-1 flex-wrap justify-center">
-          <input type="color" id="primaryColor" value="#208ea3" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent">
-          
-          <select id="brushSizeSelect" class="bg-zinc-800 text-zinc-200 text-xs px-2 py-1.5 rounded-lg border border-zinc-700 font-semibold focus:outline-none">
-            <option value="1">1 px</option>
-            <option value="2">2 px</option>
-            <option value="3">3 px</option>
-            <option value="4">4 px</option>
-            <option value="6">6 px</option>
-            <option value="8">8 px</option>
-            <option value="10">10 px</option>
-          </select>
-
-          <button id="toolPencil" class="px-2.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow flex items-center gap-1">
-            <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Kalem
-          </button>
-          
-          <button id="toolEraser" class="px-2.5 py-1.5 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 text-xs font-bold rounded-lg transition flex items-center gap-1">
-            <i data-lucide="eraser" class="w-3.5 h-3.5"></i> Silgi
-          </button>
-
-          <button id="toolPicker" class="px-2.5 py-1.5 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 text-xs font-bold rounded-lg transition flex items-center gap-1">
-            <i data-lucide="pipette" class="w-3.5 h-3.5"></i> Damlalık
-          </button>
-
-          <button id="btnSaveEdit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95 flex items-center gap-1.5">
-            <i data-lucide="save" class="w-4 h-4"></i> Kaydet
-          </button>
-        </div>
-
-        <!-- EN ALT: DIŞA AKTAR / İÇERİ AKTAR -->
+        <!-- ALT SIRASI: DIŞA AKTAR & İÇERİ AKTAR -->
         <div class="flex items-center gap-3 pt-1 border-t border-zinc-800/80 w-full justify-center">
           <button id="btnExport2D" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium rounded-xl border border-zinc-700 transition active:scale-95 flex items-center gap-1.5">
             <i data-lucide="download" class="w-3.5 h-3.5 text-green-400"></i> Dışa Aktar (2D Doku)
@@ -271,10 +236,6 @@
     const gridCanvas = document.getElementById('gridCanvas');
     const gridCtx = gridCanvas.getContext('2d');
 
-    let currentTool = 'pencil';
-    let currentColor = '#208ea3';
-    let isDrawing = false;
-    let isEditing = false;
     let isPanelOpen = false;
     let activeCostumeId = 1;
     let mini3DScenes = [];
@@ -341,13 +302,6 @@
       updateGridOverlay();
     }
 
-    function saveEditorToActiveCanvas() {
-      const activeC = getActiveCostume();
-      const tCtx = activeC.canvas.getContext('2d', { willReadFrequently: true });
-      tCtx.clearRect(0, 0, 64, 64);
-      tCtx.drawImage(skinCanvas, 0, 0);
-    }
-
     function setBoxUVs(geometry, u, v, w, h, d, textureWidth = 64, textureHeight = 64) {
       const uvAttribute = geometry.attributes.uv;
       const faces = [
@@ -374,19 +328,17 @@
       uvAttribute.needsUpdate = true;
     }
 
-    // --- 2D ŞABLON ÜZERİNDE BÖLGE REHBERLERİ VE RENKLİ HAFİF ARKA PLANLAR ---
     function updateGridOverlay() {
       gridCtx.clearRect(0, 0, 512, 512);
       const scale = 512 / 64;
 
-      // Yarı şeffaf renkli bölge kılavuzları (Hangi alanın neresi olduğunu karıştırmamak için)
       const tints = [
-        { x: 0, y: 0, w: 32, h: 16, color: 'rgba(245, 158, 11, 0.12)' },  // Kafa (Turuncu)
-        { x: 0, y: 16, w: 16, h: 16, color: 'rgba(168, 85, 247, 0.12)' }, // Sağ Bacak (Mor)
-        { x: 16, y: 16, w: 24, h: 16, color: 'rgba(59, 130, 246, 0.12)' }, // Gövde (Mavi)
-        { x: 40, y: 16, w: 16, h: 16, color: 'rgba(20, 184, 166, 0.12)' }, // Sağ Kol (Yeşil)
-        { x: 16, y: 48, w: 16, h: 16, color: 'rgba(168, 85, 247, 0.12)' }, // Sol Bacak (Mor)
-        { x: 32, y: 48, w: 16, h: 16, color: 'rgba(20, 184, 166, 0.12)' }  // Sol Kol (Yeşil)
+        { x: 0, y: 0, w: 32, h: 16, color: 'rgba(245, 158, 11, 0.12)' },
+        { x: 0, y: 16, w: 16, h: 16, color: 'rgba(168, 85, 247, 0.12)' },
+        { x: 16, y: 16, w: 24, h: 16, color: 'rgba(59, 130, 246, 0.12)' },
+        { x: 40, y: 16, w: 16, h: 16, color: 'rgba(20, 184, 166, 0.12)' },
+        { x: 16, y: 48, w: 16, h: 16, color: 'rgba(168, 85, 247, 0.12)' },
+        { x: 32, y: 48, w: 16, h: 16, color: 'rgba(20, 184, 166, 0.12)' }
       ];
 
       tints.forEach(t => {
@@ -394,7 +346,6 @@
         gridCtx.fillRect(t.x * scale, t.y * scale, t.w * scale, t.h * scale);
       });
 
-      // Pixel Grid Çizgileri
       gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       gridCtx.lineWidth = 0.5;
 
@@ -403,7 +354,6 @@
         gridCtx.beginPath(); gridCtx.moveTo(0, i * scale); gridCtx.lineTo(512, i * scale); gridCtx.stroke();
       }
 
-      // Bölge Sınır Çizgileri ve Etiketler
       const regions = [
         { x: 0, y: 0, w: 32, h: 16, color: '#f59e0b', label: 'KAFA' },
         { x: 0, y: 16, w: 16, h: 16, color: '#a855f7', label: 'SAĞ BACAK' },
@@ -587,7 +537,7 @@
     }
     window.addEventListener('resize', onWindowResize);
 
-    // --- ETKİLEŞİMLER VE ÇİZİM ---
+    // --- ETKİLEŞİMLER ---
     document.addEventListener('DOMContentLoaded', () => {
       init3D();
       syncActiveCanvasToEditor();
@@ -657,77 +607,8 @@
         onWindowResize();
       };
 
-      // Çizim Olayları
-      function getCanvasCoords(e) {
-        const rect = skinCanvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const x = Math.floor((clientX - rect.left) / (rect.width / 64));
-        const y = Math.floor((clientY - rect.top) / (rect.height / 64));
-        return { x: Math.max(0, Math.min(63, x)), y: Math.max(0, Math.min(63, y)) };
-      }
-
-      function applyTool(x, y) {
-        if (!isEditing) return;
-        const brushSize = parseInt(document.getElementById('brushSizeSelect').value) || 1;
-
-        if (currentTool === 'pencil') {
-          ctx.fillStyle = currentColor;
-          ctx.fillRect(x, y, brushSize, brushSize);
-        } else if (currentTool === 'eraser') {
-          ctx.clearRect(x, y, brushSize, brushSize);
-        } else if (currentTool === 'picker') {
-          const pixel = ctx.getImageData(x, y, 1, 1).data;
-          if (pixel[3] > 0) {
-            const hex = "#" + ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1);
-            currentColor = hex;
-            document.getElementById('primaryColor').value = hex;
-          }
-        }
-        saveEditorToActiveCanvas();
-        update3DTexture();
-      }
-
-      skinCanvas.addEventListener('mousedown', (e) => { isDrawing = true; const c = getCanvasCoords(e); applyTool(c.x, c.y); });
-      skinCanvas.addEventListener('mousemove', (e) => { if (isDrawing) { const c = getCanvasCoords(e); applyTool(c.x, c.y); } });
-      window.addEventListener('mouseup', () => isDrawing = false);
-
-      skinCanvas.addEventListener('touchstart', (e) => { isDrawing = true; const c = getCanvasCoords(e); applyTool(c.x, c.y); }, { passive: true });
-      skinCanvas.addEventListener('touchmove', (e) => { if (isDrawing) { const c = getCanvasCoords(e); applyTool(c.x, c.y); } }, { passive: true });
-      window.addEventListener('touchend', () => isDrawing = false);
-
-      document.getElementById('toolPencil').onclick = () => currentTool = 'pencil';
-      document.getElementById('toolEraser').onclick = () => currentTool = 'eraser';
-      document.getElementById('toolPicker').onclick = () => currentTool = 'picker';
-      document.getElementById('primaryColor').addEventListener('input', (e) => currentColor = e.target.value);
-
-      // Düzenleme / Kaydet / Kullan / Sil
-      const defaultActionBtns = document.getElementById('defaultActionBtns');
-      const editToolBar = document.getElementById('editToolBar');
-      const btnStartEdit = document.getElementById('btnStartEdit');
-      const btnSaveEdit = document.getElementById('btnSaveEdit');
-
-      btnStartEdit.onclick = () => {
-        isEditing = true;
-        defaultActionBtns.classList.add('hidden');
-        editToolBar.classList.remove('hidden');
-        editToolBar.classList.add('flex');
-        btnMode2D.click();
-      };
-
-      btnSaveEdit.onclick = () => {
-        isEditing = false;
-        saveEditorToActiveCanvas();
-        update3DTexture();
-        editToolBar.classList.add('hidden');
-        editToolBar.classList.remove('flex');
-        defaultActionBtns.classList.remove('hidden');
-        btnMode3D.click();
-        renderCostumeShelf();
-      };
-
+      // Kullan / Sil / Aktar Butonları
       document.getElementById('btnUseCostume').onclick = () => {
-        saveEditorToActiveCanvas();
         update3DTexture();
         alert('Kostüm aktif kılındı!');
       };
@@ -741,22 +622,7 @@
         renderCostumeShelf();
       };
 
-      document.getElementById('addCostumeBtn').onclick = () => {
-        const newId = Date.now();
-        const newCanvas = createCostumeCanvas(tCtx => {
-          tCtx.fillStyle = '#2563eb';
-          tCtx.fillRect(16, 16, 24, 12);
-        });
-        costumes.push({ id: newId, name: `Kostüm ${costumes.length + 1}`, canvas: newCanvas });
-        activeCostumeId = newId;
-        syncActiveCanvasToEditor();
-        update3DTexture();
-        renderCostumeShelf();
-      };
-
-      // İndirmeler & Yüklemeler
       document.getElementById('btnExport2D').onclick = () => {
-        saveEditorToActiveCanvas();
         const a = document.createElement('a');
         a.download = 'skin-texture-64x64.png';
         a.href = getActiveCostume().canvas.toDataURL('image/png');
@@ -764,7 +630,6 @@
       };
 
       document.getElementById('downloadSkinBtn').onclick = document.getElementById('downloadSkinTopBtn').onclick = () => {
-        saveEditorToActiveCanvas();
         const a = document.createElement('a');
         a.download = 'skin_64x64.png';
         a.href = getActiveCostume().canvas.toDataURL('image/png');
@@ -786,9 +651,11 @@
           reader.onload = (event) => {
             const img = new Image();
             img.onload = () => {
-              ctx.clearRect(0, 0, 64, 64);
-              ctx.drawImage(img, 0, 0, 64, 64);
-              saveEditorToActiveCanvas();
+              const activeC = getActiveCostume();
+              const tCtx = activeC.canvas.getContext('2d', { willReadFrequently: true });
+              tCtx.clearRect(0, 0, 64, 64);
+              tCtx.drawImage(img, 0, 0, 64, 64);
+              syncActiveCanvasToEditor();
               update3DTexture();
               renderCostumeShelf();
             };
