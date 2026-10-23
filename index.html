@@ -76,13 +76,6 @@
       opacity: 0;
       pointer-events: none;
     }
-
-    .grid-overlay {
-      background-size: 16px 16px;
-      background-image: 
-        linear-gradient(to right, rgba(0, 255, 255, 0.15) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 255, 255, 0.15) 1px, transparent 1px);
-    }
   </style>
 </head>
 <body class="bg-[#0f0f12] text-gray-100 flex flex-col font-sans select-none">
@@ -157,7 +150,7 @@
         </div>
       </div>
 
-      <!-- VIEWPORT BÖLGESİ (TAM EKRAN FLEX KORUMALI) -->
+      <!-- VIEWPORT BÖLGESİ -->
       <div class="flex-1 flex w-full relative items-center justify-center overflow-hidden">
 
         <!-- 3D ANA KARAKTER GÖRÜNÜMÜ -->
@@ -168,10 +161,10 @@
           </div>
         </div>
 
-        <!-- 2D KOSTÜM DOKU ŞABLONU -->
+        <!-- 2D KOSTÜM DOKU ŞABLONU (RENKLİ ŞEFFAF BÖLGE REHBERLERİ İLE) -->
         <div id="panel2D" class="w-full h-full flex-1 hidden flex-col items-center justify-center p-4 bg-[#0f0f12]/95 z-10 backdrop-blur">
-          <div class="text-xs text-zinc-400 mb-2 font-semibold">2D Kostüm Şablonu (64x64 Pixel)</div>
-          <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black shadow-2xl grid-overlay">
+          <div class="text-xs text-zinc-400 mb-2 font-semibold">2D Kostüm Şablonu (Bölge Sınır Rehberli)</div>
+          <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black shadow-2xl">
             <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[480px] md:h-[480px] cursor-crosshair rounded"></canvas>
             <canvas id="gridCanvas" width="512" height="512" class="absolute top-0 left-0 pointer-events-none w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[480px] md:h-[480px]"></canvas>
           </div>
@@ -179,7 +172,7 @@
 
       </div>
 
-      <!-- SAĞ ÜST KÖŞE: 3D İNDİRME PANELİ (İLK AÇILIŞTA KAPALI) -->
+      <!-- SAĞ ÜST KÖŞE: 3D İNDİRME PANELİ -->
       <aside id="floatingPanel" class="absolute top-16 right-3 w-80 sm:w-96 bg-mcpanel/95 backdrop-blur-md border border-zinc-700/80 rounded-2xl shadow-2xl flex flex-col z-25 overflow-hidden panel-closed">
         <div class="p-3 border-b border-zinc-800 flex items-center justify-end bg-zinc-900/80">
           <button id="closeFloatingPanelBtn" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 transition" title="Kapat">
@@ -381,6 +374,56 @@
       uvAttribute.needsUpdate = true;
     }
 
+    // --- 2D ŞABLON ÜZERİNDE BÖLGE REHBERLERİ VE RENKLİ HAFİF ARKA PLANLAR ---
+    function updateGridOverlay() {
+      gridCtx.clearRect(0, 0, 512, 512);
+      const scale = 512 / 64;
+
+      // Yarı şeffaf renkli bölge kılavuzları (Hangi alanın neresi olduğunu karıştırmamak için)
+      const tints = [
+        { x: 0, y: 0, w: 32, h: 16, color: 'rgba(245, 158, 11, 0.12)' },  // Kafa (Turuncu)
+        { x: 0, y: 16, w: 16, h: 16, color: 'rgba(168, 85, 247, 0.12)' }, // Sağ Bacak (Mor)
+        { x: 16, y: 16, w: 24, h: 16, color: 'rgba(59, 130, 246, 0.12)' }, // Gövde (Mavi)
+        { x: 40, y: 16, w: 16, h: 16, color: 'rgba(20, 184, 166, 0.12)' }, // Sağ Kol (Yeşil)
+        { x: 16, y: 48, w: 16, h: 16, color: 'rgba(168, 85, 247, 0.12)' }, // Sol Bacak (Mor)
+        { x: 32, y: 48, w: 16, h: 16, color: 'rgba(20, 184, 166, 0.12)' }  // Sol Kol (Yeşil)
+      ];
+
+      tints.forEach(t => {
+        gridCtx.fillStyle = t.color;
+        gridCtx.fillRect(t.x * scale, t.y * scale, t.w * scale, t.h * scale);
+      });
+
+      // Pixel Grid Çizgileri
+      gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      gridCtx.lineWidth = 0.5;
+
+      for (let i = 0; i <= 64; i++) {
+        gridCtx.beginPath(); gridCtx.moveTo(i * scale, 0); gridCtx.lineTo(i * scale, 512); gridCtx.stroke();
+        gridCtx.beginPath(); gridCtx.moveTo(0, i * scale); gridCtx.lineTo(512, i * scale); gridCtx.stroke();
+      }
+
+      // Bölge Sınır Çizgileri ve Etiketler
+      const regions = [
+        { x: 0, y: 0, w: 32, h: 16, color: '#f59e0b', label: 'KAFA' },
+        { x: 0, y: 16, w: 16, h: 16, color: '#a855f7', label: 'SAĞ BACAK' },
+        { x: 16, y: 16, w: 24, h: 16, color: '#3b82f6', label: 'GÖVDE' },
+        { x: 40, y: 16, w: 16, h: 16, color: '#14b8a6', label: 'SAĞ KOL' },
+        { x: 16, y: 48, w: 16, h: 16, color: '#a855f7', label: 'SOL BACAK' },
+        { x: 32, y: 48, w: 16, h: 16, color: '#14b8a6', label: 'SOL KOL' }
+      ];
+
+      regions.forEach(r => {
+        gridCtx.strokeStyle = r.color;
+        gridCtx.lineWidth = 2;
+        gridCtx.strokeRect(r.x * scale, r.y * scale, r.w * scale, r.h * scale);
+
+        gridCtx.fillStyle = r.color;
+        gridCtx.font = 'bold 10px sans-serif';
+        gridCtx.fillText(r.label, r.x * scale + 4, r.y * scale + 14);
+      });
+    }
+
     function renderCostumeShelf() {
       const shelfList = document.getElementById('costumeShelfList');
       shelfList.innerHTML = '';
@@ -462,18 +505,6 @@
 
       mScene.add(mGroup);
       mini3DScenes.push({ scene: mScene, camera: mCam, renderer: mRen, group: mGroup, texture: mTexture });
-    }
-
-    function updateGridOverlay() {
-      gridCtx.clearRect(0, 0, 512, 512);
-      const scale = 512 / 64;
-      gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-      gridCtx.lineWidth = 0.5;
-
-      for (let i = 0; i <= 64; i++) {
-        gridCtx.beginPath(); gridCtx.moveTo(i * scale, 0); gridCtx.lineTo(i * scale, 512); gridCtx.stroke();
-        gridCtx.beginPath(); gridCtx.moveTo(0, i * scale); gridCtx.lineTo(512, i * scale); gridCtx.stroke();
-      }
     }
 
     // --- THREE.JS ANA 3D SAHNE ---
