@@ -27,7 +27,7 @@
   </script>
 
   <style>
-    body, html { background-color: #0a0a0c !important; color: #f4f4f5; margin: 0; padding: 0; overflow: hidden; }
+    body, html { background-color: #0a0a0c !important; color: #f4f4f5; margin: 0; padding: 0; overflow: hidden; width: 100vw; height: 100vh; }
     canvas.pixelated {
       image-rendering: pixelated;
       image-rendering: crisp-edges;
@@ -36,7 +36,20 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #18181b; }
     ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
-    .shelf-transition { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    
+    /* Sol Raf Kapanma Animasyonu */
+    #shelfPanel {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s ease;
+    }
+    #shelfPanel.closed {
+      transform: translateX(-100%);
+      width: 0 !important;
+      min-width: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      overflow: hidden;
+    }
+
     .grid-overlay {
       background-size: 16px 16px;
       background-image: 
@@ -64,11 +77,11 @@
   </header>
 
   <!-- ANA ÇALIŞMA ALANI CONTAINER -->
-  <div class="flex-1 flex overflow-hidden relative">
+  <div class="flex-1 flex overflow-hidden relative w-full h-full">
 
     <!-- SOL TARAF: KOSTÜM RAFI -->
-    <aside id="shelfPanel" class="w-72 sm:w-80 bg-mcpanel border-r border-zinc-800 flex flex-col p-3 gap-3 shrink-0 z-20 shelf-transition relative">
-      <div class="flex items-center justify-between pb-2 border-b border-zinc-800">
+    <aside id="shelfPanel" class="w-72 sm:w-80 bg-mcpanel border-r border-zinc-800 flex flex-col p-3 gap-3 shrink-0 z-20 relative h-full">
+      <div class="flex items-center justify-between pb-2 border-b border-zinc-800 shrink-0">
         <div class="flex items-center gap-2 text-xs font-bold text-zinc-300 uppercase tracking-wider">
           <i data-lucide="shirt" class="w-4 h-4 text-blue-400"></i>
           <span>Kostüm Rafı</span>
@@ -89,8 +102,8 @@
       <div id="costumeShelfList" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
     </aside>
 
-    <!-- SAĞ/ORTA ÇALIŞMA ALANI -->
-    <main class="flex-1 bg-[#0a0a0c] flex flex-col relative overflow-hidden">
+    <!-- SAĞ/ORTA ÇALIŞMA ALANI (TAM GENİŞLİK FLEX-1) -->
+    <main class="flex-1 bg-[#0a0a0c] flex flex-col relative overflow-hidden h-full">
 
       <!-- ÜST MOD SEÇİMİ (3D GÖRÜNÜM / 2D GÖRÜNÜM) -->
       <div class="absolute top-4 right-4 z-20 flex gap-2">
@@ -108,7 +121,7 @@
         <!-- 3D CANLI KARAKTER GÖRÜNÜMÜ -->
         <div id="container3D" class="w-full h-full relative bg-[#0a0a0c]">
           <canvas id="canvas3D" class="w-full h-full block"></canvas>
-          <div class="absolute bottom-16 left-4 text-[11px] text-zinc-400 bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur pointer-events-none border border-zinc-800">
+          <div class="absolute bottom-16 left-4 text-[11px] text-zinc-400 bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur pointer-events-none border border-zinc-800 z-10">
             Sol tık: Döndür | Sağ tık: Kaydır | Tekerlek: Yakınlaş
           </div>
         </div>
@@ -203,7 +216,7 @@
       { id: 3, name: "Zümrüt Muhafız", color: "#10b981" }
     ];
 
-    // --- MİNECRAFT UV MAPPING FONKSİYONU ---
+    // --- MİNECRAFT UV MAPPING (DOĞRU ORANLAR) ---
     function setBoxUVs(geometry, u, v, w, h, d, textureWidth = 64, textureHeight = 64) {
       const uvAttribute = geometry.attributes.uv;
       const x0 = u / textureWidth;
@@ -366,7 +379,7 @@
       scene.background = new THREE.Color(0x0a0a0c);
 
       camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-      camera.position.set(18, 18, 38);
+      camera.position.set(0, 16, 36);
 
       renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true });
       renderer.setSize(container.clientWidth, container.clientHeight);
@@ -374,10 +387,10 @@
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.target.set(0, 16, 0);
+      controls.target.set(0, 12, 0);
 
       scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
       dirLight.position.set(20, 40, 20);
       scene.add(dirLight);
 
@@ -400,13 +413,14 @@
         return mesh;
       }
 
-      // Ana Karakter Uzuvları
-      characterGroup.add(createPartWithUV(8, 8, 8, 0, 28, 0, 0, 0));      // Kafa
-      characterGroup.add(createPartWithUV(8, 12, 4, 0, 18, 0, 16, 16));   // Gövde
-      characterGroup.add(createPartWithUV(4, 12, 4, -6, 18, 0, 40, 16));  // Sağ Kol
-      characterGroup.add(createPartWithUV(4, 12, 4, 6, 18, 0, 32, 48));   // Sol Kol
-      characterGroup.add(createPartWithUV(4, 12, 4, -2, 6, 0, 0, 16));    // Sağ Bacak
-      characterGroup.add(createPartWithUV(4, 12, 4, 2, 6, 0, 16, 48));    // Sol Bacak
+      // Karakter Oranları ve Pozisyonları (Minecraft 1.8+ Skin Mimarisi)
+      // Genişlik, Yükseklik, Derinlik, X, Y, Z, U, V
+      characterGroup.add(createPartWithUV(8, 8, 8, 0, 20, 0, 0, 0));       // Kafa
+      characterGroup.add(createPartWithUV(8, 12, 4, 0, 10, 0, 16, 16));   // Gövde
+      characterGroup.add(createPartWithUV(4, 12, 4, -6, 10, 0, 40, 16));  // Sağ Kol
+      characterGroup.add(createPartWithUV(4, 12, 4, 6, 10, 0, 32, 48));   // Sol Kol
+      characterGroup.add(createPartWithUV(4, 12, 4, -2, -2, 0, 0, 16));   // Sağ Bacak
+      characterGroup.add(createPartWithUV(4, 12, 4, 2, -2, 0, 16, 48));   // Sol Bacak
 
       scene.add(characterGroup);
 
@@ -427,6 +441,15 @@
       if (skinTexture) skinTexture.needsUpdate = true;
     }
 
+    function onWindowResize() {
+      const container = document.getElementById('container3D');
+      if (!container || !renderer || !camera) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+    window.addEventListener('resize', onWindowResize);
+
     // --- ETKİLEŞİMLER VE ÇİZİM ---
     document.addEventListener('DOMContentLoaded', () => {
       init3D();
@@ -438,15 +461,17 @@
       const openShelfBtn = document.getElementById('openShelfBtn');
 
       closeShelfBtn.onclick = () => {
-        shelfPanel.style.transform = 'translateX(-100%)';
-        shelfPanel.style.marginLeft = '-20rem';
-        setTimeout(() => openShelfBtn.classList.remove('hidden'), 300);
+        shelfPanel.classList.add('closed');
+        setTimeout(() => {
+          openShelfBtn.classList.remove('hidden');
+          onWindowResize();
+        }, 150);
       };
 
       openShelfBtn.onclick = () => {
-        shelfPanel.style.transform = 'translateX(0)';
-        shelfPanel.style.marginLeft = '0';
+        shelfPanel.classList.remove('closed');
         openShelfBtn.classList.add('hidden');
+        setTimeout(onWindowResize, 150);
       };
 
       // Mod Butonları
@@ -460,6 +485,7 @@
         btnMode2D.className = "px-4 py-2 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold text-xs rounded-xl shadow-lg border border-zinc-700 transition active:scale-95 flex items-center gap-1.5";
         panel2D.classList.add('hidden');
         container3D.classList.remove('hidden');
+        onWindowResize();
       };
 
       btnMode2D.onclick = () => {
