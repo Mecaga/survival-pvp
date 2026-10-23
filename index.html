@@ -289,30 +289,31 @@
       { id: 3, name: "Zümrüt Muhafız", color: "#10b981" }
     ];
 
-    // --- MİNECRAFT 64x64 UV MAP KOORDİNATLARI ---
+    // --- MİNECRAFT 64x64 HASSAS UV DİLİMLEME (HER UZUV KENDİ BÖLGESİNİ ALIR) ---
     function setBoxUVs(geometry, u, v, w, h, d, textureWidth = 64, textureHeight = 64) {
       const uvAttribute = geometry.attributes.uv;
-      const x0 = u / textureWidth;
-      const x1 = (u + d) / textureWidth;
-      const x2 = (u + d + w) / textureWidth;
-      const x3 = (u + 2 * d + w) / textureWidth;
-      const x4 = (u + 2 * d + 2 * w) / textureWidth;
 
-      const y0 = 1 - (v + h + d) / textureHeight;
-      const y1 = 1 - (v + d) / textureHeight;
-      const y2 = 1 - v / textureHeight;
-
-      const uvs = [
-        x1, y1,  x0, y1,  x1, y2,  x0, y2, // Right
-        x3, y1,  x2, y1,  x3, y2,  x2, y2, // Left
-        x2, y1,  x1, y1,  x2, y0,  x1, y0, // Top
-        x3, y0,  x2, y0,  x3, y1,  x2, y1, // Bottom
-        x2, y1,  x1, y1,  x2, y2,  x1, y2, // Front
-        x4, y1,  x3, y1,  x4, y2,  x3, y2  // Back
+      // Minecraft 64x64 standart yüzey haritalandırma koordinatları (Right, Left, Top, Bottom, Front, Back)
+      const faces = [
+        { x: u,         y: v + d,     w: d, h: h }, // 0: Right
+        { x: u + d + w, y: v + d,     w: d, h: h }, // 1: Left
+        { x: u + d,     y: v,         w: w, h: d }, // 2: Top
+        { x: u + d + w, y: v,         w: w, h: d }, // 3: Bottom
+        { x: u + d,     y: v + d,     w: w, h: h }, // 4: Front
+        { x: u + d + w + d, y: v + d, w: w, h: h }  // 5: Back
       ];
 
-      for (let i = 0; i < uvs.length; i++) {
-        uvAttribute.setX(i, uvs[i]);
+      for (let i = 0; i < 6; i++) {
+        const f = faces[i];
+        const u0 = f.x / textureWidth;
+        const u1 = (f.x + f.w) / textureWidth;
+        const v0 = 1 - (f.y + f.h) / textureHeight;
+        const v1 = 1 - f.y / textureHeight;
+
+        uvAttribute.setXY(i * 4 + 0, u0, v1);
+        uvAttribute.setXY(i * 4 + 1, u1, v1);
+        uvAttribute.setXY(i * 4 + 2, u0, v0);
+        uvAttribute.setXY(i * 4 + 3, u1, v0);
       }
       uvAttribute.needsUpdate = true;
     }
@@ -475,9 +476,9 @@
       const skinMaterial = new THREE.MeshStandardMaterial({ map: skinTexture, roughness: 0.8, metalness: 0.1 });
       characterGroup = new THREE.Group();
 
-      function createPartWithUV(w, h, d, x, y, z, u, v) {
+      function createPartWithUV(w, h, d, x, y, z, u, v, pw, ph, pd) {
         const geo = new THREE.BoxGeometry(w, h, d);
-        setBoxUVs(geo, u, v, w * 10, h * 10, d * 10);
+        setBoxUVs(geo, u, v, pw, ph, pd, 64, 64);
         const mesh = new THREE.Mesh(geo, skinMaterial);
         mesh.position.set(x, y, z);
 
@@ -487,13 +488,13 @@
         return mesh;
       }
 
-      // Minecraft Standart 3D Uzuv Hiyerarşisi
-      characterGroup.add(createPartWithUV(0.8, 0.8, 0.8, 0, 0.8, 0, 0, 0));       // Kafa
-      characterGroup.add(createPartWithUV(0.8, 1.2, 0.4, 0, -0.2, 0, 16, 16));    // Gövde
-      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.6, -0.2, 0, 40, 16)); // Sağ Kol
-      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.6, -0.2, 0, 40, 16));  // Sol Kol
-      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.2, -1.4, 0, 0, 16));  // Sol Bacak
-      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.2, -1.4, 0, 0, 16));   // Sağ Bacak
+      // Minecraft Standart 3D Uzuv Hiyerarşisi (Doğru UV piksel koordinatları ile)
+      characterGroup.add(createPartWithUV(0.8, 0.8, 0.8, 0, 0.8, 0, 0, 0, 8, 8, 8));       // Kafa (u:0, v:0)
+      characterGroup.add(createPartWithUV(0.8, 1.2, 0.4, 0, -0.2, 0, 16, 16, 8, 12, 4));    // Gövde (u:16, v:16)
+      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.6, -0.2, 0, 40, 16, 4, 12, 4)); // Sağ Kol (u:40, v:16)
+      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.6, -0.2, 0, 32, 48, 4, 12, 4));  // Sol Kol (u:32, v:48)
+      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.2, -1.4, 0, 0, 16, 4, 12, 4));  // Sağ Bacak (u:0, v:16)
+      characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.2, -1.4, 0, 16, 48, 4, 12, 4));   // Sol Bacak (u:16, v:48)
 
       scene.add(characterGroup);
 
