@@ -27,7 +27,7 @@
 </head>
 <body class="h-screen w-screen flex flex-col select-none">
 
-    <!-- ÜST BAR / HEADER (İÇERİ & DIŞARI AKTARMA) -->
+    <!-- ÜST BAR / HEADER -->
     <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0">
         <div class="flex items-center gap-3">
             <span class="text-2xl">👕</span>
@@ -50,7 +50,7 @@
     <!-- BÖLÜNMÜŞ ANA EKRAN -->
     <main class="flex-1 flex overflow-hidden relative">
 
-        <!-- SOL TARAF: KOSTÜM RAFI (PENCERE KAPATMA SİSTEMLİ & CANLI 3D KARTLAR) -->
+        <!-- SOL TARAF: KOSTÜM RAFI -->
         <section id="shelf-panel" class="w-80 sm:w-96 bg-slate-900/95 border-r border-slate-800 flex flex-col p-4 shrink-0 z-30 shelf-transition absolute left-0 top-0 bottom-0 md:relative">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
                 <div class="flex items-center gap-2">
@@ -61,7 +61,6 @@
                     <button id="btn-add-costume" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-md transition active:scale-95">
                         <span>+</span> Ekle
                     </button>
-                    <!-- PENCERE KAPATMA BUTONU -->
                     <button id="btn-close-shelf" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition active:scale-95" title="Rafı Kapat">
                         ◀ Kapat
                     </button>
@@ -82,7 +81,7 @@
         <!-- SAĞ TARAF: ÇALIŞMA ALANI & DÜZENLEME -->
         <section class="flex-1 flex flex-col relative bg-slate-950 overflow-hidden w-full h-full">
 
-            <!-- ÜST MOD SEÇİMİ (SADECE 3D GÖRÜNÜM VE 2D ŞABLON) -->
+            <!-- ÜST MOD SEÇİMİ -->
             <div class="absolute top-4 right-4 z-20 flex gap-2">
                 <button id="btn-mode-3d" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400 transition active:scale-95">
                     🧊 3D Görünüm
@@ -108,7 +107,7 @@
                     </button>
                 </div>
 
-                <!-- DÜZENLEME MODU ARAÇLARI (DÜZENLE'YE BASINCA AÇILIR) -->
+                <!-- DÜZENLEME MODU ARAÇLARI -->
                 <div id="edit-tools" class="hidden flex items-center gap-3">
                     <input type="color" id="color-picker" value="#3b82f6" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent">
                     
@@ -177,10 +176,7 @@
         const displayCanvas = document.getElementById('canvas-2d');
         const displayCtx = displayCanvas.getContext('2d');
 
-        let costumeTexture, textureMaterial;
-
-        // Görseldeki Özel Skin Dokusu Data URL'si
-        const baseSkinImageSrc = "data:image/png;base64,iVBORw0KGgoAAAANSU_YOUR_SKIN_DATA_URL_HERE";
+        let costumeTexture;
 
         // Varsayılan Kostümler
         let costumes = [
@@ -189,33 +185,66 @@
             { id: 3, name: "Zümrüt Muhafız", color: "#10b981" }
         ];
 
-        // Görseldeki Birebir Dokuyu Çiz
+        // --- MINECRAFT STANDART UV HARİTA KOORDİNATLARI ---
+        function setBoxUVs(geometry, u, v, w, h, d, textureWidth = 64, textureHeight = 64) {
+            const uvAttribute = geometry.attributes.uv;
+
+            const x0 = u / textureWidth;
+            const x1 = (u + d) / textureWidth;
+            const x2 = (u + d + w) / textureWidth;
+            const x3 = (u + 2 * d + w) / textureWidth;
+            const x4 = (u + 2 * d + 2 * w) / textureWidth;
+
+            const y0 = 1 - (v + h + d) / textureHeight;
+            const y1 = 1 - (v + d) / textureHeight;
+            const y2 = 1 - v / textureHeight;
+
+            // BoxGeometry Yüzey Sırası: Right, Left, Top, Bottom, Front, Back
+            const uvs = [
+                // Right
+                x1, y1,  x0, y1,  x1, y2,  x0, y2,
+                // Left
+                x3, y1,  x2, y1,  x3, y2,  x2, y2,
+                // Top
+                x2, y1,  x1, y1,  x2, y0,  x1, y0,
+                // Bottom
+                x3, y0,  x2, y0,  x3, y1,  x2, y1,
+                // Front
+                x2, y1,  x1, y1,  x2, y2,  x1, y2,
+                // Back
+                x4, y1,  x3, y1,  x4, y2,  x3, y2
+            ];
+
+            for (let i = 0; i < uvs.length; i++) {
+                uvAttribute.setX(i, uvs[i]);
+            }
+            uvAttribute.needsUpdate = true;
+        }
+
+        // Birebir Minecraft Dokusu Çizimi (64x64 UV)
         function drawCustomSkinTexture() {
-            // Arka plan rengini temizle
             offCtx.clearRect(0, 0, 64, 64);
 
-            // Kafa ve Yüz alanı
-            offCtx.fillStyle = '#ffdbac'; offCtx.fillRect(8, 8, 8, 8);
-            offCtx.fillStyle = '#1e293b'; offCtx.fillRect(10, 11, 1, 1); offCtx.fillRect(13, 11, 1, 1);
-            offCtx.fillStyle = '#7c2d12'; offCtx.fillRect(8, 6, 8, 2);
+            // Kafa (Head) UV [0,0 - 32,16]
+            offCtx.fillStyle = '#ffdbac'; offCtx.fillRect(8, 8, 8, 8);  // Yüz Ön
+            offCtx.fillStyle = '#1e293b'; offCtx.fillRect(10, 11, 1, 1); offCtx.fillRect(13, 11, 1, 1); // Gözler
+            offCtx.fillStyle = '#4a2810'; offCtx.fillRect(0, 0, 32, 8);  // Saç Üst/Arka
+            offCtx.fillStyle = '#4a2810'; offCtx.fillRect(0, 8, 8, 8);   // Saç Sağ
+            offCtx.fillStyle = '#4a2810'; offCtx.fillRect(16, 8, 16, 8); // Saç Sol/Arka
 
-            // Sol Taraf: Mor/Mavi Gradyan Desen
-            offCtx.fillStyle = '#4c1d95'; offCtx.fillRect(0, 16, 12, 16);
-            offCtx.fillStyle = '#2563eb'; offCtx.fillRect(0, 20, 8, 8);
+            // Bacaklar (Right Leg) UV [0,16 - 16,32]
+            offCtx.fillStyle = '#312e81'; offCtx.fillRect(0, 16, 16, 16);
+            offCtx.fillStyle = '#1e1b4b'; offCtx.fillRect(4, 20, 4, 12);
 
-            // Orta Gövde: Özel Renkli Harfler / Desenler
-            offCtx.fillStyle = '#06b6d4'; offCtx.fillRect(16, 16, 12, 16);
-            offCtx.fillStyle = '#eab308'; offCtx.fillRect(18, 18, 4, 3);
-            offCtx.fillStyle = '#ef4444'; offCtx.fillRect(18, 22, 4, 4);
+            // Gövde (Torso) UV [16,16 - 40,32]
+            offCtx.fillStyle = '#0284c7'; offCtx.fillRect(16, 16, 24, 16);
+            // Türk Bayrağı Detayı (Göğüs - Ön Yüz)
+            offCtx.fillStyle = '#dc2626'; offCtx.fillRect(20, 20, 8, 12);
+            offCtx.fillStyle = '#ffffff'; offCtx.fillText('C*', 21, 28);
 
-            // Türk Bayrağı Detayı (Kırmızı Zemin üzerine C*)
-            offCtx.fillStyle = '#dc2626'; offCtx.fillRect(20, 32, 8, 10);
-            offCtx.fillStyle = '#ffffff'; offCtx.fillText('C*', 21, 40);
-
-            // Sağ Kol & Bacaklar Desenleri
-            offCtx.fillStyle = '#22c55e'; offCtx.fillRect(32, 16, 12, 16);
-            offCtx.fillStyle = '#1e1b4b'; offCtx.fillRect(16, 48, 16, 16);
-            offCtx.fillStyle = '#10b981'; offCtx.fillRect(20, 52, 4, 8);
+            // Kollar (Right Arm) UV [40,16 - 56,32]
+            offCtx.fillStyle = '#0284c7'; offCtx.fillRect(40, 16, 16, 8);  // Omuz / Üst
+            offCtx.fillStyle = '#ffdbac'; offCtx.fillRect(40, 24, 16, 8);  // Ten / El
 
             updateDisplayCanvas();
             update3DTexture();
@@ -225,7 +254,6 @@
             displayCtx.imageSmoothingEnabled = false;
             displayCtx.drawImage(offCanvas, 0, 0, 512, 512);
 
-            // Izgara Çizgileri
             displayCtx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
             displayCtx.lineWidth = 1;
             for (let i = 0; i <= 512; i += 8) {
@@ -240,7 +268,7 @@
             }
         }
 
-        // --- THREE.JS 3D KARAKTER (KAFA, GÖVDE, KOLLAR, BACAKLAR) ---
+        // --- THREE.JS 3D KARAKTER ---
         function init3D() {
             const container = document.getElementById('container-3d');
             scene = new THREE.Scene();
@@ -268,17 +296,18 @@
             costumeTexture.magFilter = THREE.NearestFilter;
             costumeTexture.minFilter = THREE.NearestFilter;
 
-            textureMaterial = new THREE.MeshStandardMaterial({
+            const textureMaterial = new THREE.MeshStandardMaterial({
                 map: costumeTexture,
                 roughness: 0.8,
                 metalness: 0.1
             });
 
-            // Minecraft Parçaları + Turkuaz Kenar Çizgileri (EdgesGeometry)
             characterGroup = new THREE.Group();
 
-            function createPart(w, h, d, x, y, z) {
+            function createPartWithUV(w, h, d, x, y, z, u, v) {
                 const geo = new THREE.BoxGeometry(w, h, d);
+                setBoxUVs(geo, u, v, w * 10, h * 10, d * 10);
+
                 const mesh = new THREE.Mesh(geo, textureMaterial);
                 mesh.position.set(x, y, z);
                 
@@ -288,12 +317,13 @@
                 return mesh;
             }
 
-            characterGroup.add(createPart(0.8, 0.8, 0.8, 0, 0.8, 0));   // Kafa
-            characterGroup.add(createPart(0.8, 1.2, 0.4, 0, -0.2, 0));  // Gövde
-            characterGroup.add(createPart(0.4, 1.2, 0.4, -0.6, -0.2, 0));// Sol Kol
-            characterGroup.add(createPart(0.4, 1.2, 0.4, 0.6, -0.2, 0)); // Sağ Kol
-            characterGroup.add(createPart(0.4, 1.2, 0.4, -0.2, -1.4, 0));// Sol Bacak
-            characterGroup.add(createPart(0.4, 1.2, 0.4, 0.2, -1.4, 0)); // Sağ Bacak
+            // Minecraft Uzuvları (Standart 64x64 UV Koordinatları ile)
+            characterGroup.add(createPartWithUV(0.8, 0.8, 0.8, 0, 0.8, 0, 0, 0));       // Kafa
+            characterGroup.add(createPartWithUV(0.8, 1.2, 0.4, 0, -0.2, 0, 16, 16));    // Gövde
+            characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.6, -0.2, 0, 40, 16)); // Sol Kol
+            characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.6, -0.2, 0, 40, 16));  // Sağ Kol
+            characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, -0.2, -1.4, 0, 0, 16));  // Sol Bacak
+            characterGroup.add(createPartWithUV(0.4, 1.2, 0.4, 0.2, -1.4, 0, 0, 16));   // Sağ Bacak
 
             scene.add(characterGroup);
 
@@ -305,14 +335,13 @@
             if (controls) controls.update();
             if (renderer && scene && camera) renderer.render(scene, camera);
 
-            // Sol Raftaki Canlı 3D Modellere Dönme Hareketi
             miniScenes.forEach(m => {
                 if (m.group) m.group.rotation.y += 0.02;
                 if (m.renderer && m.scene && m.camera) m.renderer.render(m.scene, m.camera);
             });
         }
 
-        // --- SOL RAFTAKİ MİNİ 3D MODELLER (KAFA, GÖVDE, KOLLAR, BACAKLAR) ---
+        // --- SOL RAF MİNİ MODELLERİ ---
         function renderCostumeList() {
             const listEl = document.getElementById('costume-list');
             listEl.innerHTML = '';
@@ -378,13 +407,12 @@
                 return mesh;
             }
 
-            // Tam 3D Parçalar
-            mGroup.add(createMiniPart(0.6, 0.6, 0.6, 0, 0.6, 0));   // Kafa
-            mGroup.add(createMiniPart(0.6, 0.9, 0.3, 0, -0.15, 0)); // Gövde
-            mGroup.add(createMiniPart(0.3, 0.9, 0.3, -0.45, -0.15, 0)); // Sol Kol
-            mGroup.add(createMiniPart(0.3, 0.9, 0.3, 0.45, -0.15, 0));  // Sağ Kol
-            mGroup.add(createMiniPart(0.3, 0.9, 0.3, -0.15, -1.05, 0)); // Sol Bacak
-            mGroup.add(createMiniPart(0.3, 0.9, 0.3, 0.15, -1.05, 0));  // Sağ Bacak
+            mGroup.add(createMiniPart(0.6, 0.6, 0.6, 0, 0.6, 0));
+            mGroup.add(createMiniPart(0.6, 0.9, 0.3, 0, -0.15, 0));
+            mGroup.add(createMiniPart(0.3, 0.9, 0.3, -0.45, -0.15, 0));
+            mGroup.add(createMiniPart(0.3, 0.9, 0.3, 0.45, -0.15, 0));
+            mGroup.add(createMiniPart(0.3, 0.9, 0.3, -0.15, -1.05, 0));
+            mGroup.add(createMiniPart(0.3, 0.9, 0.3, 0.15, -1.05, 0));
 
             mScene.add(mGroup);
 
@@ -400,13 +428,12 @@
             renderCostumeList();
         }
 
-        // --- ARAYÜZ VE ETKİLEŞİM YÖNETİMİ ---
+        // --- ETKİLEŞİM YÖNETİMİ ---
         document.addEventListener('DOMContentLoaded', () => {
             init3D();
             drawCustomSkinTexture();
             renderCostumeList();
 
-            // SOL RAF PENCERE KAPATMA / AÇMA
             const shelfPanel = document.getElementById('shelf-panel');
             const btnCloseShelf = document.getElementById('btn-close-shelf');
             const btnOpenShelf = document.getElementById('btn-open-shelf');
@@ -429,7 +456,6 @@
                 }, 10);
             };
 
-            // MOD SEÇİMİ (3D GÖRÜNÜM / 2D ŞABLON)
             const btn3D = document.getElementById('btn-mode-3d');
             const btn2D = document.getElementById('btn-mode-2d');
             const panel2D = document.getElementById('panel-2d');
@@ -449,7 +475,6 @@
                 onWindowResize();
             };
 
-            // DÜZENLEME MODU AÇMA / KAPATMA SİSTEMİ
             const defaultActions = document.getElementById('default-actions');
             const editTools = document.getElementById('edit-tools');
             const btnStartEdit = document.getElementById('btn-start-edit');
@@ -468,12 +493,12 @@
                 editTools.classList.add('hidden');
                 defaultActions.classList.remove('hidden');
                 btn3D.click();
-                alert('Kostüm başarıyla güncellendi ve kaydedildi!');
+                alert('Kostüm değişiklikleri kaydedildi!');
             };
 
             document.getElementById('btn-use').onclick = () => {
                 update3DTexture();
-                alert('Kostüm giydirildi ve aktif kılındı!');
+                alert('Kostüm başarıyla uygulandı!');
             };
 
             document.getElementById('btn-delete').onclick = () => {
@@ -493,7 +518,6 @@
                 selectCostume(newId);
             };
 
-            // ÇİZİM VE RENK ALMA (EYEDROPPER) ARAÇLARI
             let isDrawing = false;
             displayCanvas.onpointerdown = (e) => { isDrawing = true; handleDraw(e); };
             displayCanvas.onpointermove = (e) => { if (isDrawing) handleDraw(e); };
@@ -548,7 +572,6 @@
             document.getElementById('tool-eraser').onclick = () => { currentTool = 'eraser'; updateToolUI(); };
             document.getElementById('tool-eyedropper').onclick = () => { currentTool = 'eyedropper'; updateToolUI(); };
 
-            // İÇERİ / DIŞARI AKTARMA
             document.getElementById('btn-save-snapshot').onclick = () => {
                 renderer.render(scene, camera);
                 const a = document.createElement('a');
