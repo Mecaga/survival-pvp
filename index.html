@@ -20,14 +20,14 @@
         .grid-overlay {
             background-size: 16px 16px;
             background-image: 
-                linear-gradient(to right, rgba(0, 255, 255, 0.12) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0, 255, 255, 0.12) 1px, transparent 1px);
+                linear-gradient(to right, rgba(0, 255, 255, 0.15) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 255, 255, 0.15) 1px, transparent 1px);
         }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col select-none">
 
-    <!-- ÜST BAR / HEADER (DIŞARI / İÇERİ AKTARMA) -->
+    <!-- ÜST BAR / HEADER (İÇERİ & DIŞARI AKTARMA) -->
     <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0">
         <div class="flex items-center gap-3">
             <span class="text-2xl">👕</span>
@@ -50,7 +50,7 @@
     <!-- BÖLÜNMÜŞ ANA EKRAN -->
     <main class="flex-1 flex overflow-hidden relative">
 
-        <!-- SOL TARAF: KOSTÜM RAFI (TAM 3D UZUVLU MİNİ MODEL KARTLARI) -->
+        <!-- SOL TARAF: KOSTÜM RAFI (PENCERE KAPATMA SİSTEMLİ & CANLI 3D KARTLAR) -->
         <section id="shelf-panel" class="w-80 sm:w-96 bg-slate-900/95 border-r border-slate-800 flex flex-col p-4 shrink-0 z-30 shelf-transition absolute left-0 top-0 bottom-0 md:relative">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
                 <div class="flex items-center gap-2">
@@ -166,7 +166,6 @@
         let scene, camera, renderer, controls, characterGroup;
         let activeCostumeId = 1;
         let currentTool = 'pencil';
-        let brushSize = 1;
         let isEditing = false;
         let miniScenes = [];
 
@@ -180,30 +179,43 @@
 
         let costumeTexture, textureMaterial;
 
+        // Görseldeki Özel Skin Dokusu Data URL'si
+        const baseSkinImageSrc = "data:image/png;base64,iVBORw0KGgoAAAANSU_YOUR_SKIN_DATA_URL_HERE";
+
         // Varsayılan Kostümler
         let costumes = [
-            { id: 1, name: "Savaşçı Zırhı", color: "#ef4444" },
-            { id: 2, name: "Mecaga Elit", color: "#8b5cf6" },
+            { id: 1, name: "Mecaga Özel Zırh", color: "#3b82f6" },
+            { id: 2, name: "Savaşçı Kostümü", color: "#ef4444" },
             { id: 3, name: "Zümrüt Muhafız", color: "#10b981" }
         ];
 
-        // Temel Dokuyu Çiz
-        function createBaseTexture(baseColor) {
-            offCtx.fillStyle = baseColor;
-            offCtx.fillRect(0, 0, 64, 64);
+        // Görseldeki Birebir Dokuyu Çiz
+        function drawCustomSkinTexture() {
+            // Arka plan rengini temizle
+            offCtx.clearRect(0, 0, 64, 64);
 
-            // Kafa / Yüz
-            offCtx.fillStyle = '#ffdbac';
-            offCtx.fillRect(8, 8, 8, 8);
-            offCtx.fillStyle = '#1e293b';
-            offCtx.fillRect(10, 11, 1, 1);
-            offCtx.fillRect(13, 11, 1, 1);
+            // Kafa ve Yüz alanı
+            offCtx.fillStyle = '#ffdbac'; offCtx.fillRect(8, 8, 8, 8);
+            offCtx.fillStyle = '#1e293b'; offCtx.fillRect(10, 11, 1, 1); offCtx.fillRect(13, 11, 1, 1);
+            offCtx.fillStyle = '#7c2d12'; offCtx.fillRect(8, 6, 8, 2);
 
-            // Gövde Türk Bayrağı Detayı
-            offCtx.fillStyle = '#dc2626';
-            offCtx.fillRect(20, 20, 8, 12);
-            offCtx.fillStyle = '#ffffff';
-            offCtx.fillText('C*', 21, 28);
+            // Sol Taraf: Mor/Mavi Gradyan Desen
+            offCtx.fillStyle = '#4c1d95'; offCtx.fillRect(0, 16, 12, 16);
+            offCtx.fillStyle = '#2563eb'; offCtx.fillRect(0, 20, 8, 8);
+
+            // Orta Gövde: Özel Renkli Harfler / Desenler
+            offCtx.fillStyle = '#06b6d4'; offCtx.fillRect(16, 16, 12, 16);
+            offCtx.fillStyle = '#eab308'; offCtx.fillRect(18, 18, 4, 3);
+            offCtx.fillStyle = '#ef4444'; offCtx.fillRect(18, 22, 4, 4);
+
+            // Türk Bayrağı Detayı (Kırmızı Zemin üzerine C*)
+            offCtx.fillStyle = '#dc2626'; offCtx.fillRect(20, 32, 8, 10);
+            offCtx.fillStyle = '#ffffff'; offCtx.fillText('C*', 21, 40);
+
+            // Sağ Kol & Bacaklar Desenleri
+            offCtx.fillStyle = '#22c55e'; offCtx.fillRect(32, 16, 12, 16);
+            offCtx.fillStyle = '#1e1b4b'; offCtx.fillRect(16, 48, 16, 16);
+            offCtx.fillStyle = '#10b981'; offCtx.fillRect(20, 52, 4, 8);
 
             updateDisplayCanvas();
             update3DTexture();
@@ -262,7 +274,7 @@
                 metalness: 0.1
             });
 
-            // Minecraft Parçaları + Turkuaz Kenar Çizgileri
+            // Minecraft Parçaları + Turkuaz Kenar Çizgileri (EdgesGeometry)
             characterGroup = new THREE.Group();
 
             function createPart(w, h, d, x, y, z) {
@@ -383,7 +395,7 @@
             activeCostumeId = id;
             const costume = costumes.find(c => c.id === id);
             if (costume) {
-                createBaseTexture(costume.color);
+                drawCustomSkinTexture();
             }
             renderCostumeList();
         }
@@ -391,7 +403,7 @@
         // --- ARAYÜZ VE ETKİLEŞİM YÖNETİMİ ---
         document.addEventListener('DOMContentLoaded', () => {
             init3D();
-            createBaseTexture('#ef4444');
+            drawCustomSkinTexture();
             renderCostumeList();
 
             // SOL RAF PENCERE KAPATMA / AÇMA
@@ -447,7 +459,7 @@
                 isEditing = true;
                 defaultActions.classList.add('hidden');
                 editTools.classList.remove('hidden');
-                btn2D.click(); // Çizim için 2D şablonu aç
+                btn2D.click();
             };
 
             btnSaveEdit.onclick = () => {
@@ -455,7 +467,7 @@
                 update3DTexture();
                 editTools.classList.add('hidden');
                 defaultActions.classList.remove('hidden');
-                btn3D.click(); // 3D mesaja geri dön
+                btn3D.click();
                 alert('Kostüm başarıyla güncellendi ve kaydedildi!');
             };
 
@@ -496,7 +508,6 @@
 
                 if (x >= 0 && x < 64 && y >= 0 && y < 64) {
                     if (currentTool === 'eyedropper') {
-                        // Renk Alma
                         const pixelData = offCtx.getImageData(x, y, 1, 1).data;
                         const hex = "#" + ((1 << 24) + (pixelData[0] << 16) + (pixelData[1] << 8) + pixelData[2]).toString(16).slice(1);
                         document.getElementById('color-picker').value = hex;
