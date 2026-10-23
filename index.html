@@ -495,13 +495,13 @@
     btnSleep.addEventListener('click', () => {
       isSleeping = !isSleeping;
       if (isSleeping) {
-        // Lay down 90 degrees
-        characterGroup.rotation.x = Math.PI / 2;
-        characterGroup.position.set(0, -2, 4);
-        btnSleep.innerText = "Yatakta (90° Yatay)";
+        // Lay down 90 degrees backwards on back (Sırt üstü yatış)
+        characterGroup.rotation.x = -Math.PI / 2;
+        characterGroup.position.set(0, -3, -4);
+        btnSleep.innerText = "Sırt Üstü Yatakta (90°)";
         btnSleep.className = "px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg font-medium transition";
       } else {
-        // Stand upright 0 degrees
+        // Stand upright 0 degrees (Ayakta)
         characterGroup.rotation.x = 0;
         characterGroup.position.set(0, 0, 0);
         btnSleep.innerText = "Ayakta (0°)";
