@@ -17,9 +17,10 @@
         .shelf-scroll::-webkit-scrollbar { width: 6px; }
         .shelf-scroll::-webkit-scrollbar-track { background: #1e293b; }
         .shelf-scroll::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+        canvas { touch-action: none; }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col">
+<body class="h-screen w-screen flex flex-col select-none">
 
     <!-- ÜST BAR / HEADER -->
     <header class="h-14 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between px-4 z-20 shrink-0">
@@ -110,9 +111,20 @@
 
     <script>
         // TS / JS Kod Yapısı & Three.js Başlatma Mantığı
-        let scene, camera, renderer, controls;
+        let scene, camera, renderer, controls, characterGroup;
         let activeCostumeId = 1;
         let isSleeping = false;
+        let currentTool = 'pencil';
+
+        // 64x64 Standart Minecraft UV Çizim Tuvali
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = 64; offCanvas.height = 64;
+        const offCtx = offCanvas.getContext('2d');
+
+        const displayCanvas = document.getElementById('canvas-2d');
+        const displayCtx = displayCanvas.getContext('2d');
+
+        let costumeTexture, textureMaterial;
 
         // Varsayılan Kostüm Verileri
         let costumes = [
@@ -121,37 +133,101 @@
             { id: 3, name: "Şövalye Zırhı", color: "#10b981" }
         ];
 
+        // Temel Dokuyu Çiz
+        function drawBaseTexture(color) {
+            offCtx.fillStyle = color;
+            offCtx.fillRect(0, 0, 64, 64);
+
+            // Baş / Yüz Alanı (UV Haritasına Uygun)
+            offCtx.fillStyle = '#ffdbac';
+            offCtx.fillRect(8, 8, 8, 8); // Ön Yüz
+            offCtx.fillStyle = '#1e293b';
+            offCtx.fillRect(10, 11, 1, 1); // Sol Göz
+            offCtx.fillRect(13, 11, 1, 1); // Sağ Göz
+
+            // Gövde Türk Bayrağı Detayı
+            offCtx.fillStyle = '#dc2626';
+            offCtx.fillRect(20, 20, 8, 12);
+            offCtx.fillStyle = '#ffffff';
+            offCtx.fillText('C*', 21, 28);
+
+            updateDisplayCanvas();
+            update3DTexture();
+        }
+
+        function updateDisplayCanvas() {
+            displayCtx.imageSmoothingEnabled = false;
+            displayCtx.drawImage(offCanvas, 0, 0, 512, 512);
+
+            // Piksel Izgara Çizgileri
+            displayCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            displayCtx.lineWidth = 1;
+            for (let i = 0; i <= 512; i += 8) {
+                displayCtx.beginPath(); displayCtx.moveTo(i, 0); displayCtx.lineTo(i, 512); displayCtx.stroke();
+                displayCtx.beginPath(); displayCtx.moveTo(0, i); displayCtx.lineTo(512, i); displayCtx.stroke();
+            }
+        }
+
+        function update3DTexture() {
+            if (costumeTexture) {
+                costumeTexture.needsUpdate = true;
+            }
+        }
+
         function init3D() {
             const container = document.getElementById('container-3d');
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0f172a);
 
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 1.5, 5);
+            camera.position.set(0, 1.2, 4.5);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
 
-            const light = new THREE.DirectionalLight(0xffffff, 1);
+            const light = new THREE.DirectionalLight(0xffffff, 0.9);
             light.position.set(2, 4, 3);
             scene.add(light);
             scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-            // Basit Karakter Kutusu
-            const geometry = new THREE.BoxGeometry(1, 2, 0.5);
-            const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
-            const character = new THREE.Mesh(geometry, material);
-            character.position.y = 1;
-            scene.add(character);
+            // Doku
+            costumeTexture = new THREE.CanvasTexture(offCanvas);
+            costumeTexture.magFilter = THREE.NearestFilter;
+            costumeTexture.minFilter = THREE.NearestFilter;
 
-            // Çizgi/Köşe Vurguları
-            const edges = new THREE.EdgesGeometry(geometry);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff }));
-            character.add(line);
+            textureMaterial = new THREE.MeshStandardMaterial({
+                map: costumeTexture,
+                roughness: 0.8,
+                metalness: 0.1
+            });
+
+            // Minecraft Karakter Parçaları
+            characterGroup = new THREE.Group();
+
+            function createPart(w, h, d, x, y, z) {
+                const geo = new THREE.BoxGeometry(w, h, d);
+                const mesh = new THREE.Mesh(geo, textureMaterial);
+                mesh.position.set(x, y, z);
+                
+                const edges = new THREE.EdgesGeometry(geo);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff }));
+                mesh.add(line);
+                return mesh;
+            }
+
+            characterGroup.add(createPart(0.8, 0.8, 0.8, 0, 0.8, 0));   // Kafa
+            characterGroup.add(createPart(0.8, 1.2, 0.4, 0, -0.2, 0));  // Gövde
+            characterGroup.add(createPart(0.4, 1.2, 0.4, -0.6, -0.2, 0));// Sol Kol
+            characterGroup.add(createPart(0.4, 1.2, 0.4, 0.6, -0.2, 0)); // Sağ Kol
+            characterGroup.add(createPart(0.4, 1.2, 0.4, -0.2, -1.4, 0));// Sol Bacak
+            characterGroup.add(createPart(0.4, 1.2, 0.4, 0.2, -1.4, 0)); // Sağ Bacak
+
+            scene.add(characterGroup);
 
             animate();
         }
@@ -160,6 +236,43 @@
             requestAnimationFrame(animate);
             if(controls) controls.update();
             if(renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        function renderCostumeShelf() {
+            const listEl = document.getElementById('costume-list');
+            listEl.innerHTML = '';
+
+            costumes.forEach(c => {
+                const isActive = c.id === activeCostumeId;
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border cursor-pointer transition flex items-center justify-between ${
+                    isActive ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/60 border-slate-700 hover:bg-slate-800'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs text-white" style="background-color: ${c.color}">
+                            👕
+                        </div>
+                        <div>
+                            <div class="font-bold text-xs text-slate-200">${c.name}</div>
+                            <div class="text-[10px] text-slate-400">ID: #${c.id}</div>
+                        </div>
+                    </div>
+                `;
+
+                card.onclick = () => selectCostume(c.id);
+                listEl.appendChild(card);
+            });
+        }
+
+        function selectCostume(id) {
+            activeCostumeId = id;
+            const costume = costumes.find(c => c.id === id);
+            if (costume) {
+                drawBaseTexture(costume.color);
+            }
+            renderCostumeShelf();
         }
 
         window.addEventListener('resize', () => {
@@ -172,6 +285,126 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             init3D();
+            drawBaseTexture('#ef4444');
+            renderCostumeShelf();
+
+            // Mod Butonları Olayları
+            const btn3D = document.getElementById('btn-mode-3d');
+            const btn2D = document.getElementById('btn-mode-2d');
+            const container3D = document.getElementById('container-3d');
+            const container2D = document.getElementById('container-2d');
+
+            btn3D.onclick = () => {
+                container2D.classList.add('hidden');
+                container2D.classList.remove('flex');
+                container3D.classList.remove('hidden');
+                btn3D.className = "px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400";
+                btn2D.className = "px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs rounded-xl shadow-lg border border-slate-700";
+            };
+
+            btn2D.onclick = () => {
+                container3D.classList.add('hidden');
+                container2D.classList.remove('hidden');
+                container2D.classList.add('flex');
+                btn2D.className = "px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400";
+                btn3D.className = "px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs rounded-xl shadow-lg border border-slate-700";
+            };
+
+            // Yatak Modu
+            document.getElementById('btn-toggle-bed').onclick = () => {
+                isSleeping = !isSleeping;
+                if (characterGroup) {
+                    characterGroup.rotation.x = isSleeping ? -Math.PI / 2 : 0;
+                    characterGroup.position.y = isSleeping ? -0.5 : 0;
+                }
+            };
+
+            // Kostüm Yönetim Butonları
+            document.getElementById('btn-add-costume').onclick = () => {
+                const newId = Date.now();
+                const colors = ['#f59e0b', '#ec4899', '#06b6d4', '#10b981', '#3b82f6'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                costumes.push({ id: newId, name: `Kostüm ${costumes.length + 1}`, color: randomColor });
+                selectCostume(newId);
+            };
+
+            document.getElementById('btn-use').onclick = () => {
+                update3DTexture();
+                alert('Kostüm başarıyla giydirildi!');
+            };
+
+            document.getElementById('btn-edit').onclick = () => btn2D.click();
+
+            document.getElementById('btn-delete').onclick = () => {
+                if (costumes.length <= 1) {
+                    alert('En az bir kostüm kalmalıdır!');
+                    return;
+                }
+                costumes = costumes.filter(c => c.id !== activeCostumeId);
+                selectCostume(costumes[0].id);
+            };
+
+            // 2D Çizim İşlemleri
+            let isDrawing = false;
+            displayCanvas.onpointerdown = (e) => { isDrawing = true; draw(e); };
+            displayCanvas.onpointermove = (e) => { if (isDrawing) draw(e); };
+            window.onpointerup = () => isDrawing = false;
+
+            function draw(e) {
+                const rect = displayCanvas.getBoundingClientRect();
+                const x = Math.floor((e.clientX - rect.left) / (rect.width / 64));
+                const y = Math.floor((e.clientY - rect.top) / (rect.height / 64));
+
+                if (x >= 0 && x < 64 && y >= 0 && y < 64) {
+                    if (currentTool === 'eraser') {
+                        offCtx.clearRect(x, y, 1, 1);
+                    } else {
+                        offCtx.fillStyle = document.getElementById('color-picker').value;
+                        offCtx.fillRect(x, y, 1, 1);
+                    }
+                    updateDisplayCanvas();
+                    update3DTexture();
+                }
+            }
+
+            document.getElementById('tool-pencil').onclick = () => currentTool = 'pencil';
+            document.getElementById('tool-eraser').onclick = () => currentTool = 'eraser';
+
+            document.getElementById('btn-save-2d').onclick = () => {
+                update3DTexture();
+                alert('Kostüm değişiklikleri kaydedildi!');
+                btn3D.click();
+            };
+
+            // Dosya ve İndirme Olayları
+            document.getElementById('btn-save-snapshot').onclick = () => {
+                renderer.render(scene, camera);
+                const a = document.createElement('a');
+                a.download = 'minecraft-costume-3d.png';
+                a.href = renderer.domElement.toDataURL('image/png');
+                a.click();
+            };
+
+            document.getElementById('btn-download-texture').onclick = () => {
+                const a = document.createElement('a');
+                a.download = 'skin-texture-64x64.png';
+                a.href = offCanvas.toDataURL('image/png');
+                a.click();
+            };
+
+            document.getElementById('input-upload-skin').onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const img = new Image();
+                    img.onload = () => {
+                        offCtx.clearRect(0, 0, 64, 64);
+                        offCtx.drawImage(img, 0, 0, 64, 64);
+                        updateDisplayCanvas();
+                        update3DTexture();
+                    };
+                    img.src = URL.createObjectURL(file);
+                }
+            };
         });
     </script>
 </body>
