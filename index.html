@@ -157,19 +157,19 @@
         </div>
       </div>
 
-      <!-- VIEWPORT BÖLGESİ (TAM BOYUT KORUMALI) -->
-      <div class="flex-1 flex w-full h-full relative items-center justify-center overflow-hidden">
+      <!-- VIEWPORT BÖLGESİ (TAM EKRAN FLEX KORUMALI) -->
+      <div class="flex-1 flex w-full relative items-center justify-center overflow-hidden">
 
         <!-- 3D ANA KARAKTER GÖRÜNÜMÜ -->
-        <div id="container3D" class="w-full h-full absolute inset-0 bg-[#0f0f12]">
+        <div id="container3D" class="w-full h-full flex-1 relative bg-[#0f0f12]">
           <canvas id="canvas3D" class="w-full h-full block"></canvas>
-          <div class="absolute bottom-20 left-4 text-[11px] text-zinc-400 bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur pointer-events-none border border-zinc-800 z-10">
+          <div class="absolute bottom-4 left-4 text-[11px] text-zinc-400 bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur pointer-events-none border border-zinc-800 z-10">
             Sol tık: Döndür | Sağ tık: Kaydır | Tekerlek: Yakınlaş
           </div>
         </div>
 
         <!-- 2D KOSTÜM DOKU ŞABLONU -->
-        <div id="panel2D" class="w-full h-full absolute inset-0 hidden flex-col items-center justify-center p-4 bg-[#0f0f12]/95 z-10 backdrop-blur">
+        <div id="panel2D" class="w-full h-full flex-1 hidden flex-col items-center justify-center p-4 bg-[#0f0f12]/95 z-10 backdrop-blur">
           <div class="text-xs text-zinc-400 mb-2 font-semibold">2D Kostüm Şablonu (64x64 Pixel)</div>
           <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black shadow-2xl grid-overlay">
             <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[480px] md:h-[480px] cursor-crosshair rounded"></canvas>
@@ -282,7 +282,7 @@
     let currentColor = '#208ea3';
     let isDrawing = false;
     let isEditing = false;
-    let isPanelOpen = false; // İlk açılışta kapalı
+    let isPanelOpen = false;
     let activeCostumeId = 1;
     let mini3DScenes = [];
 
@@ -560,6 +560,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       init3D();
       syncActiveCanvasToEditor();
+      update3DTexture();
       renderCostumeShelf();
       onWindowResize();
 
@@ -578,7 +579,7 @@
       openShelfBtn.onclick = () => {
         shelfPanel.classList.remove('closed');
         openShelfBtn.classList.add('hidden');
-        setTimeout(onWindowResize, 150);
+        setTimeout(() => onWindowResize(), 150);
       };
 
       // Sağ Üst 3D Panel Çekmece Kontrolleri
@@ -611,6 +612,7 @@
         btnMode3D.className = "px-3.5 py-1.5 bg-blue-600 text-white font-bold text-xs rounded-xl shadow border border-blue-400 transition active:scale-95 flex items-center gap-1.5";
         btnMode2D.className = "px-3.5 py-1.5 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold text-xs rounded-xl shadow border border-zinc-700 transition active:scale-95 flex items-center gap-1.5";
         panel2D.classList.add('hidden');
+        panel2D.classList.remove('flex');
         container3D.classList.remove('hidden');
         onWindowResize();
       };
@@ -621,6 +623,7 @@
         container3D.classList.add('hidden');
         panel2D.classList.remove('hidden');
         panel2D.classList.add('flex');
+        onWindowResize();
       };
 
       // Çizim Olayları
