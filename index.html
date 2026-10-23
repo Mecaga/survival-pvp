@@ -20,14 +20,14 @@
         .grid-overlay {
             background-size: 16px 16px;
             background-image: 
-                linear-gradient(to right, rgba(0, 255, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+                linear-gradient(to right, rgba(0, 255, 255, 0.12) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 255, 255, 0.12) 1px, transparent 1px);
         }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col select-none">
 
-    <!-- ÜST BAR / HEADER (DIŞARI / İÇERİ AKTARMA & İNDİRME) -->
+    <!-- ÜST BAR / HEADER (DIŞARI / İÇERİ AKTARMA) -->
     <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0">
         <div class="flex items-center gap-3">
             <span class="text-2xl">👕</span>
@@ -41,7 +41,7 @@
                 💾 Doku İndir (PNG)
             </button>
             <label class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-700 text-slate-200 cursor-pointer transition active:scale-95">
-                📂 Skin Yükle (İçeri Aktar)
+                📂 Skin Yükle
                 <input type="file" id="input-upload-skin" accept="image/png" class="hidden">
             </label>
         </div>
@@ -50,7 +50,7 @@
     <!-- BÖLÜNMÜŞ ANA EKRAN -->
     <main class="flex-1 flex overflow-hidden relative">
 
-        <!-- SOL TARAF: KOSTÜM RAFI (PENCERE KAPAMA / AÇMA ÖZELLİKLİ) -->
+        <!-- SOL TARAF: KOSTÜM RAFI (TAM 3D UZUVLU MİNİ MODEL KARTLARI) -->
         <section id="shelf-panel" class="w-80 sm:w-96 bg-slate-900/95 border-r border-slate-800 flex flex-col p-4 shrink-0 z-30 shelf-transition absolute left-0 top-0 bottom-0 md:relative">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
                 <div class="flex items-center gap-2">
@@ -68,21 +68,21 @@
                 </div>
             </div>
 
-            <!-- KOSTÜM LİSTESİ (CANLI 3D KARTLAR) -->
+            <!-- KOSTÜM LİSTESİ -->
             <div id="costume-list" class="flex-1 overflow-y-auto shelf-scroll space-y-3 pr-1">
                 <!-- Dinamik Kartlar -->
             </div>
         </section>
 
-        <!-- PENCERE AÇMA BUTONU (RAF KAPALIYKEN SOLDA GÖRÜNÜR) -->
+        <!-- PENCERE AÇMA BUTONU -->
         <button id="btn-open-shelf" class="hidden fixed left-3 top-16 z-20 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xl transition active:scale-95 border border-blue-400">
             ▶ Kostüm Rafını Aç
         </button>
 
-        <!-- SAĞ TARAF: ÇALIŞMA ALANI & 2D/3D DÜZENLEME -->
+        <!-- SAĞ TARAF: ÇALIŞMA ALANI & DÜZENLEME -->
         <section class="flex-1 flex flex-col relative bg-slate-950 overflow-hidden w-full h-full">
 
-            <!-- ÜST MOD SEÇİMİ (2D DOKU ŞEMASI / 3D PANEL) -->
+            <!-- ÜST MOD SEÇİMİ (SADECE 3D GÖRÜNÜM VE 2D ŞABLON) -->
             <div class="absolute top-4 right-4 z-20 flex gap-2">
                 <button id="btn-mode-3d" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg border border-blue-400 transition active:scale-95">
                     🧊 3D Görünüm
@@ -90,43 +90,60 @@
                 <button id="btn-mode-2d" class="px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs rounded-xl shadow-lg border border-slate-700 transition active:scale-95">
                     ✏️ 2D Şablon
                 </button>
-                <button id="btn-toggle-bed" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-lg transition active:scale-95">
-                    🛏️ Yatak Modu
-                </button>
             </div>
 
-            <!-- ALT DÜZENLEME BAR (ÇİZİM ARAÇLARI & EYLEMLER) -->
+            <!-- ALT DÜZENLEME / ANA EYLEM BARI -->
             <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 border border-slate-700 px-5 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md">
-                <!-- DÜZENLE BUTONU (RESİM ARAÇLARINI AÇAR) -->
-                <button id="btn-edit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
-                    ✏️ Düzenle
-                </button>
-
-                <!-- RESİM ARAÇLARI (DÜZENLE MODUNDA AKTİF) -->
-                <div id="drawing-tools" class="flex items-center gap-2 border-l border-r border-slate-700 px-3">
-                    <input type="color" id="color-picker" value="#3b82f6" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent">
-                    <button id="tool-pencil" class="px-2.5 py-1 bg-blue-600 text-white text-xs font-bold rounded-lg shadow">Kalem</button>
-                    <button id="tool-eraser" class="px-2.5 py-1 bg-slate-700 text-slate-300 hover:bg-slate-600 text-xs font-bold rounded-lg">Silgi</button>
+                
+                <!-- VARSAYILAN KONTROL BUTONLARI -->
+                <div id="default-actions" class="flex items-center gap-3">
+                    <button id="btn-use" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
+                        ✓ Kullan
+                    </button>
+                    <button id="btn-start-edit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
+                        ✏️ Düzenle
+                    </button>
+                    <button id="btn-delete" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
+                        🗑️ Sil
+                    </button>
                 </div>
 
-                <!-- KAYDET VE KOSTÜMÜ SEÇ BUTONLARI -->
-                <button id="btn-save-2d" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
-                    💾 Kaydet
-                </button>
-                <button id="btn-use" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
-                    ✓ Kostümü Seç
-                </button>
-                <button id="btn-delete" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
-                    🗑️
-                </button>
+                <!-- DÜZENLEME MODU ARAÇLARI (DÜZENLE'YE BASINCA AÇILIR) -->
+                <div id="edit-tools" class="hidden flex items-center gap-3">
+                    <input type="color" id="color-picker" value="#3b82f6" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent">
+                    
+                    <button id="tool-eyedropper" class="px-2.5 py-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold rounded-lg border border-slate-700 transition" title="Renk Alma (Eyedropper)">
+                        🧪 Damlalık
+                    </button>
+                    
+                    <button id="tool-pencil" class="px-2.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow">
+                        ✏️ Kalem
+                    </button>
+                    
+                    <button id="tool-eraser" class="px-2.5 py-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold rounded-lg transition">
+                        🧹 Silgi
+                    </button>
+
+                    <!-- FIRÇA BOYUTU -->
+                    <select id="brush-size" class="bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 rounded-lg px-2 py-1 outline-none">
+                        <option value="1">1px</option>
+                        <option value="2">2px</option>
+                        <option value="3">3px</option>
+                    </select>
+
+                    <button id="btn-save-edit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow ml-2 transition active:scale-95">
+                        💾 Kaydet
+                    </button>
+                </div>
+
             </div>
 
             <!-- VIEWPORT CONTAINERS -->
             <div class="flex-1 flex w-full h-full relative">
                 
-                <!-- 2D KOSTÜM RESİM ŞABLONU DÜZENLEME ALANI -->
+                <!-- 2D DOKU ŞABLONU -->
                 <div id="panel-2d" class="w-full h-full hidden flex-col items-center justify-center p-4 bg-slate-900/90 z-10 backdrop-blur-md">
-                    <div class="text-xs text-slate-400 mb-2 font-semibold">2D Kostüm Şablonu (64x64 Piksel)</div>
+                    <div class="text-xs text-slate-400 mb-2 font-semibold">2D Kostüm Şablonu (64x64 Pixel)</div>
                     <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black/80 shadow-2xl grid-overlay">
                         <canvas id="canvas-2d" width="512" height="512" class="cursor-crosshair"></canvas>
                     </div>
@@ -148,8 +165,9 @@
         // --- SİSTEM DEĞİŞKENLERİ ---
         let scene, camera, renderer, controls, characterGroup;
         let activeCostumeId = 1;
-        let isSleeping = false;
         let currentTool = 'pencil';
+        let brushSize = 1;
+        let isEditing = false;
         let miniScenes = [];
 
         // 64x64 Doku Tuvali
@@ -162,7 +180,7 @@
 
         let costumeTexture, textureMaterial;
 
-        // Varsayılan Kostüm Listesi
+        // Varsayılan Kostümler
         let costumes = [
             { id: 1, name: "Savaşçı Zırhı", color: "#ef4444" },
             { id: 2, name: "Mecaga Elit", color: "#8b5cf6" },
@@ -174,7 +192,7 @@
             offCtx.fillStyle = baseColor;
             offCtx.fillRect(0, 0, 64, 64);
 
-            // Kafa & Yüz Detayı
+            // Kafa / Yüz
             offCtx.fillStyle = '#ffdbac';
             offCtx.fillRect(8, 8, 8, 8);
             offCtx.fillStyle = '#1e293b';
@@ -195,7 +213,7 @@
             displayCtx.imageSmoothingEnabled = false;
             displayCtx.drawImage(offCanvas, 0, 0, 512, 512);
 
-            // Piksel Izgara Çizgileri
+            // Izgara Çizgileri
             displayCtx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
             displayCtx.lineWidth = 1;
             for (let i = 0; i <= 512; i += 8) {
@@ -210,7 +228,7 @@
             }
         }
 
-        // --- THREE.JS 3D KARAKTER KURULUMU ---
+        // --- THREE.JS 3D KARAKTER (KAFA, GÖVDE, KOLLAR, BACAKLAR) ---
         function init3D() {
             const container = document.getElementById('container-3d');
             scene = new THREE.Scene();
@@ -233,7 +251,7 @@
             dirLight.position.set(3, 5, 4);
             scene.add(dirLight);
 
-            // Doku & Materyal
+            // Doku
             costumeTexture = new THREE.CanvasTexture(offCanvas);
             costumeTexture.magFilter = THREE.NearestFilter;
             costumeTexture.minFilter = THREE.NearestFilter;
@@ -244,7 +262,7 @@
                 metalness: 0.1
             });
 
-            // Minecraft Modeli + Turkuaz Kenar Çizgileri (EdgesGeometry)
+            // Minecraft Parçaları + Turkuaz Kenar Çizgileri
             characterGroup = new THREE.Group();
 
             function createPart(w, h, d, x, y, z) {
@@ -275,14 +293,14 @@
             if (controls) controls.update();
             if (renderer && scene && camera) renderer.render(scene, camera);
 
-            // Sol Raftaki Canlı 3D Modellere Dönme Hareketi Ver
+            // Sol Raftaki Canlı 3D Modellere Dönme Hareketi
             miniScenes.forEach(m => {
                 if (m.group) m.group.rotation.y += 0.02;
                 if (m.renderer && m.scene && m.camera) m.renderer.render(m.scene, m.camera);
             });
         }
 
-        // --- SOL RAFI RENDER ET & MİNİ 3D MODELLERİ OLUŞTUR ---
+        // --- SOL RAFTAKİ MİNİ 3D MODELLER (KAFA, GÖVDE, KOLLAR, BACAKLAR) ---
         function renderCostumeList() {
             const listEl = document.getElementById('costume-list');
             listEl.innerHTML = '';
@@ -299,7 +317,7 @@
 
                 card.innerHTML = `
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-xl bg-slate-950 border border-slate-700 overflow-hidden relative shrink-0">
+                        <div class="w-14 h-14 rounded-xl bg-slate-950 border border-slate-700 overflow-hidden relative shrink-0">
                             <canvas id="${miniCanvasId}" class="w-full h-full"></canvas>
                         </div>
                         <div>
@@ -325,10 +343,10 @@
             mScene.background = new THREE.Color(0x090d16);
 
             const mCam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-            mCam.position.set(0, 0.5, 3.2);
+            mCam.position.set(0, 0.2, 3.8);
 
             const mRen = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-            mRen.setSize(48, 48);
+            mRen.setSize(56, 56);
 
             const mLight = new THREE.DirectionalLight(0xffffff, 1);
             mLight.position.set(2, 3, 2);
@@ -337,14 +355,25 @@
 
             const mGroup = new THREE.Group();
             const mat = new THREE.MeshStandardMaterial({ color: hexColor, roughness: 0.5 });
-            const geo = new THREE.BoxGeometry(0.7, 1.4, 0.4);
-            const mesh = new THREE.Mesh(geo, mat);
 
-            const edges = new THREE.EdgesGeometry(geo);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff }));
-            mesh.add(line);
+            function createMiniPart(w, h, d, x, y, z) {
+                const geo = new THREE.BoxGeometry(w, h, d);
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(x, y, z);
+                const edges = new THREE.EdgesGeometry(geo);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff }));
+                mesh.add(line);
+                return mesh;
+            }
 
-            mGroup.add(mesh);
+            // Tam 3D Parçalar
+            mGroup.add(createMiniPart(0.6, 0.6, 0.6, 0, 0.6, 0));   // Kafa
+            mGroup.add(createMiniPart(0.6, 0.9, 0.3, 0, -0.15, 0)); // Gövde
+            mGroup.add(createMiniPart(0.3, 0.9, 0.3, -0.45, -0.15, 0)); // Sol Kol
+            mGroup.add(createMiniPart(0.3, 0.9, 0.3, 0.45, -0.15, 0));  // Sağ Kol
+            mGroup.add(createMiniPart(0.3, 0.9, 0.3, -0.15, -1.05, 0)); // Sol Bacak
+            mGroup.add(createMiniPart(0.3, 0.9, 0.3, 0.15, -1.05, 0));  // Sağ Bacak
+
             mScene.add(mGroup);
 
             miniScenes.push({ scene: mScene, camera: mCam, renderer: mRen, group: mGroup });
@@ -359,13 +388,13 @@
             renderCostumeList();
         }
 
-        // --- ARAYÜZ ETKİLEŞİMLERİ ---
+        // --- ARAYÜZ VE ETKİLEŞİM YÖNETİMİ ---
         document.addEventListener('DOMContentLoaded', () => {
             init3D();
             createBaseTexture('#ef4444');
             renderCostumeList();
 
-            // PENCERE KAPATMA / AÇMA (SOL RAF)
+            // SOL RAF PENCERE KAPATMA / AÇMA
             const shelfPanel = document.getElementById('shelf-panel');
             const btnCloseShelf = document.getElementById('btn-close-shelf');
             const btnOpenShelf = document.getElementById('btn-open-shelf');
@@ -388,7 +417,7 @@
                 }, 10);
             };
 
-            // MOD SEÇİMİ (2D ŞABLON / 3D GÖRÜNÜM)
+            // MOD SEÇİMİ (3D GÖRÜNÜM / 2D ŞABLON)
             const btn3D = document.getElementById('btn-mode-3d');
             const btn2D = document.getElementById('btn-mode-2d');
             const panel2D = document.getElementById('panel-2d');
@@ -408,35 +437,31 @@
                 onWindowResize();
             };
 
-            // YATAK MODU
-            document.getElementById('btn-toggle-bed').onclick = () => {
-                isSleeping = !isSleeping;
-                if (characterGroup) {
-                    characterGroup.rotation.x = isSleeping ? -Math.PI / 2 : 0;
-                    characterGroup.position.y = isSleeping ? -0.5 : 0;
-                }
+            // DÜZENLEME MODU AÇMA / KAPATMA SİSTEMİ
+            const defaultActions = document.getElementById('default-actions');
+            const editTools = document.getElementById('edit-tools');
+            const btnStartEdit = document.getElementById('btn-start-edit');
+            const btnSaveEdit = document.getElementById('btn-save-edit');
+
+            btnStartEdit.onclick = () => {
+                isEditing = true;
+                defaultActions.classList.add('hidden');
+                editTools.classList.remove('hidden');
+                btn2D.click(); // Çizim için 2D şablonu aç
             };
 
-            // EYLEM BUTONLARI
-            document.getElementById('btn-add-costume').onclick = () => {
-                const newId = Date.now();
-                const colors = ['#f59e0b', '#ec4899', '#06b6d4', '#10b981', '#3b82f6'];
-                const randomColor = colors[Math.floor(Math.random() * colors.length)];
-                costumes.push({ id: newId, name: `Kostüm ${costumes.length + 1}`, color: randomColor });
-                selectCostume(newId);
+            btnSaveEdit.onclick = () => {
+                isEditing = false;
+                update3DTexture();
+                editTools.classList.add('hidden');
+                defaultActions.classList.remove('hidden');
+                btn3D.click(); // 3D mesaja geri dön
+                alert('Kostüm başarıyla güncellendi ve kaydedildi!');
             };
-
-            document.getElementById('btn-edit').onclick = () => btn2D.click();
 
             document.getElementById('btn-use').onclick = () => {
                 update3DTexture();
-                alert('Kostüm seçildi ve karaktere giydirildi!');
-            };
-
-            document.getElementById('btn-save-2d').onclick = () => {
-                update3DTexture();
-                alert('Kostüm değişiklikleri kaydedildi!');
-                btn3D.click();
+                alert('Kostüm giydirildi ve aktif kılındı!');
             };
 
             document.getElementById('btn-delete').onclick = () => {
@@ -448,33 +473,71 @@
                 selectCostume(costumes[0].id);
             };
 
-            // 2D ÇİZİM SİSTEMİ
+            document.getElementById('btn-add-costume').onclick = () => {
+                const newId = Date.now();
+                const colors = ['#f59e0b', '#ec4899', '#06b6d4', '#10b981', '#3b82f6'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                costumes.push({ id: newId, name: `Kostüm ${costumes.length + 1}`, color: randomColor });
+                selectCostume(newId);
+            };
+
+            // ÇİZİM VE RENK ALMA (EYEDROPPER) ARAÇLARI
             let isDrawing = false;
-            displayCanvas.onpointerdown = (e) => { isDrawing = true; draw(e); };
-            displayCanvas.onpointermove = (e) => { if (isDrawing) draw(e); };
+            displayCanvas.onpointerdown = (e) => { isDrawing = true; handleDraw(e); };
+            displayCanvas.onpointermove = (e) => { if (isDrawing) handleDraw(e); };
             window.onpointerup = () => isDrawing = false;
 
-            function draw(e) {
+            function handleDraw(e) {
+                if (!isEditing) return;
+
                 const rect = displayCanvas.getBoundingClientRect();
                 const x = Math.floor((e.clientX - rect.left) / (rect.width / 64));
                 const y = Math.floor((e.clientY - rect.top) / (rect.height / 64));
 
                 if (x >= 0 && x < 64 && y >= 0 && y < 64) {
-                    if (currentTool === 'eraser') {
-                        offCtx.clearRect(x, y, 1, 1);
-                    } else {
-                        offCtx.fillStyle = document.getElementById('color-picker').value;
-                        offCtx.fillRect(x, y, 1, 1);
+                    if (currentTool === 'eyedropper') {
+                        // Renk Alma
+                        const pixelData = offCtx.getImageData(x, y, 1, 1).data;
+                        const hex = "#" + ((1 << 24) + (pixelData[0] << 16) + (pixelData[1] << 8) + pixelData[2]).toString(16).slice(1);
+                        document.getElementById('color-picker').value = hex;
+                        currentTool = 'pencil';
+                        updateToolUI();
+                        return;
                     }
+
+                    const size = parseInt(document.getElementById('brush-size').value);
+
+                    for (let dx = 0; dx < size; dx++) {
+                        for (let dy = 0; dy < size; dy++) {
+                            const px = x + dx;
+                            const py = y + dy;
+                            if (px < 64 && py < 64) {
+                                if (currentTool === 'eraser') {
+                                    offCtx.clearRect(px, py, 1, 1);
+                                } else {
+                                    offCtx.fillStyle = document.getElementById('color-picker').value;
+                                    offCtx.fillRect(px, py, 1, 1);
+                                }
+                            }
+                        }
+                    }
+
                     updateDisplayCanvas();
                     update3DTexture();
                 }
             }
 
-            document.getElementById('tool-pencil').onclick = () => currentTool = 'pencil';
-            document.getElementById('tool-eraser').onclick = () => currentTool = 'eraser';
+            function updateToolUI() {
+                document.getElementById('tool-pencil').className = currentTool === 'pencil' ? "px-2.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow" : "px-2.5 py-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold rounded-lg transition";
+                document.getElementById('tool-eraser').className = currentTool === 'eraser' ? "px-2.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow" : "px-2.5 py-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold rounded-lg transition";
+                document.getElementById('tool-eyedropper').className = currentTool === 'eyedropper' ? "px-2.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow" : "px-2.5 py-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold rounded-lg transition";
+            }
 
-            // İÇERİ / DIŞARI AKTARMA & İNDİRME
+            document.getElementById('tool-pencil').onclick = () => { currentTool = 'pencil'; updateToolUI(); };
+            document.getElementById('tool-eraser').onclick = () => { currentTool = 'eraser'; updateToolUI(); };
+            document.getElementById('tool-eyedropper').onclick = () => { currentTool = 'eyedropper'; updateToolUI(); };
+
+            // İÇERİ / DIŞARI AKTARMA
             document.getElementById('btn-save-snapshot').onclick = () => {
                 renderer.render(scene, camera);
                 const a = document.createElement('a');
