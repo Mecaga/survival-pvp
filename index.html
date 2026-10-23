@@ -1,585 +1,647 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minecraft 3D Skin Studio & Doku Yöneticisi</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minecraft 64x64 Skin Studio</title>
+  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Three.js for 3D Preview -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            mcbg: '#0f0f12',
+            mcpanel: '#18181c',
+            mcaccent: '#2563eb',
+            mcaccenthover: '#1d4ed8',
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    body { font-family: 'Inter', sans-serif; user-select: none; }
-    canvas { touch-action: none; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    .pixelated { image-rendering: pixelated; image-rendering: crisp-edges; }
+    /* Crisp pixel rendering for pixel art */
+    canvas.pixelated {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      -ms-interpolation-mode: nearest-neighbor;
+    }
+    
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #18181b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3f3f46;
+      border-radius: 3px;
+    }
+
+    /* Floating Panel Drawer Transition */
+    #floatingPanel {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+    #floatingPanel.panel-closed {
+      transform: translateX(110%);
+      opacity: 0;
+      pointer-events: none;
+    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-screen w-screen overflow-hidden flex flex-col md:flex-row">
+<body class="bg-mcbg text-gray-100 h-screen w-screen overflow-hidden flex flex-col font-sans select-none">
 
-  <!-- LEFT PANEL: 2D Texture Paint Studio & Uploads -->
-  <div class="w-full md:w-[450px] bg-slate-900 border-r border-slate-800 flex flex-col h-1/2 md:h-full z-10 shadow-2xl">
-    <!-- Header -->
-    <div class="p-3.5 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
-      <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-          <i class="fa-solid fa-paintbrush text-sm"></i>
-        </div>
-        <div>
-          <h1 class="font-bold text-sm text-slate-100 leading-tight">Skin Studio 3D</h1>
-          <p class="text-[10px] text-emerald-400 font-medium">Doku Çizici & Karakter Yöneticisi</p>
-        </div>
+  <!-- TOP HEADER NAVBAR -->
+  <header class="bg-mcpanel border-b border-zinc-800 px-4 py-2 flex items-center justify-between shrink-0 h-14 z-30">
+    <div class="flex items-center gap-3">
+      <div class="bg-red-600 text-white font-bold px-2.5 py-1 rounded text-xs tracking-wider flex items-center gap-1.5 shadow">
+        <i data-lucide="box" class="w-4 h-4"></i> MC SKIN STUDIO
       </div>
-      <span class="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded font-mono">64x64 UV</span>
+      <h1 class="text-sm font-semibold text-zinc-300 hidden sm:block">64x64 Tasarım & 3D Voxel Düzenleyici</h1>
     </div>
 
-    <!-- Scrollable Studio Content -->
-    <div class="flex-1 overflow-y-auto p-3.5 space-y-3.5 custom-scrollbar">
+    <!-- Right Header Actions & Corner Panel Toggle Button -->
+    <div class="flex items-center gap-2">
+      <button id="downloadSkinTopBtn" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 border border-zinc-700 transition">
+        <i data-lucide="download" class="w-3.5 h-3.5 text-green-400"></i>
+        <span class="hidden md:inline">Doku İndir</span>
+      </button>
 
-      <!-- Upload & Download Skin Actions -->
-      <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2">
-        <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-          <i class="fa-solid fa-file-arrow-up text-blue-400"></i> Doku & Dosya İşlemleri
-        </h2>
-        <div class="grid grid-cols-2 gap-2">
-          <!-- File Input for Custom PNG -->
-          <label class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-blue-500/50 rounded-lg text-xs cursor-pointer flex items-center justify-center gap-1.5 transition text-blue-300">
-            <i class="fa-solid fa-upload"></i>
-            <span class="font-medium text-[11px]">Skin Yükle (.png)</span>
-            <input type="file" id="skinFileInput" accept="image/png" class="hidden">
-          </label>
+      <!-- Corner Floating Panel Toggle Button -->
+      <button id="toggleCornerPanelBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition shadow-lg border border-blue-400">
+        <i data-lucide="box" class="w-4 h-4"></i>
+        <span>3D Panel</span>
+        <i data-lucide="chevron-left" id="panelChevron" class="w-3.5 h-3.5 transition-transform duration-300"></i>
+      </button>
+    </div>
+  </header>
 
-          <!-- Download Texture Sheet -->
-          <button id="btnDownloadSkin" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/50 rounded-lg text-xs font-medium text-emerald-300 flex items-center justify-center gap-1.5 transition">
-            <i class="fa-solid fa-download"></i>
-            <span class="text-[11px]">Doku Resmi İndir</span>
-          </button>
-        </div>
+  <!-- MAIN WORKSPACE CONTAINER -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT TOOLBAR -->
+    <aside class="w-14 bg-mcpanel border-r border-zinc-800 flex flex-col items-center py-3 gap-2.5 shrink-0 z-10">
+      <button data-tool="pencil" class="tool-btn active bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-500 transition relative group" title="Kalem (Pencil)">
+        <i data-lucide="pencil" class="w-5 h-5"></i>
+      </button>
+
+      <button data-tool="eraser" class="tool-btn text-zinc-400 hover:text-white hover:bg-zinc-800 p-2.5 rounded-xl transition relative group" title="Silgi (Eraser)">
+        <i data-lucide="eraser" class="w-5 h-5"></i>
+      </button>
+
+      <button data-tool="bucket" class="tool-btn text-zinc-400 hover:text-white hover:bg-zinc-800 p-2.5 rounded-xl transition relative group" title="Boya Kovası (Fill Bucket)">
+        <i data-lucide="paint-bucket" class="w-5 h-5"></i>
+      </button>
+
+      <button data-tool="picker" class="tool-btn text-zinc-400 hover:text-white hover:bg-zinc-800 p-2.5 rounded-xl transition relative group" title="Renk Seçici (Eyedropper)">
+        <i data-lucide="pipette" class="w-5 h-5"></i>
+      </button>
+
+      <hr class="w-8 border-zinc-800 my-1" />
+
+      <!-- Active Color Picker -->
+      <div class="flex flex-col items-center gap-1">
+        <input type="color" id="primaryColor" value="#208ea3" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0 p-0" title="Aktif Renk" />
       </div>
 
-      <!-- Color Palette & Tools -->
-      <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2.5">
-        <div class="flex justify-between items-center">
-          <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <i class="fa-solid fa-palette text-amber-400"></i> Çizim Araçları
-          </h2>
-          <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300">
-            <input type="checkbox" id="chkWireframe" class="rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0">
-            <span>Köşe Çizgileri</span>
-          </label>
-        </div>
+      <!-- Grid Toggle -->
+      <button id="toggleGridBtn" class="text-blue-400 hover:bg-zinc-800 p-2.5 rounded-xl transition mt-auto" title="Izgara Çizgilerini Aç/Kapat">
+        <i data-lucide="grid" class="w-5 h-5"></i>
+      </button>
 
-        <div class="flex items-center gap-2">
-          <input type="color" id="colorPicker" value="#10b981" class="w-9 h-9 rounded-lg cursor-pointer bg-slate-800 border border-slate-700 p-0.5">
-          <div class="grid grid-cols-2 gap-1.5 flex-1">
-            <button id="btnPencil" class="py-1.5 px-2 bg-emerald-600 text-white rounded-lg font-medium text-xs flex items-center justify-center gap-1 transition">
-              <i class="fa-solid fa-pencil"></i> Kalem
-            </button>
-            <button id="btnEraser" class="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium text-xs flex items-center justify-center gap-1 border border-slate-700 transition">
-              <i class="fa-solid fa-eraser"></i> Silgi
-            </button>
-          </div>
-        </div>
+      <button id="resetSkinBtn" class="text-red-400 hover:bg-zinc-800 p-2.5 rounded-xl transition" title="Varsayılan Skine Dön">
+        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+      </button>
+    </aside>
+
+    <!-- CENTER CANVAS AREA (2D UV EDITOR) -->
+    <main class="flex-1 bg-zinc-950 flex flex-col justify-center items-center p-4 relative overflow-auto">
+      
+      <!-- Informative Floating Badge -->
+      <div class="absolute top-3 left-4 bg-zinc-900/90 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs text-zinc-400 flex items-center gap-2 backdrop-blur z-0">
+        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+        <span>64x64 UV Haritası (Net Piksel Ayraçları)</span>
       </div>
 
-      <!-- Quick Preset Costumes -->
-      <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2">
-        <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-          <i class="fa-solid fa-shirt text-purple-400"></i> Hazır Kostüm Şablonları
-        </h2>
-        <div class="grid grid-cols-2 gap-1.5">
-          <button onclick="applyPreset('mecaga')" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 rounded-lg text-xs text-left transition">
-            <div class="font-bold text-emerald-400 text-[11px]">Mecaga Özel</div>
-            <div class="text-[9px] text-slate-400">Külah & Tuval Karakteri</div>
-          </button>
-          <button onclick="applyPreset('default')" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500/50 rounded-lg text-xs text-left transition">
-            <div class="font-bold text-purple-300 text-[11px]">Mor Tişörtlü</div>
-            <div class="text-[9px] text-slate-400">Klasik Oyuncu Skin</div>
-          </button>
-          <button onclick="applyPreset('warrior')" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-red-500/50 rounded-lg text-xs text-left transition">
-            <div class="font-bold text-red-400 text-[11px]">Kırmızı Savaşçı</div>
-            <div class="text-[9px] text-slate-400">Zırhlı Savaşçı</div>
-          </button>
-          <button onclick="applyPreset('emerald')" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-teal-500/50 rounded-lg text-xs text-left transition">
-            <div class="font-bold text-teal-300 text-[11px]">Zümrüt Şövalye</div>
-            <div class="text-[9px] text-slate-400">Yeşil Parlak Zırh</div>
-          </button>
-        </div>
-      </div>
-
-      <!-- 2D Canvas Editor with UV Boundaries -->
-      <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex justify-between items-center">
-          <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <i class="fa-solid fa-border-all text-blue-400"></i> 2D UV Haritası & Köşe Çerçevesi
-          </h2>
-          <span class="text-[10px] text-emerald-400">64x64 Piksel</span>
-        </div>
+      <!-- Canvas Container -->
+      <div class="relative shadow-2xl rounded-lg border-2 border-zinc-700 bg-zinc-900 p-1 flex items-center justify-center">
+        <!-- Main 2D Drawing Canvas -->
+        <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[360px] h-[360px] sm:w-[460px] sm:h-[460px] md:w-[512px] md:h-[512px] cursor-crosshair rounded bg-black/40"></canvas>
         
-        <div class="relative flex justify-center bg-slate-900 p-2 rounded-lg border border-slate-800 overflow-hidden">
-          <!-- Main Drawing Canvas -->
-          <canvas id="skinCanvas" width="64" height="64" class="w-60 h-60 pixelated border border-slate-700 cursor-crosshair bg-slate-950 relative z-0"></canvas>
-          <!-- Grid Overlay Canvas -->
-          <canvas id="gridOverlay" width="240" height="240" class="w-60 h-60 absolute pointer-events-none z-10"></canvas>
+        <!-- Grid & Region Overlay Canvas -->
+        <canvas id="gridCanvas" width="512" height="512" class="absolute top-1 left-1 pointer-events-none w-[360px] h-[360px] sm:w-[460px] sm:h-[460px] md:w-[512px] md:h-[512px]"></canvas>
+      </div>
+
+      <!-- Bottom Legend Bar -->
+      <div class="mt-4 flex flex-wrap gap-2 justify-center text-[11px] text-zinc-400">
+        <span class="flex items-center gap-1 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Kafa</span>
+        <span class="flex items-center gap-1 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Gövde & Türk Bayrağı C*</span>
+        <span class="flex items-center gap-1 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800"><span class="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block"></span> Kollar</span>
+        <span class="flex items-center gap-1 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span> Bacaklar</span>
+      </div>
+    </main>
+
+    <!-- RIGHT FLOATING CORNER PANEL DRAWER (3D PREVIEW & CONTROLS) -->
+    <aside id="floatingPanel" class="absolute top-3 right-3 bottom-3 w-80 sm:w-96 bg-mcpanel/95 backdrop-blur-md border border-zinc-700/80 rounded-2xl shadow-2xl flex flex-col z-20 overflow-hidden">
+      
+      <!-- Panel Header -->
+      <div class="p-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
+        <div class="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+          <i data-lucide="box" class="w-4 h-4 text-blue-400"></i>
+          <span>3D Karakter Önizleme</span>
+        </div>
+        <button id="closePanelBtn" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 transition" title="Kapat">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- 3D WebGL Canvas Viewport -->
+      <div id="canvas3DContainer" class="flex-1 bg-zinc-950/80 relative overflow-hidden">
+        <canvas id="canvas3D" class="w-full h-full block"></canvas>
+        
+        <!-- Controls hint overlay -->
+        <div class="absolute bottom-2 left-2 right-2 text-[10px] text-zinc-400 bg-black/70 px-2 py-1 rounded-md backdrop-blur text-center pointer-events-none border border-zinc-800">
+          Sol tık: Döndür | Sağ tık: Kaydır | Tekerlek: Yakınlaş
         </div>
       </div>
 
-    </div>
-  </div>
-
-  <!-- CENTER/RIGHT AREA: 3D Viewport with Collapsible Side Panel -->
-  <div class="flex-1 relative bg-slate-950 flex h-1/2 md:h-full overflow-hidden">
-    <!-- 3D Canvas Viewport -->
-    <div id="threeContainer" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
-
-    <!-- SIDE PANEL: Character Preview & Quick Action Controls -->
-    <div id="sidePanel" class="absolute top-3 right-3 bottom-3 w-80 bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-2xl transition-all duration-300 z-20">
-      
-      <!-- Panel Header & Toggle Button -->
-      <div class="space-y-3">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-cube text-emerald-400 text-sm"></i>
-            <h3 class="font-bold text-xs text-slate-200">Karakter Paneli</h3>
-          </div>
-          <span id="skinStatusBadge" class="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">Aktif</span>
-        </div>
-
-        <!-- Download 3D Render Image Button -->
-        <button id="btnDownloadRender" class="w-full py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition">
-          <i class="fa-solid fa-camera"></i>
-          <span>Karakter Resmini İndir (PNG)</span>
-        </button>
-
-        <!-- Mechanics: Bed Sleeping Toggle -->
-        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2">
-          <div class="text-xs font-bold text-slate-300 flex items-center justify-between">
-            <span class="flex items-center gap-1.5"><i class="fa-solid fa-bed text-indigo-400"></i> Yatak Modu</span>
-            <span class="text-[10px] text-slate-400 font-normal">Sırt Üstü (90°)</span>
-          </div>
-          <button id="btnSleepToggle" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg font-medium border border-slate-700 transition">
-            Ayakta (0°)
+      <!-- Quick Action Controls inside Floating Panel -->
+      <div class="p-3 border-t border-zinc-800 bg-zinc-900/90 flex flex-col gap-2">
+        
+        <!-- Sleep Toggle Switch -->
+        <div class="flex items-center justify-between bg-zinc-800/80 p-2 rounded-xl border border-zinc-700/60">
+          <span class="text-xs text-zinc-300 font-medium flex items-center gap-1.5">
+            <i data-lucide="bed" class="w-4 h-4 text-purple-400"></i> Yatakta Yat (Sırt Üstü)
+          </span>
+          <button id="toggleSleepBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition shadow">
+            <span id="sleepBtnText">Yatak Modu</span>
           </button>
         </div>
 
-        <!-- Camera Preset Angles -->
-        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2">
-          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-            <i class="fa-solid fa-video text-amber-400"></i> Kamera Açısı
-          </div>
-          <div class="grid grid-cols-3 gap-1.5">
-            <button onclick="resetCamera('front')" class="py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-medium text-slate-300 rounded-lg text-center">Ön</button>
-            <button onclick="resetCamera('back')" class="py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-medium text-slate-300 rounded-lg text-center">Arka</button>
-            <button onclick="resetCamera('iso')" class="py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-medium text-slate-300 rounded-lg text-center">İzo</button>
-          </div>
-        </div>
-      </div>
+        <!-- Action Buttons Grid -->
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <button id="downloadSnapshotBtn" class="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition shadow">
+            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+            <span>3D Poz İndir</span>
+          </button>
 
-      <!-- Panel Footer Hints -->
-      <div class="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80 text-[10px] text-slate-400 space-y-1">
-        <div class="font-bold text-slate-300 flex items-center gap-1">
-          <i class="fa-solid fa-circle-info text-blue-400"></i> Bilgi
+          <button id="downloadSkinBtn" class="bg-green-700 hover:bg-green-600 text-white p-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition shadow">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Doku İndir</span>
+          </button>
         </div>
-        <p>Yatak modu aktifleştiğinde karakter yatağa <strong>sırt üstü</strong> uzanır.</p>
-      </div>
 
-    </div>
+        <!-- Skin File Upload Input -->
+        <label class="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-zinc-200 p-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 border border-zinc-700 transition">
+          <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span>Harici Skin Yükle (.png)</span>
+          <input type="file" id="uploadInput" accept="image/png" class="hidden" />
+        </label>
+
+      </div>
+    </aside>
+
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
   <script>
-    // --- 1. GLOBAL STATE & UV COORDINATES ---
-    const ATLAS_SIZE = 64;
-    let currentColor = '#10b981';
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // ------------------------------------------------------------------
+    // CANVASES & STATE MANAGEMENT
+    // ------------------------------------------------------------------
+    const skinCanvas = document.getElementById('skinCanvas');
+    const ctx = skinCanvas.getContext('2d', { willReadFrequently: true });
+    const gridCanvas = document.getElementById('gridCanvas');
+    const gridCtx = gridCanvas.getContext('2d');
+
     let currentTool = 'pencil';
-    let isMouseDown = false;
-    let isSleeping = false;
-    let showWireframe = true;
+    let currentColor = '#208ea3';
+    let isDrawing = false;
+    let showGrid = true;
+    let isBedMode = false;
+    let isPanelOpen = true;
 
-    // 2D Skin Canvas Setup
-    const canvas = document.getElementById('skinCanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.imageSmoothingEnabled = false;
+    // ------------------------------------------------------------------
+    // PRE-LOADED DEFAULT SKIN (User's skin template with Türk Bayrağı C*)
+    // ------------------------------------------------------------------
+    function loadDefaultUploadedSkin() {
+      ctx.clearRect(0, 0, 64, 64);
 
-    // Grid Overlay Setup for Corner & Edge Boundaries
-    const gridOverlay = document.getElementById('gridOverlay');
-    const gridCtx = gridOverlay.getContext('2d');
+      const cHair = '#52341d';
+      const cFace = '#cba07a';
+      const cEyeW = '#ffffff';
+      const cEyeB = '#4b382a';
+      const cShirt = '#208ea3';
+      const cShirtDark = '#176979';
+      const cPants = '#3b3175';
+      const cPantsDark = '#2b2358';
+      const cRed = '#cc182b';
+      const cWhite = '#ffffff';
 
-    // 64x64 Minecraft Skin UV Mapping Data
-    const UV_MAP = {
-      head: {
-        top:    { x: 8,  y: 0,  w: 8, h: 8 },
-        bottom: { x: 16, y: 0,  w: 8, h: 8 },
-        right:  { x: 0,  y: 8,  w: 8, h: 8 },
-        front:  { x: 8,  y: 8,  w: 8, h: 8 },
-        left:   { x: 16, y: 8,  w: 8, h: 8 },
-        back:   { x: 24, y: 8,  w: 8, h: 8 }
-      },
-      torso: {
-        top:    { x: 20, y: 16, w: 8, h: 4 },
-        bottom: { x: 28, y: 16, w: 8, h: 4 },
-        right:  { x: 16, y: 20, w: 4, h: 12 },
-        front:  { x: 20, y: 20, w: 8, h: 12 },
-        left:   { x: 28, y: 20, w: 4, h: 12 },
-        back:   { x: 32, y: 20, w: 8, h: 12 }
-      },
-      rightArm: {
-        top:    { x: 44, y: 16, w: 4, h: 4 },
-        bottom: { x: 48, y: 16, w: 4, h: 4 },
-        right:  { x: 40, y: 20, w: 4, h: 12 },
-        front:  { x: 44, y: 20, w: 4, h: 12 },
-        left:   { x: 48, y: 20, w: 4, h: 12 },
-        back:   { x: 52, y: 20, w: 4, h: 12 }
-      },
-      leftArm: {
-        top:    { x: 36, y: 48, w: 4, h: 4 },
-        bottom: { x: 40, y: 48, w: 4, h: 4 },
-        right:  { x: 32, y: 52, w: 4, h: 12 },
-        front:  { x: 36, y: 52, w: 4, h: 12 },
-        left:   { x: 40, y: 52, w: 4, h: 12 },
-        back:   { x: 44, y: 52, w: 4, h: 12 }
-      },
-      rightLeg: {
-        top:    { x: 4,  y: 16, w: 4, h: 4 },
-        bottom: { x: 8,  y: 16, w: 4, h: 4 },
-        right:  { x: 0,  y: 20, w: 4, h: 12 },
-        front:  { x: 4,  y: 20, w: 4, h: 12 },
-        left:   { x: 8,  y: 20, w: 4, h: 12 },
-        back:   { x: 12, y: 20, w: 4, h: 12 }
-      },
-      leftLeg: {
-        top:    { x: 20, y: 48, w: 4, h: 4 },
-        bottom: { x: 24, y: 48, w: 4, h: 4 },
-        right:  { x: 16, y: 52, w: 4, h: 12 },
-        front:  { x: 20, y: 52, w: 4, h: 12 },
-        left:   { x: 24, y: 52, w: 4, h: 12 },
-        back:   { x: 28, y: 52, w: 4, h: 12 }
+      // 1. HEAD (0,0 -> 32,16)
+      ctx.fillStyle = cHair;
+      ctx.fillRect(8, 0, 8, 8); // Head Top
+      ctx.fillRect(16, 0, 8, 8); // Head Bottom
+      ctx.fillRect(0, 8, 32, 8); // Head Sides
+
+      // Face Front Details
+      ctx.fillStyle = cFace;
+      ctx.fillRect(8, 10, 8, 6);
+      ctx.fillStyle = cEyeW; ctx.fillRect(9, 13, 2, 1); ctx.fillRect(13, 13, 2, 1);
+      ctx.fillStyle = cEyeB; ctx.fillRect(10, 13, 1, 1); ctx.fillRect(13, 13, 1, 1);
+
+      // 2. TORSO & TURKISH FLAG (16,16 -> 40,32)
+      ctx.fillStyle = cShirt;
+      ctx.fillRect(20, 16, 8, 4); // Top
+      ctx.fillRect(28, 16, 8, 4); // Bottom
+      ctx.fillRect(16, 20, 24, 12);
+
+      // Torso Back: Red Flag with Crescent & Star (C*)
+      ctx.fillStyle = cRed;
+      ctx.fillRect(33, 21, 6, 9);
+      ctx.fillStyle = cWhite;
+      ctx.fillRect(34, 23, 3, 5);
+      ctx.fillStyle = cRed;
+      ctx.fillRect(35, 24, 2, 3);
+      ctx.fillStyle = cWhite;
+      ctx.fillRect(37, 25, 1, 1);
+
+      // 3. RIGHT ARM (40,16 -> 56,32)
+      ctx.fillStyle = cShirtDark;
+      ctx.fillRect(44, 16, 4, 4); ctx.fillRect(48, 16, 4, 4);
+      ctx.fillRect(40, 20, 16, 4);
+      ctx.fillStyle = cFace;
+      ctx.fillRect(40, 24, 16, 8);
+
+      // 4. RIGHT LEG (0,16 -> 16,32)
+      ctx.fillStyle = cPantsDark;
+      ctx.fillRect(4, 16, 4, 4); ctx.fillRect(8, 16, 4, 4);
+      ctx.fillRect(0, 20, 16, 12);
+
+      // 5. LEFT LEG (16,48 -> 32,64)
+      ctx.fillStyle = cPants;
+      ctx.fillRect(20, 48, 4, 4); ctx.fillRect(24, 48, 4, 4);
+      ctx.fillRect(16, 52, 16, 12);
+
+      // 6. LEFT ARM (32,48 -> 48,64)
+      ctx.fillStyle = cShirt;
+      ctx.fillRect(36, 48, 4, 4); ctx.fillRect(40, 48, 4, 4);
+      ctx.fillRect(32, 52, 16, 4);
+      ctx.fillStyle = cFace;
+      ctx.fillRect(32, 56, 16, 8);
+
+      updateGridOverlay();
+      if (typeof update3DTexture === 'function') update3DTexture();
+    }
+
+    // ------------------------------------------------------------------
+    // 2D UV GRID OVERLAY
+    // ------------------------------------------------------------------
+    function updateGridOverlay() {
+      gridCtx.clearRect(0, 0, 512, 512);
+      if (!showGrid) return;
+
+      const scale = 512 / 64;
+
+      // Pixel Grid
+      gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      gridCtx.lineWidth = 0.5;
+
+      for (let i = 0; i <= 64; i++) {
+        gridCtx.beginPath();
+        gridCtx.moveTo(i * scale, 0);
+        gridCtx.lineTo(i * scale, 512);
+        gridCtx.stroke();
+
+        gridCtx.beginPath();
+        gridCtx.moveTo(0, i * scale);
+        gridCtx.lineTo(512, i * scale);
+        gridCtx.stroke();
       }
-    };
 
-    // --- 2. 2D CANVAS DRAWING & GRID OVERLAY ---
-    function clearAtlas() {
-      ctx.clearRect(0, 0, ATLAS_SIZE, ATLAS_SIZE);
-    }
+      // 64x64 UV Region Outlines
+      const regions = [
+        { x: 0, y: 0, w: 32, h: 16, color: '#f59e0b', label: 'KAFA' },
+        { x: 0, y: 16, w: 16, h: 16, color: '#a855f7', label: 'SAĞ BACAK' },
+        { x: 16, y: 16, w: 24, h: 16, color: '#3b82f6', label: 'GÖVDE / BAYRAK C*' },
+        { x: 40, y: 16, w: 16, h: 16, color: '#14b8a6', label: 'SAĞ KOL' },
+        { x: 16, y: 48, w: 16, h: 16, color: '#a855f7', label: 'SOL BACAK' },
+        { x: 32, y: 48, w: 16, h: 16, color: '#14b8a6', label: 'SOL KOL' }
+      ];
 
-    function fillBox(box, color) {
-      ctx.fillStyle = color;
-      ctx.fillRect(box.x, box.y, box.w, box.h);
-    }
+      regions.forEach(r => {
+        gridCtx.strokeStyle = r.color;
+        gridCtx.lineWidth = 2;
+        gridCtx.strokeRect(r.x * scale, r.y * scale, r.w * scale, r.h * scale);
 
-    function drawGridOverlay() {
-      gridCtx.clearRect(0, 0, 240, 240);
-      const scale = 240 / 64; // 3.75x scale
-
-      gridCtx.strokeStyle = '#00ffcc';
-      gridCtx.lineWidth = 1;
-
-      Object.values(UV_MAP).forEach(part => {
-        Object.values(part).forEach(box => {
-          const rx = box.x * scale;
-          const ry = box.y * scale;
-          const rw = box.w * scale;
-          const rh = box.h * scale;
-          gridCtx.strokeRect(rx + 0.5, ry + 0.5, rw - 1, rh - 1);
-        });
+        gridCtx.fillStyle = r.color;
+        gridCtx.font = 'bold 9px sans-serif';
+        gridCtx.fillText(r.label, r.x * scale + 4, r.y * scale + 12);
       });
     }
 
-    function applyPreset(preset) {
-      clearAtlas();
-      const skinColor = '#ffcc99';
-      const eyeColor = '#000000';
-
-      Object.values(UV_MAP).forEach(part => {
-        Object.values(part).forEach(box => fillBox(box, skinColor));
-      });
-
-      if (preset === 'mecaga') {
-        Object.values(UV_MAP.head).forEach(box => fillBox(box, '#eab308'));
-        fillBox(UV_MAP.head.front, '#fef08a');
-        ctx.fillStyle = '#000';
-        ctx.fillRect(UV_MAP.head.front.x + 2, UV_MAP.head.front.y + 4, 4, 2);
-        Object.values(UV_MAP.torso).forEach(box => fillBox(box, '#86198f'));
-        Object.values(UV_MAP.rightLeg).forEach(box => fillBox(box, '#1e3a8a'));
-        Object.values(UV_MAP.leftLeg).forEach(box => fillBox(box, '#1e3a8a'));
-      } else if (preset === 'default') {
-        Object.values(UV_MAP.torso).forEach(box => fillBox(box, '#a855f7'));
-        Object.values(UV_MAP.rightLeg).forEach(box => fillBox(box, '#1d4ed8'));
-        Object.values(UV_MAP.leftLeg).forEach(box => fillBox(box, '#1d4ed8'));
-        ctx.fillStyle = eyeColor;
-        ctx.fillRect(UV_MAP.head.front.x + 1, UV_MAP.head.front.y + 4, 2, 1);
-        ctx.fillRect(UV_MAP.head.front.x + 5, UV_MAP.head.front.y + 4, 2, 1);
-        fillBox(UV_MAP.head.top, '#451a03');
-      } else if (preset === 'warrior') {
-        Object.values(UV_MAP.torso).forEach(box => fillBox(box, '#dc2626'));
-        Object.values(UV_MAP.rightArm).forEach(box => fillBox(box, '#ef4444'));
-        Object.values(UV_MAP.leftArm).forEach(box => fillBox(box, '#ef4444'));
-        Object.values(UV_MAP.rightLeg).forEach(box => fillBox(box, '#18181b'));
-        Object.values(UV_MAP.leftLeg).forEach(box => fillBox(box, '#18181b'));
-        fillBox(UV_MAP.head.top, '#f59e0b');
-      } else if (preset === 'emerald') {
-        Object.values(UV_MAP.torso).forEach(box => fillBox(box, '#059669'));
-        Object.values(UV_MAP.rightArm).forEach(box => fillBox(box, '#10b981'));
-        Object.values(UV_MAP.leftArm).forEach(box => fillBox(box, '#10b981'));
-        Object.values(UV_MAP.rightLeg).forEach(box => fillBox(box, '#047857'));
-        Object.values(UV_MAP.leftLeg).forEach(box => fillBox(box, '#047857'));
-        fillBox(UV_MAP.head.top, '#34d399');
-      }
+    // ------------------------------------------------------------------
+    // CANVAS DRAWING TOOLS
+    // ------------------------------------------------------------------
+    function getCanvasCoords(e) {
+      const rect = skinCanvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
-      updateTexture();
+      const x = Math.floor((clientX - rect.left) / (rect.width / 64));
+      const y = Math.floor((clientY - rect.top) / (rect.height / 64));
+      return {
+        x: Math.max(0, Math.min(63, x)),
+        y: Math.max(0, Math.min(63, y))
+      };
     }
 
-    // Paint logic
-    function paintAtMouse(e) {
-      const rect = canvas.getBoundingClientRect();
-      const scale = ATLAS_SIZE / rect.width;
-      const x = Math.floor((e.clientX - rect.left) * scale);
-      const y = Math.floor((e.clientY - rect.top) * scale);
-
-      if (x >= 0 && x < ATLAS_SIZE && y >= 0 && y < ATLAS_SIZE) {
-        if (currentTool === 'pencil') {
-          ctx.fillStyle = currentColor;
-          ctx.fillRect(x, y, 1, 1);
-        } else if (currentTool === 'eraser') {
-          ctx.clearRect(x, y, 1, 1);
+    function applyTool(x, y) {
+      if (currentTool === 'pencil') {
+        ctx.fillStyle = currentColor;
+        ctx.fillRect(x, y, 1, 1);
+      } else if (currentTool === 'eraser') {
+        ctx.clearRect(x, y, 1, 1);
+      } else if (currentTool === 'picker') {
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+        if (pixel[3] > 0) {
+          const hex = "#" + ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1);
+          currentColor = hex;
+          document.getElementById('primaryColor').value = hex;
         }
-        updateTexture();
+      } else if (currentTool === 'bucket') {
+        floodFill(x, y, currentColor);
       }
+      update3DTexture();
     }
 
-    canvas.addEventListener('mousedown', (e) => { isMouseDown = true; paintAtMouse(e); });
-    canvas.addEventListener('mousemove', (e) => { if (isMouseDown) paintAtMouse(e); });
-    window.addEventListener('mouseup', () => { isMouseDown = false; });
+    function floodFill(startX, startY, fillHex) {
+      const imgData = ctx.getImageData(0, 0, 64, 64);
+      const data = imgData.data;
 
-    // Touch support
-    canvas.addEventListener('touchstart', (e) => {
-      isMouseDown = true;
-      if (e.touches[0]) paintAtMouse(e.touches[0]);
-      e.preventDefault();
-    }, { passive: false });
-    canvas.addEventListener('touchmove', (e) => {
-      if (isMouseDown && e.touches[0]) paintAtMouse(e.touches[0]);
-      e.preventDefault();
-    }, { passive: false });
-    canvas.addEventListener('touchend', () => { isMouseDown = false; });
+      const targetPos = (startY * 64 + startX) * 4;
+      const targetR = data[targetPos], targetG = data[targetPos + 1], targetB = data[targetPos + 2], targetA = data[targetPos + 3];
 
-    document.getElementById('colorPicker').addEventListener('change', (e) => currentColor = e.target.value);
-    document.getElementById('btnPencil').addEventListener('click', () => {
-      currentTool = 'pencil';
-      document.getElementById('btnPencil').className = "py-1.5 px-2 bg-emerald-600 text-white rounded-lg font-medium text-xs flex items-center justify-center gap-1 transition";
-      document.getElementById('btnEraser').className = "py-1.5 px-2 bg-slate-800 text-slate-300 rounded-lg font-medium text-xs flex items-center justify-center gap-1 border border-slate-700 transition";
+      const tempColor = document.createElement('div');
+      tempColor.style.color = fillHex;
+      document.body.appendChild(tempColor);
+      const rgb = window.getComputedStyle(tempColor).color.match(/\d+/g).map(Number);
+      document.body.removeChild(tempColor);
+
+      const fillR = rgb[0], fillG = rgb[1], fillB = rgb[2], fillA = 255;
+      if (targetR === fillR && targetG === fillG && targetB === fillB && targetA === fillA) return;
+
+      const queue = [[startX, startY]];
+      while (queue.length > 0) {
+        const [x, y] = queue.pop();
+        if (x < 0 || x >= 64 || y < 0 || y >= 64) continue;
+
+        const pos = (y * 64 + x) * 4;
+        if (data[pos] === targetR && data[pos + 1] === targetG && data[pos + 2] === targetB && data[pos + 3] === targetA) {
+          data[pos] = fillR; data[pos + 1] = fillG; data[pos + 2] = fillB; data[pos + 3] = fillA;
+          queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    // Events
+    skinCanvas.addEventListener('mousedown', (e) => { isDrawing = true; const c = getCanvasCoords(e); applyTool(c.x, c.y); });
+    skinCanvas.addEventListener('mousemove', (e) => { if (isDrawing) { const c = getCanvasCoords(e); applyTool(c.x, c.y); } });
+    window.addEventListener('mouseup', () => isDrawing = false);
+
+    skinCanvas.addEventListener('touchstart', (e) => { isDrawing = true; const c = getCanvasCoords(e); applyTool(c.x, c.y); }, { passive: true });
+    skinCanvas.addEventListener('touchmove', (e) => { if (isDrawing) { const c = getCanvasCoords(e); applyTool(c.x, c.y); } }, { passive: true });
+    window.addEventListener('touchend', () => isDrawing = false);
+
+    // ------------------------------------------------------------------
+    // THREE.JS 3D VOXEL MODEL & WIREFRAME EDGES
+    // ------------------------------------------------------------------
+    let scene, camera, renderer, controls;
+    let skinTexture;
+    let characterGroup;
+
+    function init3D() {
+      const container = document.getElementById('canvas3DContainer');
+      const canvas = document.getElementById('canvas3D');
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0a0c);
+
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(18, 18, 38);
+
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.target.set(0, 16, 0);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      dirLight.position.set(20, 40, 20);
+      scene.add(dirLight);
+
+      skinTexture = new THREE.CanvasTexture(skinCanvas);
+      skinTexture.magFilter = THREE.NearestFilter;
+      skinTexture.minFilter = THREE.NearestFilter;
+
+      const skinMaterial = new THREE.MeshBasicMaterial({
+        map: skinTexture,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+
+      characterGroup = new THREE.Group();
+
+      function createBoxPart(w, h, d, x, y, z, u, v) {
+        const geometry = new THREE.BoxGeometry(w, h, d);
+        const uvAttr = geometry.attributes.uv;
+        const tw = 64, th = 64;
+
+        const faces = [
+          { u: u + d + w, v: v + d, w: d, h: h },
+          { u: u, v: v + d, w: d, h: h },
+          { u: u + d, v: v, w: w, h: d },
+          { u: u + d + w, v: v, w: w, h: d },
+          { u: u + d, v: v + d, w: w, h: h },
+          { u: u + d + w + d, v: v + d, w: w, h: h }
+        ];
+
+        let index = 0;
+        for (let i = 0; i < 6; i++) {
+          const f = faces[i];
+          const u0 = f.u / tw;
+          const v0 = 1 - (f.v + f.h) / th;
+          const u1 = (f.u + f.w) / tw;
+          const v1 = 1 - f.v / th;
+
+          uvAttr.setXY(index, u0, v1);
+          uvAttr.setXY(index + 1, u1, v1);
+          uvAttr.setXY(index + 2, u0, v0);
+          uvAttr.setXY(index + 3, u1, v0);
+          index += 4;
+        }
+
+        const mesh = new THREE.Mesh(geometry, skinMaterial);
+        mesh.position.set(x, y, z);
+
+        // High contrast wireframe edge highlights
+        const edges = new THREE.EdgesGeometry(geometry);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 }));
+        mesh.add(line);
+
+        return mesh;
+      }
+
+      // Modular Body Parts
+      characterGroup.add(createBoxPart(8, 8, 8, 0, 28, 0, 0, 0));   // Head
+      characterGroup.add(createBoxPart(8, 12, 4, 0, 18, 0, 16, 16)); // Torso
+      characterGroup.add(createBoxPart(4, 12, 4, -6, 18, 0, 40, 16)); // Right Arm
+      characterGroup.add(createBoxPart(4, 12, 4, 6, 18, 0, 32, 48));  // Left Arm
+      characterGroup.add(createBoxPart(4, 12, 4, -2, 6, 0, 0, 16));   // Right Leg
+      characterGroup.add(createBoxPart(4, 12, 4, 2, 6, 0, 16, 48));   // Left Leg
+
+      scene.add(characterGroup);
+
+      window.addEventListener('resize', onWindowResize);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+
+    function update3DTexture() {
+      if (skinTexture) skinTexture.needsUpdate = true;
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('canvas3DContainer');
+      if (!container || !renderer) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    // ------------------------------------------------------------------
+    // CORNER FLOATING PANEL CONTROLS
+    // ------------------------------------------------------------------
+    const floatingPanel = document.getElementById('floatingPanel');
+    const toggleCornerPanelBtn = document.getElementById('toggleCornerPanelBtn');
+    const closePanelBtn = document.getElementById('closePanelBtn');
+    const panelChevron = document.getElementById('panelChevron');
+
+    function setPanelState(open) {
+      isPanelOpen = open;
+      if (isPanelOpen) {
+        floatingPanel.classList.remove('panel-closed');
+        panelChevron.style.transform = 'rotate(180deg)';
+      } else {
+        floatingPanel.classList.add('panel-closed');
+        panelChevron.style.transform = 'rotate(0deg)';
+      }
+      setTimeout(onWindowResize, 150);
+    }
+
+    toggleCornerPanelBtn.addEventListener('click', () => setPanelState(!isPanelOpen));
+    closePanelBtn.addEventListener('click', () => setPanelState(false));
+
+    // Bed Sleeping Mode Switch (-90° Back Rotation)
+    document.getElementById('toggleSleepBtn').addEventListener('click', () => {
+      isBedMode = !isBedMode;
+      const btnText = document.getElementById('sleepBtnText');
+
+      if (isBedMode) {
+        characterGroup.rotation.x = -Math.PI / 2;
+        characterGroup.position.set(0, 4, 0);
+        btnText.innerText = "Ayakta";
+      } else {
+        characterGroup.rotation.x = 0;
+        characterGroup.position.set(0, 0, 0);
+        btnText.innerText = "Yatak Modu";
+      }
     });
-    document.getElementById('btnEraser').addEventListener('click', () => {
-      currentTool = 'eraser';
-      document.getElementById('btnEraser').className = "py-1.5 px-2 bg-emerald-600 text-white rounded-lg font-medium text-xs flex items-center justify-center gap-1 transition";
-      document.getElementById('btnPencil').className = "py-1.5 px-2 bg-slate-800 text-slate-300 rounded-lg font-medium text-xs flex items-center justify-center gap-1 border border-slate-700 transition";
+
+    // Toolbar Tool Selector
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-btn').forEach(b => {
+          b.classList.remove('active', 'bg-blue-600', 'text-white');
+          b.classList.add('text-zinc-400');
+        });
+        btn.classList.add('active', 'bg-blue-600', 'text-white');
+        btn.classList.remove('text-zinc-400');
+        currentTool = btn.getAttribute('data-tool');
+      });
     });
 
-    document.getElementById('chkWireframe').addEventListener('change', (e) => {
-      showWireframe = e.target.checked;
-      edgesGroup.visible = showWireframe;
+    document.getElementById('primaryColor').addEventListener('input', (e) => currentColor = e.target.value);
+    document.getElementById('toggleGridBtn').addEventListener('click', () => { showGrid = !showGrid; updateGridOverlay(); });
+    document.getElementById('resetSkinBtn').addEventListener('click', () => { if (confirm('Sıfırlamak istediğinize emin misiniz?')) loadDefaultUploadedSkin(); });
+
+    // Skin & Snapshot Downloads
+    function downloadSkin() {
+      const link = document.createElement('a');
+      link.download = 'skin_64x64.png';
+      link.href = skinCanvas.toDataURL('image/png');
+      link.click();
+    }
+
+    document.getElementById('downloadSkinBtn').addEventListener('click', downloadSkin);
+    document.getElementById('downloadSkinTopBtn').addEventListener('click', downloadSkin);
+
+    document.getElementById('downloadSnapshotBtn').addEventListener('click', () => {
+      renderer.render(scene, camera);
+      const link = document.createElement('a');
+      link.download = 'character_3d.png';
+      link.href = renderer.domElement.toDataURL('image/png');
+      link.click();
     });
 
-    // --- 3. CUSTOM SKIN FILE UPLOAD & DOWNLOADS ---
-    
-    // Upload Skin File
-    document.getElementById('skinFileInput').addEventListener('change', function(e) {
+    document.getElementById('uploadInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
-      reader.onload = function(event) {
+      reader.onload = (event) => {
         const img = new Image();
-        img.onload = function() {
-          clearAtlas();
-          ctx.drawImage(img, 0, 0, ATLAS_SIZE, ATLAS_SIZE);
-          updateTexture();
+        img.onload = () => {
+          ctx.clearRect(0, 0, 64, 64);
+          ctx.drawImage(img, 0, 0, 64, 64);
+          update3DTexture();
         };
         img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     });
 
-    // Download 2D Skin Sheet (64x64 PNG)
-    document.getElementById('btnDownloadSkin').addEventListener('click', () => {
-      const link = document.createElement('a');
-      link.download = 'karakter_skin_64x64.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
-
-    // Download 3D Render Snapshot Image
-    document.getElementById('btnDownloadRender').addEventListener('click', () => {
-      // Re-render scene to ensure buffer is fresh
-      renderer.render(scene, camera);
-      const dataURL = renderer.domElement.toDataURL('image/png');
-      
-      const link = document.createElement('a');
-      link.download = 'karakter_3d_render.png';
-      link.href = dataURL;
-      link.click();
-    });
-
-
-    // --- 4. THREE.JS 3D VOXEL CHARACTER SETUP ---
-    let scene, camera, renderer, controls;
-    let characterGroup, edgesGroup, skinTexture;
-
-    function init3D() {
-      const container = document.getElementById('threeContainer');
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x020617);
-
-      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-      camera.position.set(24, 20, 36);
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
-      container.appendChild(renderer.domElement);
-
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.target.set(0, 10, 0);
-
-      // Lights
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-      scene.add(ambientLight);
-
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-      dirLight.position.set(30, 50, 30);
-      scene.add(dirLight);
-
-      // Texture from 2D Canvas
-      skinTexture = new THREE.CanvasTexture(canvas);
-      skinTexture.magFilter = THREE.NearestFilter;
-      skinTexture.minFilter = THREE.NearestFilter;
-
-      characterGroup = new THREE.Group();
-      edgesGroup = new THREE.Group();
-      characterGroup.add(edgesGroup);
-      scene.add(characterGroup);
-
-      function createCubePart(w, h, d, uvFaces, x, y, z) {
-        const geometry = new THREE.BoxGeometry(w, h, d);
-        const uvAttr = geometry.attributes.uv;
-        const faces = ['right', 'left', 'top', 'bottom', 'front', 'back'];
-
-        faces.forEach((faceName, index) => {
-          const uv = uvFaces[faceName];
-          if (uv) {
-            const u0 = uv.x / 64;
-            const v1 = 1 - (uv.y / 64);
-            const u1 = (uv.x + uv.w) / 64;
-            const v0 = 1 - ((uv.y + uv.h) / 64);
-
-            const baseIndex = index * 4;
-            uvAttr.setXY(baseIndex, u0, v1);
-            uvAttr.setXY(baseIndex + 1, u1, v1);
-            uvAttr.setXY(baseIndex + 2, u0, v0);
-            uvAttr.setXY(baseIndex + 3, u1, v0);
-          }
-        });
-
-        const material = new THREE.MeshBasicMaterial({
-          map: skinTexture,
-          transparent: true
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(x, y, z);
-
-        // EDGE OUTLINES (Köşeleri ayırt etme)
-        const edgeGeo = new THREE.EdgesGeometry(geometry);
-        const edgeMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, linewidth: 2 });
-        const line = new THREE.LineSegments(edgeGeo, edgeMat);
-        line.position.set(x, y, z);
-        edgesGroup.add(line);
-
-        return mesh;
-      }
-
-      // Construct Character Parts
-      characterGroup.add(createCubePart(8, 8, 8, UV_MAP.head, 0, 20, 0));
-      characterGroup.add(createCubePart(8, 12, 4, UV_MAP.torso, 0, 10, 0));
-      characterGroup.add(createCubePart(4, 12, 4, UV_MAP.rightArm, -6, 10, 0));
-      characterGroup.add(createCubePart(4, 12, 4, UV_MAP.leftArm, 6, 10, 0));
-      characterGroup.add(createCubePart(4, 12, 4, UV_MAP.rightLeg, -2, -2, 0));
-      characterGroup.add(createCubePart(4, 12, 4, UV_MAP.leftLeg, 2, -2, 0));
-
-      // Bed Frame Mesh
-      const bedGeo = new THREE.BoxGeometry(14, 4, 24);
-      const bedMat = new THREE.MeshStandardMaterial({ color: 0x991b1b });
-      const bedMesh = new THREE.Mesh(bedGeo, bedMat);
-      bedMesh.position.set(0, -6, 2);
-      scene.add(bedMesh);
-
-      document.getElementById('chkWireframe').checked = true;
-      window.addEventListener('resize', onWindowResize);
-    }
-
-    function updateTexture() {
-      if (skinTexture) {
-        skinTexture.needsUpdate = true;
-      }
-    }
-
-    function onWindowResize() {
-      const container = document.getElementById('threeContainer');
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
-    }
-
-    function resetCamera(view) {
-      if (view === 'front') {
-        camera.position.set(0, 10, 36);
-        controls.target.set(0, 10, 0);
-      } else if (view === 'back') {
-        camera.position.set(0, 10, -36);
-        controls.target.set(0, 10, 0);
-      } else if (view === 'iso') {
-        camera.position.set(24, 20, 36);
-        controls.target.set(0, 10, 0);
-      }
-    }
-
-    // --- 5. BED SLEEPING TOGGLE (Sırt Üstü Yatma) ---
-    const btnSleep = document.getElementById('btnSleepToggle');
-    btnSleep.addEventListener('click', () => {
-      isSleeping = !isSleeping;
-      if (isSleeping) {
-        // Lay down 90 degrees backwards on back (Sırt üstü yatış)
-        characterGroup.rotation.x = -Math.PI / 2;
-        characterGroup.position.set(0, -3, -4);
-        btnSleep.innerText = "Sırt Üstü Yatakta (90°)";
-        btnSleep.className = "w-full py-2 px-3 bg-indigo-600 text-white text-xs rounded-lg font-medium transition shadow-lg shadow-indigo-600/30";
-      } else {
-        // Stand upright 0 degrees (Ayakta)
-        characterGroup.rotation.x = 0;
-        characterGroup.position.set(0, 0, 0);
-        btnSleep.innerText = "Ayakta (0°)";
-        btnSleep.className = "w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg font-medium border border-slate-700 transition";
-      }
-    });
-
-    // Render Loop
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-
-    // Initialization
-    window.onload = () => {
+    // ------------------------------------------------------------------
+    // INIT
+    // ------------------------------------------------------------------
+    window.onload = function() {
+      loadDefaultUploadedSkin();
       init3D();
-      drawGridOverlay();
-      applyPreset('mecaga');
-      animate();
+      setPanelState(true);
     };
   </script>
 </body>
 </html>
-
