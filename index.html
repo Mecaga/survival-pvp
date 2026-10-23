@@ -67,7 +67,7 @@
       overflow: hidden;
     }
 
-    /* Sağ Üst 3D Panel Çekmece */
+    /* Sağ Üst 3D Panel Çekmece (İlk Açılışta Kapalı) */
     #floatingPanel {
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
     }
@@ -106,7 +106,7 @@
       <button id="toggleCornerPanelBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition shadow-lg border border-blue-400">
         <i data-lucide="box" class="w-4 h-4"></i>
         <span>3D Panel</span>
-        <i data-lucide="chevron-left" id="panelChevron" class="w-3.5 h-3.5 transition-transform duration-300 rotate-180"></i>
+        <i data-lucide="chevron-left" id="panelChevron" class="w-3.5 h-3.5 transition-transform duration-300"></i>
       </button>
     </div>
   </header>
@@ -114,7 +114,7 @@
   <!-- ANA ÇALIŞMA ALANI CONTAINER -->
   <div class="flex-1 flex overflow-hidden relative w-full" style="height: calc(100vh - 3.5rem);">
 
-    <!-- SOL TARAF: KOSTÜM RAFI (GERÇEK 3D KARAKTER ÖNİZLEMELİ) -->
+    <!-- SOL TARAF: KOSTÜM RAFI -->
     <aside id="shelfPanel" class="w-72 sm:w-80 bg-mcpanel border-r border-zinc-800 flex flex-col p-3 gap-3 z-25">
       <div class="flex items-center justify-between pb-2 border-b border-zinc-800 shrink-0">
         <div class="flex items-center gap-2 text-xs font-bold text-zinc-300 uppercase tracking-wider">
@@ -145,23 +145,23 @@
     <!-- SAĞ/ORTA ÇALIŞMA ALANI -->
     <main class="flex-1 bg-[#0f0f12] flex flex-col relative overflow-hidden h-full">
 
-      <!-- ÜST KONTROL ŞERİDİ (2D/3D GEÇİŞ BUTONLARI - KESİNLİKLE BOZULMAZ) -->
+      <!-- ÜST KONTROL ŞERİDİ (2D/3D GEÇİŞ BUTONLARI) -->
       <div class="bg-mcpanel/80 border-b border-zinc-800 px-4 py-2 flex items-center justify-between shrink-0 z-20">
         <div class="flex items-center gap-2">
           <button id="btnMode3D" class="px-3.5 py-1.5 bg-blue-600 text-white font-bold text-xs rounded-xl shadow border border-blue-400 transition active:scale-95 flex items-center gap-1.5">
-            <i data-lucide="box" class="w-3.5 h-3.5"></i> 3D Görünüm[span_1](start_span)[span_1](end_span)
+            <i data-lucide="box" class="w-3.5 h-3.5"></i> 3D Görünüm
           </button>
           <button id="btnMode2D" class="px-3.5 py-1.5 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold text-xs rounded-xl shadow border border-zinc-700 transition active:scale-95 flex items-center gap-1.5">
-            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 2D Görünüm[span_2](start_span)[span_2](end_span)
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 2D Görünüm
           </button>
         </div>
       </div>
 
-      <!-- VIEWPORT BÖLGESİ -->
-      <div class="flex-1 flex w-full relative items-center justify-center overflow-hidden">
+      <!-- VIEWPORT BÖLGESİ (TAM BOYUT KORUMALI) -->
+      <div class="flex-1 flex w-full h-full relative items-center justify-center overflow-hidden">
 
         <!-- 3D ANA KARAKTER GÖRÜNÜMÜ -->
-        <div id="container3D" class="w-full h-full relative bg-[#0f0f12]">
+        <div id="container3D" class="w-full h-full absolute inset-0 bg-[#0f0f12]">
           <canvas id="canvas3D" class="w-full h-full block"></canvas>
           <div class="absolute bottom-20 left-4 text-[11px] text-zinc-400 bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur pointer-events-none border border-zinc-800 z-10">
             Sol tık: Döndür | Sağ tık: Kaydır | Tekerlek: Yakınlaş
@@ -169,7 +169,7 @@
         </div>
 
         <!-- 2D KOSTÜM DOKU ŞABLONU -->
-        <div id="panel2D" class="w-full h-full hidden flex-col items-center justify-center p-4 bg-[#0f0f12]/95 z-10 backdrop-blur">
+        <div id="panel2D" class="w-full h-full absolute inset-0 hidden flex-col items-center justify-center p-4 bg-[#0f0f12]/95 z-10 backdrop-blur">
           <div class="text-xs text-zinc-400 mb-2 font-semibold">2D Kostüm Şablonu (64x64 Pixel)</div>
           <div class="relative border-2 border-cyan-500/50 rounded-xl overflow-hidden bg-black shadow-2xl grid-overlay">
             <canvas id="skinCanvas" width="64" height="64" class="pixelated w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[480px] md:h-[480px] cursor-crosshair rounded"></canvas>
@@ -179,8 +179,8 @@
 
       </div>
 
-      <!-- SAĞ ÜST KÖŞE: 3D İNDİRME PANELİ (YATAK MODU KALDIRILDI) -->
-      <aside id="floatingPanel" class="absolute top-16 right-3 w-80 sm:w-96 bg-mcpanel/95 backdrop-blur-md border border-zinc-700/80 rounded-2xl shadow-2xl flex flex-col z-25 overflow-hidden">
+      <!-- SAĞ ÜST KÖŞE: 3D İNDİRME PANELİ (İLK AÇILIŞTA KAPALI) -->
+      <aside id="floatingPanel" class="absolute top-16 right-3 w-80 sm:w-96 bg-mcpanel/95 backdrop-blur-md border border-zinc-700/80 rounded-2xl shadow-2xl flex flex-col z-25 overflow-hidden panel-closed">
         <div class="p-3 border-b border-zinc-800 flex items-center justify-end bg-zinc-900/80">
           <button id="closeFloatingPanelBtn" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 transition" title="Kapat">
             <i data-lucide="x" class="w-4 h-4"></i>
@@ -220,11 +220,10 @@
           </button>
         </div>
 
-        <!-- DÜZENLEME MODU ARAÇLARI (BOYUT SEÇENEKLERİ İLE) -->
+        <!-- DÜZENLEME MODU ARAÇLARI -->
         <div id="editToolBar" class="hidden flex items-center gap-2.5 border-b border-zinc-800 pb-2 mb-1 flex-wrap justify-center">
           <input type="color" id="primaryColor" value="#208ea3" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent">
           
-          <!-- Boyut Seçimi (1, 2, 3, 4, 6, 8, 10) -->
           <select id="brushSizeSelect" class="bg-zinc-800 text-zinc-200 text-xs px-2 py-1.5 rounded-lg border border-zinc-700 font-semibold focus:outline-none">
             <option value="1">1 px</option>
             <option value="2">2 px</option>
@@ -283,11 +282,10 @@
     let currentColor = '#208ea3';
     let isDrawing = false;
     let isEditing = false;
-    let isPanelOpen = true;
+    let isPanelOpen = false; // İlk açılışta kapalı
     let activeCostumeId = 1;
     let mini3DScenes = [];
 
-    // Her kostümün kendine ait 64x64 doku canvası vardır
     function createCostumeCanvas(initializer) {
       const c = document.createElement('canvas');
       c.width = 64;
@@ -357,7 +355,6 @@
       tCtx.drawImage(skinCanvas, 0, 0);
     }
 
-    // --- MİNECRAFT 64x64 HASSAS UV DİLİMLEME ---
     function setBoxUVs(geometry, u, v, w, h, d, textureWidth = 64, textureHeight = 64) {
       const uvAttribute = geometry.attributes.uv;
       const faces = [
@@ -384,7 +381,6 @@
       uvAttribute.needsUpdate = true;
     }
 
-    // --- SOL RAF 3D KOSTÜM LİSTESİ VE GERÇEK 3D ÖNİZLEMELERİ ---
     function renderCostumeShelf() {
       const shelfList = document.getElementById('costumeShelfList');
       shelfList.innerHTML = '';
@@ -481,7 +477,7 @@
     }
 
     // --- THREE.JS ANA 3D SAHNE ---
-    let scene, camera, renderer, controls, skinTexture, characterGroup;
+    let scene, camera, renderer, controls, skinTexture, characterGroup, mainMaterial;
 
     function init3D() {
       const container = document.getElementById('container3D');
@@ -509,13 +505,13 @@
       skinTexture.magFilter = THREE.NearestFilter;
       skinTexture.minFilter = THREE.NearestFilter;
 
-      const skinMaterial = new THREE.MeshStandardMaterial({ map: skinTexture, roughness: 0.8, metalness: 0.1 });
+      mainMaterial = new THREE.MeshStandardMaterial({ map: skinTexture, roughness: 0.8, metalness: 0.1 });
       characterGroup = new THREE.Group();
 
       function createPartWithUV(w, h, d, x, y, z, u, v, pw, ph, pd) {
         const geo = new THREE.BoxGeometry(w, h, d);
         setBoxUVs(geo, u, v, pw, ph, pd, 64, 64);
-        const mesh = new THREE.Mesh(geo, skinMaterial);
+        const mesh = new THREE.Mesh(geo, mainMaterial);
         mesh.position.set(x, y, z);
 
         const edges = new THREE.EdgesGeometry(geo);
@@ -565,6 +561,7 @@
       init3D();
       syncActiveCanvasToEditor();
       renderCostumeShelf();
+      onWindowResize();
 
       const shelfPanel = document.getElementById('shelfPanel');
       const closeShelfBtn = document.getElementById('closeShelfBtn');
@@ -604,7 +601,7 @@
       toggleCornerPanelBtn.onclick = () => setFloatingPanel(!isPanelOpen);
       closeFloatingPanelBtn.onclick = () => setFloatingPanel(false);
 
-      // Mod Butonları (Sabit Şerit Üzerinde)
+      // Mod Butonları
       const btnMode3D = document.getElementById('btnMode3D');
       const btnMode2D = document.getElementById('btnMode2D');
       const panel2D = document.getElementById('panel2D');
@@ -626,7 +623,7 @@
         panel2D.classList.add('flex');
       };
 
-      // Çizim Olayları (Fırça Boyutu Desteği ile)
+      // Çizim Olayları
       function getCanvasCoords(e) {
         const rect = skinCanvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
