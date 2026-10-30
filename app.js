@@ -2,6 +2,9 @@ const ADMIN_PASSWORD = "1234";
 let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
 const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀'];
 
+// 🎮 Buraya oyununun canlı site adresini yazabilirsin (Örn: GitHub Pages linkin)
+const OYUN_URL = "https://mecagatrist.github.io/blokdiyar"; 
+
 let currentStatusFilter = 'all';
 
 const firebaseConfig = {
@@ -18,6 +21,27 @@ const mainVotesRef = db.ref('announcement_votes');
 
 let suggestionsData = {};
 let localVotes = JSON.parse(localStorage.getItem('blokdiyar_votes') || '{}');
+
+// Oyuna Git Butonunu Bağla
+window.addEventListener('DOMContentLoaded', () => {
+  const gameLinkBtn = document.getElementById('gameLinkBtn');
+  if (gameLinkBtn) {
+    gameLinkBtn.href = OYUN_URL;
+  }
+
+  initFloatingEmojis();
+
+  // Enter Tuşu Desteği (Öneri Formu)
+  const contentInput = document.getElementById('contentInput');
+  if (contentInput) {
+    contentInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addSuggestion();
+      }
+    });
+  }
+});
 
 // Arka Planda Hareket Eden Emojiler
 function initFloatingEmojis() {
@@ -40,21 +64,6 @@ function initFloatingEmojis() {
     bgContainer.appendChild(span);
   }
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-  initFloatingEmojis();
-
-  // ⌨️ Enter Tuşu Desteği (Öneri Ekleme Formu için)
-  const contentInput = document.getElementById('contentInput');
-  if (contentInput) {
-    contentInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        addSuggestion();
-      }
-    });
-  }
-});
 
 // Admin Modu
 function toggleAdminMode() {
@@ -129,20 +138,22 @@ function toggleCommentForm(id) {
   formBox.classList.toggle('open');
 }
 
-// Yorum Ekleme (Enter Tuşu Desteği ile)
+// Yorum Ekleme (Resim ve Enter Desteği ile)
 function addComment(suggestionId) {
   const nameInput = document.getElementById('comment-name-' + suggestionId);
   const textInput = document.getElementById('comment-text-' + suggestionId);
+  const imageInput = document.getElementById('comment-image-' + suggestionId);
 
   const author = nameInput.value.trim();
   const text = textInput.value.trim();
+  const imageUrl = imageInput ? imageInput.value.trim() : '';
 
   if (!author) {
     alert('Lütfen bir takma ad girin!');
     return;
   }
-  if (!text) {
-    alert('Lütfen bir yorum yazın!');
+  if (!text && !imageUrl) {
+    alert('Lütfen bir yorum veya resim ekleyin!');
     return;
   }
 
@@ -160,10 +171,12 @@ function addComment(suggestionId) {
     author: author,
     emoji: assignedEmoji,
     text: text,
+    imageUrl: imageUrl,
     time: timeStr,
     isAdminComment: isAdmin
   }).then(() => {
     textInput.value = '';
+    if(imageInput) imageInput.value = '';
     document.getElementById('comment-form-box-' + suggestionId).classList.remove('open');
     document.getElementById('comments-' + suggestionId).classList.add('open');
   });
@@ -228,22 +241,24 @@ function updateMainVoteUI() {
   if (userVote === 'dislike') dislikeBtn.classList.add('active-dislike');
 }
 
-// Öneri Ekleme
+// Öneri Ekleme (Resim Desteği ile)
 function addSuggestion() {
   const nicknameInput = document.getElementById('nicknameInput');
   const categoryInput = document.getElementById('categoryInput');
   const contentInput = document.getElementById('contentInput');
+  const imageInput = document.getElementById('imageInput');
 
   const nickname = nicknameInput.value.trim();
   const category = categoryInput.value;
   const content = contentInput.value.trim();
+  const imageUrl = imageInput ? imageInput.value.trim() : '';
 
   if (!nickname) {
     alert('Lütfen takma adını gir!');
     return;
   }
-  if (!content) {
-    alert('Lütfen öneri içeriğini yaz!');
+  if (!content && !imageUrl) {
+    alert('Lütfen öneri içeriğini veya resim linkini yaz!');
     return;
   }
 
@@ -255,6 +270,7 @@ function addSuggestion() {
     nickname: nickname,
     category: category,
     content: content,
+    imageUrl: imageUrl,
     timestamp: firebase.database.ServerValue.TIMESTAMP,
     formattedDate: dateStr,
     likes: 0,
@@ -262,6 +278,7 @@ function addSuggestion() {
     status: 'pending'
   }).then(() => {
     contentInput.value = '';
+    if(imageInput) imageInput.value = '';
   }).catch((error) => {
     alert('Gönderilirken hata oluştu: ' + error.message);
   });
@@ -314,7 +331,7 @@ function getStatusBadgeHtml(status, id) {
   }
 }
 
-// Listeleme, Filtreleme, Sıralama ve En Çok Beğenilen Kral Tacı Tespiti
+// Listeleme ve Render
 function renderSuggestions() {
   const listEl = document.getElementById('suggestionsList');
   const sortType = document.getElementById('sortSelect').value;
@@ -327,12 +344,10 @@ function renderSuggestions() {
     ...suggestionsData[key]
   }));
 
-  // Durum Sekmesi Filtresi
   if (currentStatusFilter !== 'all') {
     items = items.filter(item => (item.status || 'pending') === currentStatusFilter);
   }
 
-  // Arama Filtresi
   if (searchQuery) {
     items = items.filter(item => {
       const contentMatch = (item.content || '').toLowerCase().includes(searchQuery);
@@ -353,7 +368,6 @@ function renderSuggestions() {
     return;
   }
 
-  // Tüm öneriler içindeki en yüksek puanlı (Beğeni - Beğenmeme) öğeyi bul
   let highestScore = -9999;
   let topFavoriteId = null;
 
@@ -368,7 +382,6 @@ function renderSuggestions() {
     });
   }
 
-  // Sıralama Mantığı
   items.sort((a, b) => {
     if (sortType === 'likes') {
       const scoreA = (a.likes || 0) - (a.dislikes || 0);
@@ -396,6 +409,9 @@ function renderSuggestions() {
       </button>
     ` : '';
 
+    // Öneri Resmi HTML
+    const suggestionImageHtml = item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" class="suggestion-image-preview" alt="Öneri Görseli">` : '';
+
     const commentsObj = item.comments || {};
     const commentKeys = Object.keys(commentsObj);
     const commentCount = commentKeys.length;
@@ -405,6 +421,8 @@ function renderSuggestions() {
       const authorClass = com.isAdminComment ? 'comment-author admin-author' : 'comment-author';
       const badgeText = com.isAdminComment ? ' [Geliştirici]' : '';
       const userEmoji = com.emoji || '👤';
+      const commentImageHtml = com.imageUrl ? `<img src="${escapeHtml(com.imageUrl)}" class="comment-image-preview" alt="Yorum Görseli">` : '';
+
       return `
         <div class="comment-item">
           <div class="comment-header">
@@ -412,6 +430,7 @@ function renderSuggestions() {
             <span>${com.time || ''}</span>
           </div>
           <div>${escapeHtml(com.text)}</div>
+          ${commentImageHtml}
         </div>
       `;
     }).join('');
@@ -432,6 +451,7 @@ function renderSuggestions() {
             <div class="suggestion-content">
               <strong>${escapeHtml(item.nickname)}</strong> | ${escapeHtml(item.content)}
             </div>
+            ${suggestionImageHtml}
           </div>
           <div class="suggestion-actions">
             <button class="vote-btn ${likeActiveClass}" onclick="voteSuggestion('${item.id}', 'like')" title="Beğen / Geri Al">
@@ -457,11 +477,14 @@ function renderSuggestions() {
             </button>
           </div>
 
-          <!-- Yorum Yazma Alanı -->
+          <!-- Yorum Yazma Alanı (Resim Destekli) -->
           <div class="comment-form-box" id="comment-form-box-${item.id}">
             <div class="comment-form">
-              <input type="text" id="comment-name-${item.id}" class="input-field comment-input-name" placeholder="Takma adın..." maxlength="15">
-              <input type="text" id="comment-text-${item.id}" class="input-field comment-input-text" placeholder="Yorumunu yaz..." onkeydown="if(event.key==='Enter'){addComment('${item.id}');}">
+              <div class="comment-form-inputs">
+                <input type="text" id="comment-name-${item.id}" class="input-field comment-input-name" placeholder="Takma adın..." maxlength="15">
+                <input type="text" id="comment-text-${item.id}" class="input-field comment-input-text" placeholder="Yorumunu yaz..." onkeydown="if(event.key==='Enter'){addComment('${item.id}');}">
+              </div>
+              <input type="text" id="comment-image-${item.id}" class="input-field comment-input-image" placeholder="Resim linki ekle (İsteğe bağlı - URL)...">
               <button class="comment-send-btn" onclick="addComment('${item.id}')">Gönder</button>
             </div>
           </div>
