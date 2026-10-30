@@ -2,7 +2,7 @@ const ADMIN_PASSWORD = "1234";
 let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
 const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀'];
 
-// 🎮 Buraya oyununun canlı site adresini yazabilirsin (Örn: GitHub Pages linkin)
+// 🎮 Doğrudan senin oyun linkin buraya tanımlandı!
 const OYUN_URL = "https://mecaga.github.io/ticarium/?v=54"; 
 
 let currentStatusFilter = 'all';
@@ -409,7 +409,6 @@ function renderSuggestions() {
       </button>
     ` : '';
 
-    // Öneri Resmi HTML
     const suggestionImageHtml = item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" class="suggestion-image-preview" alt="Öneri Görseli">` : '';
 
     const commentsObj = item.comments || {};
