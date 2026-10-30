@@ -48,4 +48,4 @@ Projeyi yerel bilgisayarınızda veya telefonunuzda (Acode vb. editörlerle) ça
 
 ## 👨‍💻 Geliştirici
 
-**Mecaga** tarafından BlokDiyar oyunu için tutkuyla geliştirilmektedir. 🎮
+**Mecaga** ve **Gemini** tarafından BlokDiyar oyunu için tutkuyla geliştirilmektedir. 🎮
