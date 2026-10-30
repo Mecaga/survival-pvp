@@ -2,6 +2,9 @@ const ADMIN_PASSWORD = "1234";
 let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
 const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀'];
 
+// Aktif seçilen durum filtresi (Varsayılan: 'all')
+let currentStatusFilter = 'all';
+
 const firebaseConfig = {
   databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com/"
 };
@@ -16,6 +19,32 @@ const mainVotesRef = db.ref('announcement_votes');
 
 let suggestionsData = {};
 let localVotes = JSON.parse(localStorage.getItem('blokdiyar_votes') || '{}');
+
+// Arka Planda Hareket Eden Emojileri Başlat
+function initFloatingEmojis() {
+  const bgContainer = document.getElementById('emojiBackground');
+  if (!bgContainer) return;
+
+  const emojis = ['🧱', '⛏️', '💎', '⭐', '🚀', '🌲', '🛠️', '💡'];
+  const count = 15; // Ekranda aynı anda süzülecek emoji sayısı
+
+  for (let i = 0; i < count; i++) {
+    const span = document.createElement('span');
+    span.className = 'floating-emoji';
+    span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    
+    // Rastgele konum ve hız ayarları
+    span.style.left = Math.random() * 100 + 'vw';
+    span.style.animationDuration = (10 + Math.random() * 15) + 's';
+    span.style.animationDelay = -(Math.random() * 15) + 's';
+    span.style.fontSize = (1.2 + Math.random() * 1.5) + 'rem';
+
+    bgContainer.appendChild(span);
+  }
+}
+
+// Sayfa açıldığında emojileri başlat
+window.addEventListener('DOMContentLoaded', initFloatingEmojis);
 
 // Admin Modu
 function toggleAdminMode() {
@@ -68,6 +97,17 @@ function deleteSuggestion(id) {
   if (confirm("Bu öneriyi kalıcı olarak silmek istediğinize emin misiniz?")) {
     suggestionsRef.child(id).remove();
   }
+}
+
+// Sekmelere tıklandığında durumu filtrele
+function filterByStatus(status, btnElement) {
+  currentStatusFilter = status;
+  
+  // Butonların aktiflik sınıfını güncelle
+  document.querySelectorAll('.status-tab-btn').forEach(btn => btn.classList.remove('active'));
+  btnElement.classList.add('active');
+
+  renderSuggestions();
 }
 
 // Yorumları Aç/Kapat
@@ -267,7 +307,7 @@ function getStatusBadgeHtml(status, id) {
   }
 }
 
-// Listeleme ve Sıralama
+// Listeleme, Sekme Filtreleme ve Sıralama
 function renderSuggestions() {
   const listEl = document.getElementById('suggestionsList');
   const sortType = document.getElementById('sortSelect').value;
@@ -279,6 +319,11 @@ function renderSuggestions() {
     id: key,
     ...suggestionsData[key]
   }));
+
+  // Durum Sekmesi Filtresi (Tümü veya seçilen durum)
+  if (currentStatusFilter !== 'all') {
+    items = items.filter(item => (item.status || 'pending') === currentStatusFilter);
+  }
 
   // Arama Filtresi
   if (searchQuery) {
@@ -295,13 +340,13 @@ function renderSuggestions() {
     listEl.innerHTML = `
       <div class="empty-state">
         <i class="fa-regular fa-comments fa-2x" style="margin-bottom: 8px;"></i>
-        <p>Aradığınız kriterlere uygun öneri bulunamadı.</p>
+        <p>Bu sekmede henüz öneri bulunmuyor.</p>
       </div>
     `;
     return;
   }
 
-  // Sıralama Mantığı (En Çok Beğenilen, En Yeni, En Eski)
+  // Sıralama Mantığı
   items.sort((a, b) => {
     if (sortType === 'likes') {
       const scoreA = (a.likes || 0) - (a.dislikes || 0);
