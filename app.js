@@ -2,8 +2,10 @@ const ADMIN_PASSWORD = "1234";
 let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
 const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀'];
 
-// 🎮 Doğrudan senin oyun linkin buraya tanımlandı!
-const OYUN_URL = "https://mecaga.github.io/ticarium/?v=54"; 
+// 🎮 Oyuna Git Butonu Yönlendirme Fonksiyonu
+function oyunaGit() {
+  window.location.href = "https://mecaga.github.io/ticarium/?v=54";
+}
 
 let currentStatusFilter = 'all';
 
@@ -22,13 +24,7 @@ const mainVotesRef = db.ref('announcement_votes');
 let suggestionsData = {};
 let localVotes = JSON.parse(localStorage.getItem('blokdiyar_votes') || '{}');
 
-// Oyuna Git Butonunu Bağla
 window.addEventListener('DOMContentLoaded', () => {
-  const gameLinkBtn = document.getElementById('gameLinkBtn');
-  if (gameLinkBtn) {
-    gameLinkBtn.href = OYUN_URL;
-  }
-
   initFloatingEmojis();
 
   // Enter Tuşu Desteği (Öneri Formu)
