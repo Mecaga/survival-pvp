@@ -3,7 +3,7 @@ let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
 const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀'];
 
 // 🎮 Buraya oyununun canlı site adresini yazabilirsin (Örn: GitHub Pages linkin)
-const OYUN_URL = "https://mecagatrist.github.io/blokdiyar"; 
+const OYUN_URL = "https://mecaga.github.io/ticarium/?v=54"; 
 
 let currentStatusFilter = 'all';
 
