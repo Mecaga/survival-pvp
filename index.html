@@ -314,18 +314,39 @@
       background: var(--accent-hover);
     }
 
-    .list-header {
+    /* Arama ve Filtre Alanı */
+    .controls-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
       gap: 12px;
-      padding: 0 4px;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--bg-card-border);
+      padding: 14px 20px;
+      border-radius: 16px;
     }
 
-    .list-title {
-      font-size: 1.1rem;
-      font-weight: 700;
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--input-bg);
+      border: 1px solid var(--bg-card-border);
+      padding: 8px 14px;
+      border-radius: 12px;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      outline: none;
+      font-size: 0.9rem;
+      width: 100%;
     }
 
     .sort-container {
@@ -343,6 +364,12 @@
       font-size: 0.85rem;
       outline: none;
       cursor: pointer;
+    }
+
+    .list-header {
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 0 4px;
     }
 
     .suggestions-list {
@@ -456,13 +483,19 @@
       color: white;
     }
 
-    /* Yorumlar Alanı Stilleri */
+    /* Yorumlar Bölümü Stilleri (İstediğin Gibi Güncellendi) */
     .comments-section {
       border-top: 1px solid var(--bg-card-border);
-      padding-top: 12px;
+      padding-top: 10px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+    }
+
+    .comments-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .toggle-comments-btn {
@@ -475,10 +508,28 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      width: fit-content;
     }
 
     .toggle-comments-btn:hover {
+      color: var(--accent);
+    }
+
+    .add-comment-toggle-btn {
+      background: var(--input-bg);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-main);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .add-comment-toggle-btn:hover {
+      border-color: var(--accent);
       color: var(--accent);
     }
 
@@ -492,6 +543,20 @@
     }
 
     .comments-container.open {
+      display: flex;
+    }
+
+    .comment-form-box {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px dashed var(--bg-card-border);
+    }
+
+    .comment-form-box.open {
       display: flex;
     }
 
@@ -525,18 +590,17 @@
     .comment-form {
       display: flex;
       gap: 8px;
-      margin-top: 4px;
     }
 
     .comment-input-name {
-      width: 120px;
-      padding: 6px 10px;
+      width: 130px;
+      padding: 8px 10px;
       font-size: 0.85rem;
     }
 
     .comment-input-text {
       flex: 1;
-      padding: 6px 10px;
+      padding: 8px 10px;
       font-size: 0.85rem;
     }
 
@@ -544,7 +608,7 @@
       background: var(--accent);
       color: white;
       border: none;
-      padding: 6px 14px;
+      padding: 8px 16px;
       border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 600;
@@ -653,10 +717,11 @@
       </button>
     </div>
 
-    <!-- Liste Başlığı ve Sıralama -->
-    <div class="list-header">
-      <div class="list-title">
-        Topluluk Önerileri (<span id="totalCount">0</span>)
+    <!-- Arama Çubuğu ve Sıralama Kontrolleri -->
+    <div class="controls-bar">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
+        <input type="text" id="searchInput" placeholder="Öneriler içinde ara..." oninput="renderSuggestions()">
       </div>
       <div class="sort-container">
         <i class="fa-solid fa-sort" style="color: var(--text-muted);"></i>
@@ -666,6 +731,10 @@
           <option value="oldest">En Eskiye Göre</option>
         </select>
       </div>
+    </div>
+
+    <div class="list-header">
+      Topluluk Önerileri (<span id="totalCount">0</span>)
     </div>
 
     <!-- Öneri Listesi -->
@@ -750,10 +819,16 @@
       }
     }
 
-    // Yorum Aç/Kapat
+    // Yorumları Aç/Kapat
     function toggleComments(id) {
       const container = document.getElementById('comments-' + id);
       container.classList.toggle('open');
+    }
+
+    // Yorum Yazma Formunu Aç/Kapat (+)
+    function toggleCommentForm(id) {
+      const formBox = document.getElementById('comment-form-box-' + id);
+      formBox.classList.toggle('open');
     }
 
     // Yorum Ekleme
@@ -784,6 +859,8 @@
         isAdminComment: isAdmin
       }).then(() => {
         textInput.value = '';
+        document.getElementById('comment-form-box-' + suggestionId).classList.remove('open');
+        document.getElementById('comments-' + suggestionId).classList.add('open'); // Yorum yazınca direkt göster
       });
     }
 
@@ -913,28 +990,39 @@
       }
     }
 
-    // Liste Basma
+    // Liste Basma & Arama Filtreleme
     function renderSuggestions() {
       const listEl = document.getElementById('suggestionsList');
       const sortType = document.getElementById('sortSelect').value;
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
 
       const keys = Object.keys(suggestionsData);
-      document.getElementById('totalCount').textContent = keys.length;
+      
+      let items = keys.map(key => ({
+        id: key,
+        ...suggestionsData[key]
+      }));
 
-      if (keys.length === 0) {
+      // Arama Filtresi Uygula
+      if (searchQuery) {
+        items = items.filter(item => {
+          const contentMatch = (item.content || '').toLowerCase().includes(searchQuery);
+          const nicknameMatch = (item.nickname || '').toLowerCase().includes(searchQuery);
+          return contentMatch || nicknameMatch;
+        });
+      }
+
+      document.getElementById('totalCount').textContent = items.length;
+
+      if (items.length === 0) {
         listEl.innerHTML = `
           <div class="empty-state">
             <i class="fa-regular fa-comments fa-2x" style="margin-bottom: 8px;"></i>
-            <p>Henüz hiç öneri eklenmemiş. İlk öneriyi sen yaz!</p>
+            <p>Aradığınız kriterlere uygun öneri bulunamadı.</p>
           </div>
         `;
         return;
       }
-
-      const items = keys.map(key => ({
-        id: key,
-        ...suggestionsData[key]
-      }));
 
       items.sort((a, b) => {
         if (sortType === 'likes') {
@@ -959,7 +1047,7 @@
           </button>
         ` : '';
 
-        // Yorumları Listeleme
+        // Yorumlar Listeleme
         const commentsObj = item.comments || {};
         const commentKeys = Object.keys(commentsObj);
         const commentCount = commentKeys.length;
@@ -1007,16 +1095,27 @@
 
             <!-- Yorumlar Bölümü -->
             <div class="comments-section">
-              <button class="toggle-comments-btn" onclick="toggleComments('${item.id}')">
-                <i class="fa-regular fa-comment-dots"></i> Yorumlar (${commentCount})
-              </button>
-              <div class="comments-container" id="comments-${item.id}">
-                ${commentsHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Henüz yorum yapılmamış. İlk yorumu sen yaz!</p>'}
+              <div class="comments-bar-row">
+                <button class="toggle-comments-btn" onclick="toggleComments('${item.id}')">
+                  <i class="fa-regular fa-comment-dots"></i> Yorumlar (${commentCount})
+                </button>
+                <button class="add-comment-toggle-btn" onclick="toggleCommentForm('${item.id}')" title="Yorum Yaz (+) ">
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+              </div>
+
+              <!-- Yorum Yazma Alanı (Gizli/Açılır) -->
+              <div class="comment-form-box" id="comment-form-box-${item.id}">
                 <div class="comment-form">
-                  <input type="text" id="comment-name-${item.id}" class="input-field comment-input-name" placeholder="Takma ad..." maxlength="15">
-                  <input type="text" id="comment-text-${item.id}" class="input-field comment-input-text" placeholder="Yorum yaz...">
+                  <input type="text" id="comment-name-${item.id}" class="input-field comment-input-name" placeholder="Takma adın..." maxlength="15">
+                  <input type="text" id="comment-text-${item.id}" class="input-field comment-input-text" placeholder="Yorumunu yaz...">
                   <button class="comment-send-btn" onclick="addComment('${item.id}')">Gönder</button>
                 </div>
+              </div>
+
+              <!-- Yorumların Listelendiği Alan -->
+              <div class="comments-container" id="comments-${item.id}">
+                ${commentsHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Henüz yorum yapılmamış.</p>'}
               </div>
             </div>
           </div>
