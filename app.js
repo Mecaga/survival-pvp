@@ -2,7 +2,6 @@ const ADMIN_PASSWORD = "1234";
 let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
 const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀'];
 
-// Aktif seçilen durum filtresi (Varsayılan: 'all')
 let currentStatusFilter = 'all';
 
 const firebaseConfig = {
@@ -20,20 +19,19 @@ const mainVotesRef = db.ref('announcement_votes');
 let suggestionsData = {};
 let localVotes = JSON.parse(localStorage.getItem('blokdiyar_votes') || '{}');
 
-// Arka Planda Hareket Eden Emojileri Başlat
+// Arka Planda Hareket Eden Emojiler
 function initFloatingEmojis() {
   const bgContainer = document.getElementById('emojiBackground');
   if (!bgContainer) return;
 
   const emojis = ['🧱', '⛏️', '💎', '⭐', '🚀', '🌲', '🛠️', '💡'];
-  const count = 15; // Ekranda aynı anda süzülecek emoji sayısı
+  const count = 15;
 
   for (let i = 0; i < count; i++) {
     const span = document.createElement('span');
     span.className = 'floating-emoji';
     span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
     
-    // Rastgele konum ve hız ayarları
     span.style.left = Math.random() * 100 + 'vw';
     span.style.animationDuration = (10 + Math.random() * 15) + 's';
     span.style.animationDelay = -(Math.random() * 15) + 's';
@@ -43,8 +41,20 @@ function initFloatingEmojis() {
   }
 }
 
-// Sayfa açıldığında emojileri başlat
-window.addEventListener('DOMContentLoaded', initFloatingEmojis);
+window.addEventListener('DOMContentLoaded', () => {
+  initFloatingEmojis();
+
+  // ⌨️ Enter Tuşu Desteği (Öneri Ekleme Formu için)
+  const contentInput = document.getElementById('contentInput');
+  if (contentInput) {
+    contentInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addSuggestion();
+      }
+    });
+  }
+});
 
 // Admin Modu
 function toggleAdminMode() {
@@ -99,14 +109,11 @@ function deleteSuggestion(id) {
   }
 }
 
-// Sekmelere tıklandığında durumu filtrele
+// Sekme Filtreleme
 function filterByStatus(status, btnElement) {
   currentStatusFilter = status;
-  
-  // Butonların aktiflik sınıfını güncelle
   document.querySelectorAll('.status-tab-btn').forEach(btn => btn.classList.remove('active'));
   btnElement.classList.add('active');
-
   renderSuggestions();
 }
 
@@ -122,7 +129,7 @@ function toggleCommentForm(id) {
   formBox.classList.toggle('open');
 }
 
-// Yorum Ekleme
+// Yorum Ekleme (Enter Tuşu Desteği ile)
 function addComment(suggestionId) {
   const nameInput = document.getElementById('comment-name-' + suggestionId);
   const textInput = document.getElementById('comment-text-' + suggestionId);
@@ -182,7 +189,7 @@ function setTheme(theme) {
   document.querySelector(`.theme-btn.t-${theme}`).classList.add('active');
 }
 
-// Duyuru Beğeni (Geri Alma ve Değiştirme)
+// Duyuru Beğeni
 function voteMain(type) {
   const voteKey = 'main_announcement';
   const currentVote = localVotes[voteKey];
@@ -260,7 +267,7 @@ function addSuggestion() {
   });
 }
 
-// Oy Verme (Geri Alma ve Değiştirme)
+// Oy Verme
 function voteSuggestion(id, type) {
   const voteKey = 'suggestion_' + id;
   const currentVote = localVotes[voteKey];
@@ -307,7 +314,7 @@ function getStatusBadgeHtml(status, id) {
   }
 }
 
-// Listeleme, Sekme Filtreleme ve Sıralama
+// Listeleme, Filtreleme, Sıralama ve En Çok Beğenilen Kral Tacı Tespiti
 function renderSuggestions() {
   const listEl = document.getElementById('suggestionsList');
   const sortType = document.getElementById('sortSelect').value;
@@ -320,7 +327,7 @@ function renderSuggestions() {
     ...suggestionsData[key]
   }));
 
-  // Durum Sekmesi Filtresi (Tümü veya seçilen durum)
+  // Durum Sekmesi Filtresi
   if (currentStatusFilter !== 'all') {
     items = items.filter(item => (item.status || 'pending') === currentStatusFilter);
   }
@@ -346,6 +353,21 @@ function renderSuggestions() {
     return;
   }
 
+  // Tüm öneriler içindeki en yüksek puanlı (Beğeni - Beğenmeme) öğeyi bul
+  let highestScore = -9999;
+  let topFavoriteId = null;
+
+  if (keys.length > 0) {
+    keys.forEach(key => {
+      const itm = suggestionsData[key];
+      const score = (itm.likes || 0) - (itm.dislikes || 0);
+      if (score > highestScore && score > 0) {
+        highestScore = score;
+        topFavoriteId = key;
+      }
+    });
+  }
+
   // Sıralama Mantığı
   items.sort((a, b) => {
     if (sortType === 'likes') {
@@ -363,6 +385,10 @@ function renderSuggestions() {
     const userVote = localVotes['suggestion_' + item.id];
     const likeActiveClass = userVote === 'like' ? 'active-like' : '';
     const dislikeActiveClass = userVote === 'dislike' ? 'active-dislike' : '';
+
+    const isTopFavorite = (item.id === topFavoriteId);
+    const cardClass = isTopFavorite ? 'suggestion-card top-favorite' : 'suggestion-card';
+    const crownBadge = isTopFavorite ? `<span class="favorite-crown"><i class="fa-solid fa-crown"></i> Topluluk Favorisi</span>` : '';
 
     const deleteButtonHtml = isAdmin ? `
       <button class="delete-btn" onclick="deleteSuggestion('${item.id}')" title="Öneriyi Sil">
@@ -393,13 +419,14 @@ function renderSuggestions() {
     const categoryName = item.category || 'Öneri';
 
     return `
-      <div class="suggestion-card">
+      <div class="${cardClass}">
         <div class="suggestion-top-row">
           <div class="suggestion-main">
             <div class="suggestion-header">
               <span class="nickname-tag">👤 ${escapeHtml(item.nickname)}</span>
               <span class="category-tag">${escapeHtml(categoryName)}</span>
               ${getStatusBadgeHtml(item.status, item.id)}
+              ${crownBadge}
               <span class="date-tag"><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
             </div>
             <div class="suggestion-content">
@@ -434,7 +461,7 @@ function renderSuggestions() {
           <div class="comment-form-box" id="comment-form-box-${item.id}">
             <div class="comment-form">
               <input type="text" id="comment-name-${item.id}" class="input-field comment-input-name" placeholder="Takma adın..." maxlength="15">
-              <input type="text" id="comment-text-${item.id}" class="input-field comment-input-text" placeholder="Yorumunu yaz...">
+              <input type="text" id="comment-text-${item.id}" class="input-field comment-input-text" placeholder="Yorumunu yaz..." onkeydown="if(event.key==='Enter'){addComment('${item.id}');}">
               <button class="comment-send-btn" onclick="addComment('${item.id}')">Gönder</button>
             </div>
           </div>
