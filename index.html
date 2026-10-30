@@ -348,18 +348,24 @@
     .suggestions-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
     }
 
     .suggestion-card {
       background: var(--bg-card);
       backdrop-filter: blur(12px);
       border: 1px solid var(--bg-card-border);
-      padding: 16px 20px;
+      padding: 18px 20px;
       border-radius: 16px;
       display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .suggestion-top-row {
+      display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 16px;
     }
 
@@ -392,7 +398,6 @@
       opacity: 0.8;
     }
 
-    /* Durum Rozetleri */
     .status-tag {
       font-size: 0.75rem;
       font-weight: 700;
@@ -403,29 +408,10 @@
       gap: 4px;
     }
 
-    .status-tag.pending {
-      background: rgba(148, 163, 184, 0.15);
-      color: #94a3b8;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-    }
-
-    .status-tag.planned {
-      background: rgba(59, 130, 246, 0.15);
-      color: #60a5fa;
-      border: 1px solid rgba(59, 130, 246, 0.3);
-    }
-
-    .status-tag.added {
-      background: rgba(34, 197, 94, 0.15);
-      color: #4ade80;
-      border: 1px solid rgba(34, 197, 94, 0.3);
-    }
-
-    .status-tag.rejected {
-      background: rgba(239, 68, 68, 0.15);
-      color: #f87171;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-    }
+    .status-tag.pending { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+    .status-tag.planned { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .status-tag.added { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .status-tag.rejected { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
     .admin-status-select {
       background: var(--input-bg);
@@ -470,6 +456,105 @@
       color: white;
     }
 
+    /* Yorumlar Alanı Stilleri */
+    .comments-section {
+      border-top: 1px solid var(--bg-card-border);
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toggle-comments-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+    }
+
+    .toggle-comments-btn:hover {
+      color: var(--accent);
+    }
+
+    .comments-container {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.4);
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .comments-container.open {
+      display: flex;
+    }
+
+    .comment-item {
+      font-size: 0.9rem;
+      background: var(--input-bg);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--bg-card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .comment-author {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .comment-author.admin-author {
+      color: var(--green);
+    }
+
+    .comment-form {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .comment-input-name {
+      width: 120px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+    }
+
+    .comment-input-text {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+    }
+
+    .comment-send-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .comment-send-btn:hover {
+      background: var(--accent-hover);
+    }
+
     .empty-state {
       text-align: center;
       padding: 40px;
@@ -494,12 +579,17 @@
       .input-nickname, .input-content {
         width: 100%;
       }
-      .suggestion-card {
+      .suggestion-top-row {
         flex-direction: column;
-        align-items: stretch;
       }
       .suggestion-actions {
+        width: 100%;
         justify-content: flex-end;
+      }
+      .comment-form {
+        flex-direction: column;
+      }
+      .comment-input-name {
         width: 100%;
       }
     }
@@ -646,12 +736,10 @@
       }
     }
 
-    // Durum Değiştirme (Sadece Admin)
+    // Durum Değiştirme
     function changeStatus(id, newStatus) {
       if (!isAdmin) return;
-      suggestionsRef.child(id).update({
-        status: newStatus
-      });
+      suggestionsRef.child(id).update({ status: newStatus });
     }
 
     // Öneri Silme
@@ -660,6 +748,43 @@
       if (confirm("Bu öneriyi kalıcı olarak silmek istediğinize emin misiniz?")) {
         suggestionsRef.child(id).remove();
       }
+    }
+
+    // Yorum Aç/Kapat
+    function toggleComments(id) {
+      const container = document.getElementById('comments-' + id);
+      container.classList.toggle('open');
+    }
+
+    // Yorum Ekleme
+    function addComment(suggestionId) {
+      const nameInput = document.getElementById('comment-name-' + suggestionId);
+      const textInput = document.getElementById('comment-text-' + suggestionId);
+
+      const author = nameInput.value.trim();
+      const text = textInput.value.trim();
+
+      if (!author) {
+        alert('Lütfen bir takma ad girin!');
+        return;
+      }
+      if (!text) {
+        alert('Lütfen bir yorum yazın!');
+        return;
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+      const commentRef = suggestionsRef.child(suggestionId).child('comments').push();
+      commentRef.set({
+        author: author,
+        text: text,
+        time: timeStr,
+        isAdminComment: isAdmin
+      }).then(() => {
+        textInput.value = '';
+      });
     }
 
     // Bağlantı Kontrolü
@@ -741,7 +866,7 @@
         formattedDate: dateStr,
         likes: 0,
         dislikes: 0,
-        status: 'pending' // Varsayılan durum
+        status: 'pending'
       }).then(() => {
         contentInput.value = '';
       }).catch((error) => {
@@ -768,10 +893,8 @@
       renderSuggestions();
     });
 
-    // Rozet HTML Oluşturucu
     function getStatusBadgeHtml(status, id) {
       const st = status || 'pending';
-
       if (isAdmin) {
         return `
           <select class="admin-status-select" onchange="changeStatus('${id}', this.value)">
@@ -782,16 +905,11 @@
           </select>
         `;
       }
-
       switch(st) {
-        case 'planned':
-          return `<span class="status-tag planned"><i class="fa-solid fa-rocket"></i> Planlanıyor</span>`;
-        case 'added':
-          return `<span class="status-tag added"><i class="fa-solid fa-circle-check"></i> Eklendi</span>`;
-        case 'rejected':
-          return `<span class="status-tag rejected"><i class="fa-solid fa-circle-xmark"></i> Reddedildi</span>`;
-        default:
-          return `<span class="status-tag pending"><i class="fa-solid fa-hourglass-half"></i> İnceleniyor</span>`;
+        case 'planned': return `<span class="status-tag planned"><i class="fa-solid fa-rocket"></i> Planlanıyor</span>`;
+        case 'added': return `<span class="status-tag added"><i class="fa-solid fa-circle-check"></i> Eklendi</span>`;
+        case 'rejected': return `<span class="status-tag rejected"><i class="fa-solid fa-circle-xmark"></i> Reddedildi</span>`;
+        default: return `<span class="status-tag pending"><i class="fa-solid fa-hourglass-half"></i> İnceleniyor</span>`;
       }
     }
 
@@ -841,28 +959,65 @@
           </button>
         ` : '';
 
+        // Yorumları Listeleme
+        const commentsObj = item.comments || {};
+        const commentKeys = Object.keys(commentsObj);
+        const commentCount = commentKeys.length;
+
+        const commentsHtml = commentKeys.map(cKey => {
+          const com = commentsObj[cKey];
+          const authorClass = com.isAdminComment ? 'comment-author admin-author' : 'comment-author';
+          const badgeText = com.isAdminComment ? ' [Geliştirici]' : '';
+          return `
+            <div class="comment-item">
+              <div class="comment-header">
+                <span class="${authorClass}">${escapeHtml(com.author)}${badgeText}</span>
+                <span>${com.time || ''}</span>
+              </div>
+              <div>${escapeHtml(com.text)}</div>
+            </div>
+          `;
+        }).join('');
+
         return `
           <div class="suggestion-card">
-            <div class="suggestion-main">
-              <div class="suggestion-header">
-                <span class="nickname-tag">${escapeHtml(item.nickname)}</span>
-                ${getStatusBadgeHtml(item.status, item.id)}
-                <span class="date-tag"><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
+            <div class="suggestion-top-row">
+              <div class="suggestion-main">
+                <div class="suggestion-header">
+                  <span class="nickname-tag">${escapeHtml(item.nickname)}</span>
+                  ${getStatusBadgeHtml(item.status, item.id)}
+                  <span class="date-tag"><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
+                </div>
+                <div class="suggestion-content">
+                  <strong>${escapeHtml(item.nickname)}</strong> | ${escapeHtml(item.content)}
+                </div>
               </div>
-              <div class="suggestion-content">
-                <strong>${escapeHtml(item.nickname)}</strong> | ${escapeHtml(item.content)}
+              <div class="suggestion-actions">
+                <button class="vote-btn ${likeActiveClass}" onclick="voteSuggestion('${item.id}', 'like')">
+                  <i class="fa-regular fa-thumbs-up"></i>
+                  <span>${item.likes || 0}</span>
+                </button>
+                <button class="vote-btn ${dislikeActiveClass}" onclick="voteSuggestion('${item.id}', 'dislike')">
+                  <i class="fa-regular fa-thumbs-down"></i>
+                  <span>${item.dislikes || 0}</span>
+                </button>
+                ${deleteButtonHtml}
               </div>
             </div>
-            <div class="suggestion-actions">
-              <button class="vote-btn ${likeActiveClass}" onclick="voteSuggestion('${item.id}', 'like')">
-                <i class="fa-regular fa-thumbs-up"></i>
-                <span>${item.likes || 0}</span>
+
+            <!-- Yorumlar Bölümü -->
+            <div class="comments-section">
+              <button class="toggle-comments-btn" onclick="toggleComments('${item.id}')">
+                <i class="fa-regular fa-comment-dots"></i> Yorumlar (${commentCount})
               </button>
-              <button class="vote-btn ${dislikeActiveClass}" onclick="voteSuggestion('${item.id}', 'dislike')">
-                <i class="fa-regular fa-thumbs-down"></i>
-                <span>${item.dislikes || 0}</span>
-              </button>
-              ${deleteButtonHtml}
+              <div class="comments-container" id="comments-${item.id}">
+                ${commentsHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Henüz yorum yapılmamış. İlk yorumu sen yaz!</p>'}
+                <div class="comment-form">
+                  <input type="text" id="comment-name-${item.id}" class="input-field comment-input-name" placeholder="Takma ad..." maxlength="15">
+                  <input type="text" id="comment-text-${item.id}" class="input-field comment-input-text" placeholder="Yorum yaz...">
+                  <button class="comment-send-btn" onclick="addComment('${item.id}')">Gönder</button>
+                </div>
+              </div>
             </div>
           </div>
         `;
