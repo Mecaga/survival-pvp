@@ -163,7 +163,6 @@
     .theme-btn.t-voxel { background: #14281d; }
     .theme-btn.t-night { background: #050505; }
 
-    /* Admin Butonu */
     .admin-toggle-btn {
       background: var(--input-bg);
       border: 1px solid var(--bg-card-border);
@@ -377,6 +376,7 @@
       gap: 10px;
       font-size: 0.85rem;
       color: var(--text-muted);
+      flex-wrap: wrap;
     }
 
     .nickname-tag {
@@ -392,6 +392,52 @@
       opacity: 0.8;
     }
 
+    /* Durum Rozetleri */
+    .status-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-tag.pending {
+      background: rgba(148, 163, 184, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .status-tag.planned {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .status-tag.added {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .status-tag.rejected {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .admin-status-select {
+      background: var(--input-bg);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-main);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      outline: none;
+      cursor: pointer;
+    }
+
     .suggestion-content {
       font-size: 1rem;
       color: var(--text-main);
@@ -405,7 +451,6 @@
       gap: 8px;
     }
 
-    /* Admin Sil Butonu */
     .delete-btn {
       background: rgba(239, 68, 68, 0.15);
       border: 1px solid var(--red);
@@ -544,11 +589,9 @@
   </div>
 
   <script>
-    // Admin Şifresi (Buradan Şifreni Değiştirebilirsin)
     const ADMIN_PASSWORD = "1234";
     let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
 
-    // Firebase Başlatma
     const firebaseConfig = {
       databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com/"
     };
@@ -564,7 +607,7 @@
     let suggestionsData = {};
     let localVotes = JSON.parse(localStorage.getItem('blokdiyar_votes') || '{}');
 
-    // Admin Modu Değiştirici
+    // Admin Modu
     function toggleAdminMode() {
       if (isAdmin) {
         if (confirm("Admin modundan çıkmak istiyor musunuz?")) {
@@ -603,19 +646,23 @@
       }
     }
 
-    // Öneri Silme (Sadece Admin)
+    // Durum Değiştirme (Sadece Admin)
+    function changeStatus(id, newStatus) {
+      if (!isAdmin) return;
+      suggestionsRef.child(id).update({
+        status: newStatus
+      });
+    }
+
+    // Öneri Silme
     function deleteSuggestion(id) {
       if (!isAdmin) return;
-      if (confirm("Bu öneriyi veritabanından kalıcı olarak silmek istediğinize emin misiniz?")) {
-        suggestionsRef.child(id).remove().then(() => {
-          alert("Öneri silindi!");
-        }).catch((err) => {
-          alert("Silme hatası: " + err.message);
-        });
+      if (confirm("Bu öneriyi kalıcı olarak silmek istediğinize emin misiniz?")) {
+        suggestionsRef.child(id).remove();
       }
     }
 
-    // Bağlantı Durumu Kontrolü
+    // Bağlantı Kontrolü
     db.ref('.info/connected').on('value', (snap) => {
       const dot = document.getElementById('statusDot');
       const text = document.getElementById('statusText');
@@ -635,7 +682,7 @@
       document.querySelector(`.theme-btn.t-${theme}`).classList.add('active');
     }
 
-    // Duyuru Beğeni Sistemi
+    // Duyuru Beğeni
     function voteMain(type) {
       if (localVotes['main_announcement']) {
         alert('Bu duyuru için zaten oy kullandınız!');
@@ -693,7 +740,8 @@
         timestamp: firebase.database.ServerValue.TIMESTAMP,
         formattedDate: dateStr,
         likes: 0,
-        dislikes: 0
+        dislikes: 0,
+        status: 'pending' // Varsayılan durum
       }).then(() => {
         contentInput.value = '';
       }).catch((error) => {
@@ -701,7 +749,7 @@
       });
     }
 
-    // Öneri Beğenme / Beğenmeme
+    // Oy Verme
     function voteSuggestion(id, type) {
       const voteKey = 'suggestion_' + id;
       if (localVotes[voteKey]) {
@@ -714,21 +762,40 @@
       localStorage.setItem('blokdiyar_votes', JSON.stringify(localVotes));
     }
 
-    // Veritabanını Dinleme
+    // Veritabanı Dinleyici
     suggestionsRef.on('value', (snapshot) => {
       suggestionsData = snapshot.val() || {};
       renderSuggestions();
-    }, (error) => {
-      console.error("Veri okuma hatası:", error);
-      document.getElementById('suggestionsList').innerHTML = `
-        <div class="empty-state">
-          <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: var(--red); margin-bottom: 8px;"></i>
-          <p>Veriler yüklenirken bir hata oluştu. Lütfen Firebase kurallarını kontrol edin.</p>
-        </div>
-      `;
     });
 
-    // Sıralama ve Ekrana Basma
+    // Rozet HTML Oluşturucu
+    function getStatusBadgeHtml(status, id) {
+      const st = status || 'pending';
+
+      if (isAdmin) {
+        return `
+          <select class="admin-status-select" onchange="changeStatus('${id}', this.value)">
+            <option value="pending" ${st === 'pending' ? 'selected' : ''}>⏳ İnceleniyor</option>
+            <option value="planned" ${st === 'planned' ? 'selected' : ''}>🚀 Planlanıyor</option>
+            <option value="added" ${st === 'added' ? 'selected' : ''}>✅ Eklendi</option>
+            <option value="rejected" ${st === 'rejected' ? 'selected' : ''}>❌ Reddedildi</option>
+          </select>
+        `;
+      }
+
+      switch(st) {
+        case 'planned':
+          return `<span class="status-tag planned"><i class="fa-solid fa-rocket"></i> Planlanıyor</span>`;
+        case 'added':
+          return `<span class="status-tag added"><i class="fa-solid fa-circle-check"></i> Eklendi</span>`;
+        case 'rejected':
+          return `<span class="status-tag rejected"><i class="fa-solid fa-circle-xmark"></i> Reddedildi</span>`;
+        default:
+          return `<span class="status-tag pending"><i class="fa-solid fa-hourglass-half"></i> İnceleniyor</span>`;
+      }
+    }
+
+    // Liste Basma
     function renderSuggestions() {
       const listEl = document.getElementById('suggestionsList');
       const sortType = document.getElementById('sortSelect').value;
@@ -770,7 +837,7 @@
 
         const deleteButtonHtml = isAdmin ? `
           <button class="delete-btn" onclick="deleteSuggestion('${item.id}')" title="Öneriyi Sil">
-            <i class="fa-solid fa-trash-can"></i> Sil
+            <i class="fa-solid fa-trash-can"></i>
           </button>
         ` : '';
 
@@ -779,6 +846,7 @@
             <div class="suggestion-main">
               <div class="suggestion-header">
                 <span class="nickname-tag">${escapeHtml(item.nickname)}</span>
+                ${getStatusBadgeHtml(item.status, item.id)}
                 <span class="date-tag"><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
               </div>
               <div class="suggestion-content">
@@ -810,7 +878,6 @@
                  .replace(/'/g, "&#039;");
     }
 
-    // Başlangıç Ayarları
     updateAdminUI();
   </script>
 </body>
