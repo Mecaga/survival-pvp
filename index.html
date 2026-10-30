@@ -126,6 +126,12 @@
       box-shadow: 0 0 10px var(--green);
     }
 
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
     .theme-selector {
       display: flex;
       align-items: center;
@@ -156,6 +162,32 @@
     .theme-btn.t-blue { background: #1e3a8a; }
     .theme-btn.t-voxel { background: #14281d; }
     .theme-btn.t-night { background: #050505; }
+
+    /* Admin Butonu */
+    .admin-toggle-btn {
+      background: var(--input-bg);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+
+    .admin-toggle-btn:hover {
+      color: var(--text-main);
+      border-color: var(--accent);
+    }
+
+    .admin-toggle-btn.active {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: var(--red);
+      color: var(--red);
+    }
 
     .announcement-card {
       background: var(--bg-card);
@@ -373,6 +405,26 @@
       gap: 8px;
     }
 
+    /* Admin Sil Butonu */
+    .delete-btn {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--red);
+      color: var(--red);
+      padding: 8px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .delete-btn:hover {
+      background: var(--red);
+      color: white;
+    }
+
     .empty-state {
       text-align: center;
       padding: 40px;
@@ -403,6 +455,7 @@
       }
       .suggestion-actions {
         justify-content: flex-end;
+        width: 100%;
       }
     }
   </style>
@@ -411,18 +464,24 @@
 
   <div class="container">
     
-    <!-- Üst Bar & Temalar -->
+    <!-- Üst Bar, Temalar & Admin Paneli -->
     <div class="top-bar">
       <div class="status-badge">
         <div class="dot" id="statusDot"></div>
         <span id="statusText">Bağlantı Kuruluyor...</span>
       </div>
-      <div class="theme-selector">
-        <span>Arka Plan:</span>
-        <button class="theme-btn t-dark active" onclick="setTheme('dark')" title="Koyu"></button>
-        <button class="theme-btn t-blue" onclick="setTheme('blue')" title="Mavi"></button>
-        <button class="theme-btn t-voxel" onclick="setTheme('voxel')" title="Voxel / Yeşil"></button>
-        <button class="theme-btn t-night" onclick="setTheme('night')" title="Gece"></button>
+      <div class="top-controls">
+        <div class="theme-selector">
+          <span>Arka Plan:</span>
+          <button class="theme-btn t-dark active" onclick="setTheme('dark')" title="Koyu"></button>
+          <button class="theme-btn t-blue" onclick="setTheme('blue')" title="Mavi"></button>
+          <button class="theme-btn t-voxel" onclick="setTheme('voxel')" title="Voxel / Yeşil"></button>
+          <button class="theme-btn t-night" onclick="setTheme('night')" title="Gece"></button>
+        </div>
+        <button class="admin-toggle-btn" id="adminToggleBtn" onclick="toggleAdminMode()">
+          <i class="fa-solid fa-lock" id="adminIcon"></i>
+          <span id="adminText">Admin</span>
+        </button>
       </div>
     </div>
 
@@ -485,6 +544,10 @@
   </div>
 
   <script>
+    // Admin Şifresi (Buradan Şifreni Değiştirebilirsin)
+    const ADMIN_PASSWORD = "1234";
+    let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
+
     // Firebase Başlatma
     const firebaseConfig = {
       databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com/"
@@ -501,7 +564,58 @@
     let suggestionsData = {};
     let localVotes = JSON.parse(localStorage.getItem('blokdiyar_votes') || '{}');
 
-    // Bağlantı Durumu Kontrolü (Firebase .info/connected)
+    // Admin Modu Değiştirici
+    function toggleAdminMode() {
+      if (isAdmin) {
+        if (confirm("Admin modundan çıkmak istiyor musunuz?")) {
+          isAdmin = false;
+          localStorage.removeItem('blokdiyar_admin');
+          updateAdminUI();
+          renderSuggestions();
+        }
+      } else {
+        const password = prompt("Admin Şifresini Girin:");
+        if (password === ADMIN_PASSWORD) {
+          isAdmin = true;
+          localStorage.setItem('blokdiyar_admin', 'true');
+          alert("Admin girişi başarılı!");
+          updateAdminUI();
+          renderSuggestions();
+        } else if (password !== null) {
+          alert("Hatalı şifre!");
+        }
+      }
+    }
+
+    function updateAdminUI() {
+      const btn = document.getElementById('adminToggleBtn');
+      const icon = document.getElementById('adminIcon');
+      const text = document.getElementById('adminText');
+
+      if (isAdmin) {
+        btn.classList.add('active');
+        icon.className = 'fa-solid fa-unlock-keyhole';
+        text.textContent = 'Çıkış';
+      } else {
+        btn.classList.remove('active');
+        icon.className = 'fa-solid fa-lock';
+        text.textContent = 'Admin';
+      }
+    }
+
+    // Öneri Silme (Sadece Admin)
+    function deleteSuggestion(id) {
+      if (!isAdmin) return;
+      if (confirm("Bu öneriyi veritabanından kalıcı olarak silmek istediğinize emin misiniz?")) {
+        suggestionsRef.child(id).remove().then(() => {
+          alert("Öneri silindi!");
+        }).catch((err) => {
+          alert("Silme hatası: " + err.message);
+        });
+      }
+    }
+
+    // Bağlantı Durumu Kontrolü
     db.ref('.info/connected').on('value', (snap) => {
       const dot = document.getElementById('statusDot');
       const text = document.getElementById('statusText');
@@ -570,4 +684,134 @@
       }
 
       const now = new Date();
-      const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '
+      const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+      const newRef = suggestionsRef.push();
+      newRef.set({
+        nickname: nickname,
+        content: content,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        formattedDate: dateStr,
+        likes: 0,
+        dislikes: 0
+      }).then(() => {
+        contentInput.value = '';
+      }).catch((error) => {
+        alert('Gönderilirken hata oluştu: ' + error.message);
+      });
+    }
+
+    // Öneri Beğenme / Beğenmeme
+    function voteSuggestion(id, type) {
+      const voteKey = 'suggestion_' + id;
+      if (localVotes[voteKey]) {
+        alert('Bu öneri için zaten oy kullandınız!');
+        return;
+      }
+
+      suggestionsRef.child(id).child(type === 'like' ? 'likes' : 'dislikes').transaction((current) => (current || 0) + 1);
+      localVotes[voteKey] = type;
+      localStorage.setItem('blokdiyar_votes', JSON.stringify(localVotes));
+    }
+
+    // Veritabanını Dinleme
+    suggestionsRef.on('value', (snapshot) => {
+      suggestionsData = snapshot.val() || {};
+      renderSuggestions();
+    }, (error) => {
+      console.error("Veri okuma hatası:", error);
+      document.getElementById('suggestionsList').innerHTML = `
+        <div class="empty-state">
+          <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: var(--red); margin-bottom: 8px;"></i>
+          <p>Veriler yüklenirken bir hata oluştu. Lütfen Firebase kurallarını kontrol edin.</p>
+        </div>
+      `;
+    });
+
+    // Sıralama ve Ekrana Basma
+    function renderSuggestions() {
+      const listEl = document.getElementById('suggestionsList');
+      const sortType = document.getElementById('sortSelect').value;
+
+      const keys = Object.keys(suggestionsData);
+      document.getElementById('totalCount').textContent = keys.length;
+
+      if (keys.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-comments fa-2x" style="margin-bottom: 8px;"></i>
+            <p>Henüz hiç öneri eklenmemiş. İlk öneriyi sen yaz!</p>
+          </div>
+        `;
+        return;
+      }
+
+      const items = keys.map(key => ({
+        id: key,
+        ...suggestionsData[key]
+      }));
+
+      items.sort((a, b) => {
+        if (sortType === 'likes') {
+          const scoreA = (a.likes || 0) - (a.dislikes || 0);
+          const scoreB = (b.likes || 0) - (b.dislikes || 0);
+          return scoreB - scoreA;
+        } else if (sortType === 'newest') {
+          return (b.timestamp || 0) - (a.timestamp || 0);
+        } else if (sortType === 'oldest') {
+          return (a.timestamp || 0) - (b.timestamp || 0);
+        }
+      });
+
+      listEl.innerHTML = items.map(item => {
+        const userVote = localVotes['suggestion_' + item.id];
+        const likeActiveClass = userVote === 'like' ? 'active-like' : '';
+        const dislikeActiveClass = userVote === 'dislike' ? 'active-dislike' : '';
+
+        const deleteButtonHtml = isAdmin ? `
+          <button class="delete-btn" onclick="deleteSuggestion('${item.id}')" title="Öneriyi Sil">
+            <i class="fa-solid fa-trash-can"></i> Sil
+          </button>
+        ` : '';
+
+        return `
+          <div class="suggestion-card">
+            <div class="suggestion-main">
+              <div class="suggestion-header">
+                <span class="nickname-tag">${escapeHtml(item.nickname)}</span>
+                <span class="date-tag"><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
+              </div>
+              <div class="suggestion-content">
+                <strong>${escapeHtml(item.nickname)}</strong> | ${escapeHtml(item.content)}
+              </div>
+            </div>
+            <div class="suggestion-actions">
+              <button class="vote-btn ${likeActiveClass}" onclick="voteSuggestion('${item.id}', 'like')">
+                <i class="fa-regular fa-thumbs-up"></i>
+                <span>${item.likes || 0}</span>
+              </button>
+              <button class="vote-btn ${dislikeActiveClass}" onclick="voteSuggestion('${item.id}', 'dislike')">
+                <i class="fa-regular fa-thumbs-down"></i>
+                <span>${item.dislikes || 0}</span>
+              </button>
+              ${deleteButtonHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+    }
+
+    // Başlangıç Ayarları
+    updateAdminUI();
+  </script>
+</body>
+</html>
