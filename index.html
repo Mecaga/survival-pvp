@@ -22,6 +22,9 @@
 </head>
 <body class="theme-dark">
 
+  <!-- Arka Planda Hareket Eden Emojiler Alanı -->
+  <div class="emoji-background" id="emojiBackground"></div>
+
   <div class="container">
     
     <!-- Üst Bar, Temalar & Admin Paneli -->
@@ -84,6 +87,16 @@
       </button>
     </div>
 
+    <!-- Durum Sekmeleri (Paneller Arası Geçiş) -->
+    <div class="status-tabs-bar">
+      <button class="status-tab-btn active" onclick="filterByStatus('all', this)">📋 Tümü</button>
+      <button class="status-tab-btn" onclick="filterByStatus('pending', this)">⏳ İnceleniyor</button>
+      <button class="status-tab-btn" onclick="filterByStatus('planned', this)">🚀 Planlanıyor</button>
+      <button class="status-tab-btn" onclick="filterByStatus('added', this)">✅ Eklendi</button>
+      <button class="status-tab-btn" onclick="filterByStatus('rejected', this)">❌ Reddedildi</button>
+      <button class="status-tab-btn" onclick="filterByStatus('failed', this)">⚠️ Yapılamadı</button>
+    </div>
+
     <!-- Arama ve Sıralama Kontrolleri -->
     <div class="controls-bar">
       <div class="search-box">
@@ -93,9 +106,9 @@
       <div class="sort-container">
         <i class="fa-solid fa-sort" style="color: var(--text-muted);"></i>
         <select id="sortSelect" class="sort-select" onchange="renderSuggestions()">
-          <option value="likes">🔥 En Çok Beğenilen</option>
           <option value="newest">🕒 En Yeni</option>
           <option value="oldest">⏳ En Eski</option>
+          <option value="likes">🔥 En Çok Beğenilen</option>
         </select>
       </div>
     </div>
