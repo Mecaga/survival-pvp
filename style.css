@@ -115,6 +115,12 @@ body {
   border-radius: 16px;
 }
 
+.status-badge-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .status-badge {
   display: flex;
   align-items: center;
@@ -130,6 +136,26 @@ body {
   border-radius: 50%;
   background-color: var(--green);
   box-shadow: 0 0 10px var(--green);
+}
+
+.game-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #38bdf8;
+  text-decoration: none;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  width: fit-content;
+}
+
+.game-link-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
 }
 
 .top-controls {
@@ -194,17 +220,32 @@ body {
   color: var(--red);
 }
 
-.announcement-card {
-  background: var(--bg-card);
+/* Şekilli ve Ortalanmış Duyuru Kartı */
+.announcement-card-centered {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15)), var(--bg-card);
   backdrop-filter: blur(12px);
   border: 1px solid var(--bg-card-border);
-  padding: 24px;
+  padding: 24px 28px;
   border-radius: 20px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+
+.announcement-badge-top {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .announcement-text {
@@ -212,20 +253,19 @@ body {
   line-height: 1.6;
   color: var(--text-main);
   font-weight: 500;
-  flex: 1;
+  max-width: 650px;
 }
 
 .announcement-votes {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .vote-btn {
   background: var(--input-bg);
   border: 1px solid var(--bg-card-border);
   color: var(--text-main);
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-radius: 12px;
   cursor: pointer;
   display: flex;
@@ -286,6 +326,7 @@ body {
   border-radius: 12px;
   font-size: 0.95rem;
   outline: none;
+  width: 100%;
 }
 
 .input-field:focus {
@@ -304,6 +345,10 @@ body {
 .input-content {
   flex: 3;
   min-width: 220px;
+}
+
+.input-image {
+  width: 100%;
 }
 
 .submit-btn {
@@ -429,7 +474,6 @@ body {
   position: relative;
 }
 
-/* 👑 Topluluk Favorisi (En Çok Beğenilen) Özel Kart Tasarımı */
 .suggestion-card.top-favorite {
   border: 2px solid #f59e0b;
   box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
@@ -526,6 +570,16 @@ body {
   color: var(--text-main);
   word-break: break-word;
   line-height: 1.5;
+}
+
+/* Öneri içindeki resim stili */
+.suggestion-image-preview {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 10px;
+  margin-top: 8px;
+  border: 1px solid var(--bg-card-border);
+  object-fit: contain;
 }
 
 .suggestion-actions {
@@ -658,6 +712,12 @@ body {
 
 .comment-form {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-form-inputs {
+  display: flex;
   gap: 8px;
 }
 
@@ -673,6 +733,20 @@ body {
   font-size: 0.85rem;
 }
 
+.comment-input-image {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+
+.comment-image-preview {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 6px;
+  margin-top: 4px;
+  object-fit: contain;
+}
+
 .comment-send-btn {
   background: var(--accent);
   color: white;
@@ -682,6 +756,7 @@ body {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  align-self: flex-end;
 }
 
 .comment-send-btn:hover {
@@ -698,14 +773,6 @@ body {
 }
 
 @media (max-width: 600px) {
-  .announcement-card {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .announcement-votes {
-    flex-direction: row;
-    justify-content: flex-start;
-  }
   .form-row {
     flex-direction: column;
   }
@@ -719,7 +786,7 @@ body {
     width: 100%;
     justify-content: flex-end;
   }
-  .comment-form {
+  .comment-form-inputs {
     flex-direction: column;
   }
   .comment-input-name {
