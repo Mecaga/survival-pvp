@@ -1,334 +1,689 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canlı Ortak Görev Takibi</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icon Seti -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #1f2937 100%);
-            min-height: 100vh;
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(17, 24, 39, 0.6);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
-        .ping-online {
-            animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-        @keyframes ping {
-            75%, 100% {
-                transform: scale(2);
-                opacity: 0;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlokDiyar - Öneriler Panosu</title>
 
-    <!-- Firebase Compat SDK v8/v9 JS CDN -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Firebase App & Realtime Database SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-card-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --green: #22c55e;
+      --red: #ef4444;
+      --input-bg: #1e293b;
+    }
+
+    /* Tema Seçenekleri */
+    body.theme-dark {
+      --bg-primary: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-card-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --input-bg: #1e293b;
+    }
+
+    body.theme-blue {
+      --bg-primary: #030712;
+      --bg-card: rgba(17, 24, 39, 0.8);
+      --bg-card-border: rgba(59, 130, 246, 0.2);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #1d4ed8;
+      --input-bg: #111827;
+    }
+
+    body.theme-voxel {
+      --bg-primary: #14281d;
+      --bg-card: rgba(26, 47, 35, 0.85);
+      --bg-card-border: rgba(74, 222, 128, 0.2);
+      --text-main: #f0fdf4;
+      --text-muted: #86efac;
+      --accent: #16a34a;
+      --input-bg: #1c3827;
+    }
+
+    body.theme-night {
+      --bg-primary: #050505;
+      --bg-card: rgba(20, 20, 20, 0.9);
+      --bg-card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #ffffff;
+      --text-muted: #a1a1aa;
+      --accent: #8b5cf6;
+      --input-bg: #18181b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Üst Bar & Temalar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--bg-card-border);
+      padding: 14px 20px;
+      border-radius: 16px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--green);
+      box-shadow: 0 0 10px var(--green);
+    }
+
+    .theme-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .theme-selector span {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .theme-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .theme-btn.active {
+      border-color: #ffffff;
+      transform: scale(1.15);
+    }
+
+    .theme-btn.t-dark { background: #0f172a; }
+    .theme-btn.t-blue { background: #1e3a8a; }
+    .theme-btn.t-voxel { background: #14281d; }
+    .theme-btn.t-night { background: #050505; }
+
+    /* Duyuru Kutusu */
+    .announcement-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--bg-card-border);
+      padding: 24px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .announcement-text {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: var(--text-main);
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .announcement-votes {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .vote-btn {
+      background: var(--input-bg);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .vote-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .vote-btn.active-like {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .vote-btn.active-dislike {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    /* Öneri Ekleme Formu */
+    .form-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--bg-card-border);
+      padding: 20px;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .form-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .input-field {
+      background: var(--input-bg);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+    }
+
+    .input-nickname {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .input-content {
+      flex: 3;
+      min-width: 240px;
+    }
+
+    .submit-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .submit-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Liste Başlığı & Sıralama Kontrolleri */
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 0 4px;
+    }
+
+    .list-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .sort-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sort-select {
+      background: var(--input-bg);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Öneri Kartları */
+    .suggestions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .suggestion-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--bg-card-border);
+      padding: 16px 20px;
+      border-radius: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .suggestion-main {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .suggestion-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .nickname-tag {
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(59, 130, 246, 0.1);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .date-tag {
+      font-size: 0.78rem;
+      opacity: 0.8;
+    }
+
+    .suggestion-content {
+      font-size: 1rem;
+      color: var(--text-main);
+      word-break: break-word;
+      line-height: 1.5;
+    }
+
+    .suggestion-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--bg-card-border);
+    }
+
+    @media (max-width: 600px) {
+      .announcement-card {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .announcement-votes {
+        flex-direction: row;
+        justify-content: flex-start;
+      }
+      .form-row {
+        flex-direction: column;
+      }
+      .input-nickname, .input-content {
+        width: 100%;
+      }
+      .suggestion-card {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .suggestion-actions {
+        justify-content: flex-end;
+      }
+    }
+  </style>
 </head>
-<body class="text-slate-100 flex flex-col justify-between p-4 sm:p-6 md:p-8">
+<body class="theme-dark">
 
-    <div class="max-w-2xl w-full mx-auto space-y-6 my-auto">
-        
-        <!-- Üst Başlık Kartı -->
-        <div class="bg-slate-800/80 backdrop-blur-md rounded-2xl p-6 border border-slate-700/60 shadow-2xl relative overflow-hidden">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="text-center sm:text-left">
-                    <h1 class="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-400 flex items-center justify-center sm:justify-start gap-3">
-                        <i class="fa-solid fa-gamepad text-cyan-400"></i>
-                        <span>Ortak Kod & Oyun Listesi</span>
-                    </h1>
-                    <p class="text-slate-400 text-xs sm:text-sm mt-1">Anlık canlı veritabanı senkronizasyonlu görev panosu</p>
-                </div>
-                
-                <!-- Canlı Bağlantı Rozeti -->
-                <div class="flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-300 shadow-inner">
-                    <span class="relative flex h-2.5 w-2.5">
-                      <span id="statusPulse" class="ping-online absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span id="statusDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                    </span>
-                    <span id="statusText">Canlı Bağlantı</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- İlerleme & Yüzde Barı Kartı -->
-        <div class="bg-slate-800/80 backdrop-blur-md rounded-2xl p-6 border border-slate-700/60 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center text-sm font-semibold">
-                <span class="text-slate-300 flex items-center gap-2">
-                    <i class="fa-solid fa-bars-progress text-indigo-400"></i> Tamamlama Durumu
-                </span>
-                <span id="counterText" class="text-cyan-300 bg-cyan-950/60 px-3 py-1 rounded-full border border-cyan-800/60 font-mono text-xs">
-                    0 / 0 Görev
-                </span>
-            </div>
-
-            <!-- Dinamik Yüzde Barı -->
-            <div class="w-full bg-slate-900/90 h-4 rounded-full overflow-hidden p-0.5 border border-slate-700/60 relative">
-                <div id="progressBar" class="h-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-500 ease-out w-0 shadow-lg shadow-indigo-500/30"></div>
-            </div>
-
-            <div class="flex justify-between items-center text-xs text-slate-400 pt-0.5">
-                <span>Başarı Oranı</span>
-                <span id="percentageText" class="font-bold text-cyan-400 text-sm font-mono">%0 Tamamlandı</span>
-            </div>
-        </div>
-
-        <!-- Görev Ekleme Formu -->
-        <div class="bg-slate-800/80 backdrop-blur-md rounded-2xl p-4 border border-slate-700/60 shadow-2xl">
-            <form id="todoForm" class="flex flex-col sm:flex-row gap-3">
-                <input 
-                    type="text" 
-                    id="todoInput" 
-                    placeholder="Örn: Oyuncu hareket kodlarını test et veya hataları gider..." 
-                    class="flex-1 bg-slate-900/90 border border-slate-700/80 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 outline-none transition-all duration-200 text-sm"
-                    required
-                    autocomplete="off"
-                >
-                <button 
-                    type="submit" 
-                    id="addButton"
-                    class="bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 active:scale-95 text-white font-medium px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-lg shadow-cyan-500/20 text-sm"
-                >
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Ekle</span>
-                </button>
-            </form>
-        </div>
-
-        <!-- Filtreler ve Görev Listesi -->
-        <div class="bg-slate-800/80 backdrop-blur-md rounded-2xl p-6 border border-slate-700/60 shadow-2xl space-y-4">
-            
-            <div class="flex items-center justify-between border-b border-slate-700/60 pb-4 flex-wrap gap-2">
-                <h2 class="text-base font-semibold text-slate-200 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-cyan-400"></i> Görev Listesi
-                </h2>
-                <!-- Filtreleme Butonları -->
-                <div class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-700/60 text-xs font-medium">
-                    <button id="filterAll" onclick="setFilter('all')" class="px-3 py-1.5 rounded-lg transition-all bg-indigo-600 text-white shadow-md">Hepsini Göster</button>
-                    <button id="filterActive" onclick="setFilter('active')" class="px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-200">Yapılacaklar</button>
-                    <button id="filterCompleted" onclick="setFilter('completed')" class="px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-200">Tamamlananlar</button>
-                </div>
-            </div>
-
-            <!-- Yükleniyor Mesajı -->
-            <div id="loadingState" class="text-center py-8 text-cyan-400 space-y-3">
-                <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
-                <p class="text-xs text-slate-400">Canlı veritabanı verileri senkronize ediliyor...</p>
-            </div>
-
-            <!-- Liste Alanı -->
-            <ul id="todoList" class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1 hidden">
-            </ul>
-
-            <!-- Boş Liste Uyarısı -->
-            <div id="emptyState" class="hidden text-center py-10 text-slate-500 space-y-2">
-                <i class="fa-solid fa-folder-open text-4xl text-slate-600"></i>
-                <p class="text-xs sm:text-sm">Henüz eklenmiş bir görev bulunmuyor.</p>
-            </div>
-        </div>
-
+  <div class="container">
+    
+    <!-- Üst Bar & Temalar -->
+    <div class="top-bar">
+      <div class="status-badge">
+        <div class="dot"></div>
+        <span>Canlı Veritabanı Bağlı</span>
+      </div>
+      <div class="theme-selector">
+        <span>Arka Plan:</span>
+        <button class="theme-btn t-dark active" onclick="setTheme('dark')" title="Koyu"></button>
+        <button class="theme-btn t-blue" onclick="setTheme('blue')" title="Mavi"></button>
+        <button class="theme-btn t-voxel" onclick="setTheme('voxel')" title="Voxel / Yeşil"></button>
+        <button class="theme-btn t-night" onclick="setTheme('night')" title="Gece"></button>
+      </div>
     </div>
 
-    <!-- Alt Bilgi -->
-    <footer class="text-center text-xs text-slate-500 py-4">
-        <span>Firebase Realtime DB • Canlı Ortak Liste</span>
-    </footer>
+    <!-- Karşılama / Duyuru Alanı -->
+    <div class="announcement-card">
+      <div class="announcement-text">
+        "Merhaba Ben mecaga Minecraft benzeri olan BlokDiyar oyunu yapıyom fikrin veya düşüncen ve değiştirmesini istediğin varsa tabloya ekleyebilirsin istersen bende bakıp eklemeye çalışırım sırayla"
+      </div>
+      <div class="announcement-votes">
+        <button class="vote-btn" id="mainLikeBtn" onclick="voteMain('like')">
+          <i class="fa-regular fa-thumbs-up"></i>
+          <span id="mainLikeCount">0</span>
+        </button>
+        <button class="vote-btn" id="mainDislikeBtn" onclick="voteMain('dislike')">
+          <i class="fa-regular fa-thumbs-down"></i>
+          <span id="mainDislikeCount">0</span>
+        </button>
+      </div>
+    </div>
 
-    <!-- Firebase Bağlantı ve Uygulama Mantığı -->
-    <script>
-        // 1. Kullanıcının sağladığı Firebase Kurulumu
-        const firebaseConfig = {
-            databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com"
-        };
+    <!-- Öneri Ekleme Formu -->
+    <div class="form-card">
+      <div class="form-title">
+        <i class="fa-solid fa-lightbulb" style="color: #f59e0b;"></i>
+        Yeni Öneri / Fikir Ekle
+      </div>
+      <div class="form-row">
+        <input type="text" id="nicknameInput" class="input-field input-nickname" placeholder="Kısa takma adınız..." maxlength="20">
+        <input type="text" id="contentInput" class="input-field input-content" placeholder="Oyuna ne eklenmesini veya nelerin değişmesini istersin?">
+      </div>
+      <button class="submit-btn" onclick="addSuggestion()">
+        <i class="fa-solid fa-paper-plane"></i>
+        Öneriyi Gönder
+      </button>
+    </div>
 
-        // Firebase'i Başlat
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const todosRef = database.ref('todos');
+    <!-- Liste Başlığı ve Sıralama -->
+    <div class="list-header">
+      <div class="list-title">
+        Topluluk Önerileri (<span id="totalCount">0</span>)
+      </div>
+      <div class="sort-container">
+        <i class="fa-solid fa-sort" style="color: var(--text-muted);"></i>
+        <select id="sortSelect" class="sort-select" onchange="renderSuggestions()">
+          <option value="likes">En Çok Beğenilene Göre</option>
+          <option value="newest">En Yeniye Göre</option>
+          <option value="oldest">En Eskiye Göre</option>
+        </select>
+      </div>
+    </div>
 
-        // Uygulama Durumları
-        let todos = [];
-        let currentFilter = 'all';
+    <!-- Öneri Listesi -->
+    <div id="suggestionsList" class="suggestions-list">
+      <div class="empty-state">
+        <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+        <p style="margin-top: 10px;">Öneriler yükleniyor...</p>
+      </div>
+    </div>
 
-        // DOM Elemanları
-        const todoForm = document.getElementById('todoForm');
-        const todoInput = document.getElementById('todoInput');
-        const todoList = document.getElementById('todoList');
-        const progressBar = document.getElementById('progressBar');
-        const counterText = document.getElementById('counterText');
-        const percentageText = document.getElementById('percentageText');
-        const emptyState = document.getElementById('emptyState');
-        const loadingState = document.getElementById('loadingState');
-        const statusText = document.getElementById('statusText');
-        const statusDot = document.getElementById('statusDot');
-        const statusPulse = document.getElementById('statusPulse');
+  </div>
 
-        // İnternet Bağlantı Durumu Takibi
-        const connectedRef = database.ref('.info/connected');
-        connectedRef.on('value', (snap) => {
-            if (snap.val() === true) {
-                statusText.textContent = "Canlı Bağlantı";
-                statusDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500";
-                statusPulse.className = "ping-online absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
-            } else {
-                statusText.textContent = "Bağlantı Kesildi";
-                statusDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500";
-                statusPulse.className = "hidden";
-            }
-        });
+  <script>
+    // 1. Firebase Başlatma
+    const firebaseConfig = {
+      databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com"
+    };
 
-        // 2. Canlı Veri Dinleme (Real-time DB Listener)
-        todosRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            todos = [];
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
 
-            if (data) {
-                Object.keys(data).forEach((key) => {
-                    todos.push({
-                        id: key,
-                        ...data[key]
-                    });
-                });
-                // En yeni eklenen en üstte
-                todos.sort((a, b) => b.createdAt - a.createdAt);
-            }
+    // Veri Referansları
+    const suggestionsRef = db.ref('suggestions');
+    const mainVotesRef = db.ref('announcement_votes');
 
-            loadingState.classList.add('hidden');
-            todoList.classList.remove('hidden');
-            render();
-        });
+    // Yerel Hafıza Mantığı
+    let suggestionsData = {};
+    let localVotes = JSON.getItem('blokdiyar_votes') ? JSON.parse(JSON.getItem('blokdiyar_votes')) : {};
 
-        // Görev Ekleme
-        todoForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const text = todoInput.value.trim();
-            if (!text) return;
+    // 2. Tema Değiştirici
+    function setTheme(theme) {
+      document.body.className = 'theme-' + theme;
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.theme-btn.t-${theme}`).classList.add('active');
+    }
 
-            const newTodoRef = todosRef.push();
-            newTodoRef.set({
-                text: text,
-                completed: false,
-                createdAt: firebase.database.ServerValue.TIMESTAMP
-            });
+    // 3. Karşılama Duyuru Beğeni Sistemi
+    function voteMain(type) {
+      if (localVotes['main_announcement']) {
+        alert('Bu duyuru için zaten oy kullandınız!');
+        return;
+      }
 
-            todoInput.value = '';
-        });
+      mainVotesRef.child(type).transaction((current) => (current || 0) + 1);
+      localVotes['main_announcement'] = type;
+      localStorage.setItem('blokdiyar_votes', JSON.stringify(localVotes));
+      updateMainVoteUI();
+    }
 
-        // Tamamlandı / Yapılacak Durumunu Değiştirme
-        window.toggleTodo = function(id, currentCompleted) {
-            todosRef.child(id).update({
-                completed: !currentCompleted
-            });
-        };
+    function listenMainVotes() {
+      mainVotesRef.on('value', (snapshot) => {
+        const votes = snapshot.val() || { like: 0, dislike: 0 };
+        document.getElementById('mainLikeCount').textContent = votes.like || 0;
+        document.getElementById('mainDislikeCount').textContent = votes.dislike || 0;
+        updateMainVoteUI();
+      });
+    }
 
-        // Görev Silme
-        window.deleteTodo = function(id) {
-            todosRef.child(id).remove();
-        };
+    function updateMainVoteUI() {
+      const userVote = localVotes['main_announcement'];
+      const likeBtn = document.getElementById('mainLikeBtn');
+      const dislikeBtn = document.getElementById('mainDislikeBtn');
 
-        // Filtre Butonları Mantığı
-        window.setFilter = function(filter) {
-            currentFilter = filter;
-            const btnAll = document.getElementById('filterAll');
-            const btnActive = document.getElementById('filterActive');
-            const btnCompleted = document.getElementById('filterCompleted');
+      likeBtn.classList.remove('active-like');
+      dislikeBtn.classList.remove('active-dislike');
 
-            const activeClass = "px-3 py-1.5 rounded-lg transition-all bg-indigo-600 text-white shadow-md font-medium";
-            const inactiveClass = "px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-200 font-medium";
+      if (userVote === 'like') likeBtn.classList.add('active-like');
+      if (userVote === 'dislike') dislikeBtn.classList.add('active-dislike');
+    }
 
-            btnAll.className = filter === 'all' ? activeClass : inactiveClass;
-            btnActive.className = filter === 'active' ? activeClass : inactiveClass;
-            btnCompleted.className = filter === 'completed' ? activeClass : inactiveClass;
+    // 4. Öneri Ekleme
+    function addSuggestion() {
+      const nicknameInput = document.getElementById('nicknameInput');
+      const contentInput = document.getElementById('contentInput');
 
-            render();
-        };
+      const nickname = nicknameInput.value.trim();
+      const content = contentInput.value.trim();
 
-        // Ekrana Çizme Mantığı (Render)
-        function render() {
-            const total = todos.length;
-            const completedCount = todos.filter(t => t.completed).length;
-            const percentage = total === 0 ? 0 : Math.round((completedCount / total) * 100);
+      if (!nickname) {
+        alert('Lütfen kısa bir takma ad girin!');
+        return;
+      }
+      if (!content) {
+        alert('Lütfen bir öneri metni yazın!');
+        return;
+      }
 
-            // Üst Sayaç ve Progress Bar Güncelleme
-            progressBar.style.width = `${percentage}%`;
-            counterText.textContent = `${completedCount} / ${total} Görev`;
-            percentageText.textContent = `%${percentage} Tamamlandı`;
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
-            // Filtreleme
-            let filteredTodos = todos;
-            if (currentFilter === 'active') {
-                filteredTodos = todos.filter(t => !t.completed);
-            } else if (currentFilter === 'completed') {
-                filteredTodos = todos.filter(t => t.completed);
-            }
+      const newRef = suggestionsRef.push();
+      newRef.set({
+        nickname: nickname,
+        content: content,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        formattedDate: dateStr,
+        likes: 0,
+        dislikes: 0
+      }).then(() => {
+        contentInput.value = '';
+      });
+    }
 
-            todoList.innerHTML = '';
+    // 5. Öneri Beğenme / Beğenmeme
+    function voteSuggestion(id, type) {
+      const voteKey = 'suggestion_' + id;
+      if (localVotes[voteKey]) {
+        alert('Bu öneri için zaten oy kullandınız!');
+        return;
+      }
 
-            if (filteredTodos.length === 0) {
-                emptyState.classList.remove('hidden');
-            } else {
-                emptyState.classList.add('hidden');
+      suggestionsRef.child(id).child(type === 'like' ? 'likes' : 'dislikes').transaction((current) => (current || 0) + 1);
+      localVotes[voteKey] = type;
+      localStorage.setItem('blokdiyar_votes', JSON.stringify(localVotes));
+    }
 
-                filteredTodos.forEach(todo => {
-                    const li = document.createElement('li');
-                    li.className = `group flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
-                        todo.completed 
-                            ? 'bg-slate-900/40 border-slate-800/80 text-slate-500' 
-                            : 'bg-slate-900/90 border-slate-700/70 text-slate-100 hover:border-slate-600'
-                    }`;
+    // 6. Veritabanını Dinleme
+    function listenSuggestions() {
+      suggestionsRef.on('value', (snapshot) => {
+        suggestionsData = snapshot.val() || {};
+        renderSuggestions();
+      });
+    }
 
-                    li.innerHTML = `
-                        <div class="flex items-center gap-3 min-w-0 flex-1 cursor-pointer select-none" onclick="toggleTodo('${todo.id}', ${todo.completed})">
-                            <div class="w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${
-                                todo.completed 
-                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 border-emerald-500 text-white' 
-                                    : 'border-slate-600 group-hover:border-cyan-400 bg-slate-800/50'
-                            }">
-                                ${todo.completed ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
-                            </div>
-                            <span class="truncate text-sm font-medium ${todo.completed ? 'line-through text-slate-500' : ''}">
-                                ${escapeHtml(todo.text)}
-                            </span>
-                        </div>
-                        <button 
-                            onclick="deleteTodo('${todo.id}')" 
-                            class="text-slate-500 hover:text-rose-400 p-2 rounded-lg hover:bg-slate-800 transition-colors opacity-90 sm:opacity-0 group-hover:opacity-100 ml-2"
-                            title="Sil"
-                        >
-                            <i class="fa-regular fa-trash-can text-sm"></i>
-                        </button>
-                    `;
-                    todoList.appendChild(li);
-                });
-            }
+    // 7. Ekrana Basma ve Sıralama
+    function renderSuggestions() {
+      const listEl = document.getElementById('suggestionsList');
+      const sortType = document.getElementById('sortSelect').value;
+
+      const keys = Object.keys(suggestionsData);
+      document.getElementById('totalCount').textContent = keys.length;
+
+      if (keys.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-comments fa-2x" style="margin-bottom: 8px;"></i>
+            <p>Henüz hiç öneri eklenmemiş. İlk öneriyi sen yaz!</p>
+          </div>
+        `;
+        return;
+      }
+
+      const items = keys.map(key => ({
+        id: key,
+        ...suggestionsData[key]
+      }));
+
+      // Sıralama Mantığı
+      items.sort((a, b) => {
+        if (sortType === 'likes') {
+          const scoreA = (a.likes || 0) - (a.dislikes || 0);
+          const scoreB = (b.likes || 0) - (b.dislikes || 0);
+          return scoreB - scoreA;
+        } else if (sortType === 'newest') {
+          return (b.timestamp || 0) - (a.timestamp || 0);
+        } else if (sortType === 'oldest') {
+          return (a.timestamp || 0) - (b.timestamp || 0);
         }
+      });
 
-        // Güvenli Metin Dönüştürme (XSS Önlemi)
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-    </script>
+      listEl.innerHTML = items.map(item => {
+        const userVote = localVotes['suggestion_' + item.id];
+        const likeActiveClass = userVote === 'like' ? 'active-like' : '';
+        const dislikeActiveClass = userVote === 'dislike' ? 'active-dislike' : '';
+
+        return `
+          <div class="suggestion-card">
+            <div class="suggestion-main">
+              <div class="suggestion-header">
+                <span class="nickname-tag">${escapeHtml(item.nickname)}</span>
+                <span class="date-tag"><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
+              </div>
+              <div class="suggestion-content">
+                ${escapeHtml(item.content)}
+              </div>
+            </div>
+            <div class="suggestion-actions">
+              <button class="vote-btn ${likeActiveClass}" onclick="voteSuggestion('${item.id}', 'like')">
+                <i class="fa-regular fa-thumbs-up"></i>
+                <span>${item.likes || 0}</span>
+              </button>
+              <button class="vote-btn ${dislikeActiveClass}" onclick="voteSuggestion('${item.id}', 'dislike')">
+                <i class="fa-regular fa-thumbs-down"></i>
+                <span>${item.dislikes || 0}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Güvenlik için HTML Temizleme
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+    }
+
+    // Başlatıcılar
+    listenMainVotes();
+    listenSuggestions();
+  </script>
 </body>
 </html>
