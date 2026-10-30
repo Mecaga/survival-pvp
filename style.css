@@ -1,6 +1,6 @@
 :root {
   --bg-primary: #0f172a;
-  --bg-card: rgba(30, 41, 59, 0.7);
+  --bg-card: rgba(30, 41, 59, 0.75);
   --bg-card-border: rgba(255, 255, 255, 0.1);
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
@@ -13,7 +13,7 @@
 
 body.theme-dark {
   --bg-primary: #0f172a;
-  --bg-card: rgba(30, 41, 59, 0.7);
+  --bg-card: rgba(30, 41, 59, 0.75);
   --bg-card-border: rgba(255, 255, 255, 0.1);
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
@@ -23,7 +23,7 @@ body.theme-dark {
 
 body.theme-blue {
   --bg-primary: #030712;
-  --bg-card: rgba(17, 24, 39, 0.8);
+  --bg-card: rgba(17, 24, 39, 0.85);
   --bg-card-border: rgba(59, 130, 246, 0.2);
   --text-main: #f3f4f6;
   --text-muted: #9ca3af;
@@ -66,6 +66,36 @@ body {
   display: flex;
   justify-content: center;
   padding: 24px 16px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Arka Plan Hareketli Emojiler */
+.emoji-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.floating-emoji {
+  position: absolute;
+  font-size: 1.5rem;
+  opacity: 0.15;
+  animation: floatUp 15s linear infinite;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(105vh) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-10vh) rotate(360deg);
+  }
 }
 
 .container {
@@ -74,6 +104,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  z-index: 1;
 }
 
 .top-bar {
@@ -296,6 +327,37 @@ body {
 
 .submit-btn:hover {
   background: var(--accent-hover);
+}
+
+/* Durum Sekmeleri Çubuğu */
+.status-tabs-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.status-tab-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.status-tab-btn:hover {
+  color: var(--text-main);
+  border-color: var(--accent);
+}
+
+.status-tab-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
 }
 
 .controls-bar {
