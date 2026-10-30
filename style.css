@@ -70,7 +70,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Arka Plan Hareketli Emojiler */
 .emoji-background {
   position: fixed;
   top: 0;
@@ -90,12 +89,8 @@ body {
 }
 
 @keyframes floatUp {
-  0% {
-    transform: translateY(105vh) rotate(0deg);
-  }
-  100% {
-    transform: translateY(-10vh) rotate(360deg);
-  }
+  0% { transform: translateY(105vh) rotate(0deg); }
+  100% { transform: translateY(-10vh) rotate(360deg); }
 }
 
 .container {
@@ -329,7 +324,6 @@ body {
   background: var(--accent-hover);
 }
 
-/* Durum Sekmeleri Çubuğu */
 .status-tabs-bar {
   display: flex;
   gap: 8px;
@@ -432,6 +426,26 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  position: relative;
+}
+
+/* 👑 Topluluk Favorisi (En Çok Beğenilen) Özel Kart Tasarımı */
+.suggestion-card.top-favorite {
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+}
+
+.favorite-crown {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .suggestion-top-row {
