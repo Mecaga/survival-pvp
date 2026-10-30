@@ -314,7 +314,6 @@
       background: var(--accent-hover);
     }
 
-    /* Arama ve Filtre Alanı */
     .controls-bar {
       display: flex;
       justify-content: space-between;
@@ -425,6 +424,7 @@
       opacity: 0.8;
     }
 
+    /* Durum Rozetleri */
     .status-tag {
       font-size: 0.75rem;
       font-weight: 700;
@@ -439,6 +439,7 @@
     .status-tag.planned { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
     .status-tag.added { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
     .status-tag.rejected { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-tag.failed { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
 
     .admin-status-select {
       background: var(--input-bg);
@@ -483,7 +484,7 @@
       color: white;
     }
 
-    /* Yorumlar Bölümü Stilleri (İstediğin Gibi Güncellendi) */
+    /* Yorumlar Bölümü */
     .comments-section {
       border-top: 1px solid var(--bg-card-border);
       padding-top: 10px;
@@ -717,18 +718,23 @@
       </button>
     </div>
 
-    <!-- Arama Çubuğu ve Sıralama Kontrolleri -->
+    <!-- Arama ve Durum/Sıralama Filtreleri -->
     <div class="controls-bar">
       <div class="search-box">
         <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
         <input type="text" id="searchInput" placeholder="Öneriler içinde ara..." oninput="renderSuggestions()">
       </div>
       <div class="sort-container">
-        <i class="fa-solid fa-sort" style="color: var(--text-muted);"></i>
+        <i class="fa-solid fa-filter" style="color: var(--text-muted);"></i>
         <select id="sortSelect" class="sort-select" onchange="renderSuggestions()">
-          <option value="likes">En Çok Beğenilene Göre</option>
-          <option value="newest">En Yeniye Göre</option>
-          <option value="oldest">En Eskiye Göre</option>
+          <option value="likes">🔥 En Çok Beğenilen</option>
+          <option value="newest">🕒 En Yeni</option>
+          <option value="oldest">⏳ En Eski</option>
+          <option value="filter_pending">⏳ İnceleniyor Olanlar</option>
+          <option value="filter_planned">🚀 Planlanıyor Olanlar</option>
+          <option value="filter_added">✅ Eklendi Olanlar</option>
+          <option value="filter_rejected">❌ Reddedildi Olanlar</option>
+          <option value="filter_failed">⚠️ Yapılamadı Olanlar</option>
         </select>
       </div>
     </div>
@@ -750,6 +756,7 @@
   <script>
     const ADMIN_PASSWORD = "1234";
     let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
+    const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀', '🐱'];
 
     const firebaseConfig = {
       databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com/"
@@ -825,7 +832,7 @@
       container.classList.toggle('open');
     }
 
-    // Yorum Yazma Formunu Aç/Kapat (+)
+    // Yorum Formunu Aç/Kapat (+)
     function toggleCommentForm(id) {
       const formBox = document.getElementById('comment-form-box-' + id);
       formBox.classList.toggle('open');
@@ -848,19 +855,27 @@
         return;
       }
 
+      // İsme göre sabit bir emoji seçimi
+      let emojiIndex = 0;
+      for (let i = 0; i < author.length; i++) {
+        emojiIndex += author.charCodeAt(i);
+      }
+      const assignedEmoji = profileEmojis[emojiIndex % profileEmojis.length];
+
       const now = new Date();
       const timeStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
       const commentRef = suggestionsRef.child(suggestionId).child('comments').push();
       commentRef.set({
         author: author,
+        emoji: assignedEmoji,
         text: text,
         time: timeStr,
         isAdminComment: isAdmin
       }).then(() => {
         textInput.value = '';
         document.getElementById('comment-form-box-' + suggestionId).classList.remove('open');
-        document.getElementById('comments-' + suggestionId).classList.add('open'); // Yorum yazınca direkt göster
+        document.getElementById('comments-' + suggestionId).classList.add('open');
       });
     }
 
@@ -979,6 +994,7 @@
             <option value="planned" ${st === 'planned' ? 'selected' : ''}>🚀 Planlanıyor</option>
             <option value="added" ${st === 'added' ? 'selected' : ''}>✅ Eklendi</option>
             <option value="rejected" ${st === 'rejected' ? 'selected' : ''}>❌ Reddedildi</option>
+            <option value="failed" ${st === 'failed' ? 'selected' : ''}>⚠️ Yapılamadı</option>
           </select>
         `;
       }
@@ -986,11 +1002,12 @@
         case 'planned': return `<span class="status-tag planned"><i class="fa-solid fa-rocket"></i> Planlanıyor</span>`;
         case 'added': return `<span class="status-tag added"><i class="fa-solid fa-circle-check"></i> Eklendi</span>`;
         case 'rejected': return `<span class="status-tag rejected"><i class="fa-solid fa-circle-xmark"></i> Reddedildi</span>`;
+        case 'failed': return `<span class="status-tag failed"><i class="fa-solid fa-triangle-exclamation"></i> Yapılamadı</span>`;
         default: return `<span class="status-tag pending"><i class="fa-solid fa-hourglass-half"></i> İnceleniyor</span>`;
       }
     }
 
-    // Liste Basma & Arama Filtreleme
+    // Listeleme, Arama ve Durum Filtreleme
     function renderSuggestions() {
       const listEl = document.getElementById('suggestionsList');
       const sortType = document.getElementById('sortSelect').value;
@@ -1003,13 +1020,19 @@
         ...suggestionsData[key]
       }));
 
-      // Arama Filtresi Uygula
+      // Arama Filtresi
       if (searchQuery) {
         items = items.filter(item => {
           const contentMatch = (item.content || '').toLowerCase().includes(searchQuery);
           const nicknameMatch = (item.nickname || '').toLowerCase().includes(searchQuery);
           return contentMatch || nicknameMatch;
         });
+      }
+
+      // Durum Filtreleri (Filtre seçeneklerine göre ayıkla)
+      if (sortType.startsWith('filter_')) {
+        const targetStatus = sortType.replace('filter_', '');
+        items = items.filter(item => (item.status || 'pending') === targetStatus);
       }
 
       document.getElementById('totalCount').textContent = items.length;
@@ -1024,6 +1047,7 @@
         return;
       }
 
+      // Sıralama Mantığı
       items.sort((a, b) => {
         if (sortType === 'likes') {
           const scoreA = (a.likes || 0) - (a.dislikes || 0);
@@ -1034,6 +1058,7 @@
         } else if (sortType === 'oldest') {
           return (a.timestamp || 0) - (b.timestamp || 0);
         }
+        return 0;
       });
 
       listEl.innerHTML = items.map(item => {
@@ -1047,7 +1072,7 @@
           </button>
         ` : '';
 
-        // Yorumlar Listeleme
+        // Yorumları Listeleme
         const commentsObj = item.comments || {};
         const commentKeys = Object.keys(commentsObj);
         const commentCount = commentKeys.length;
@@ -1056,10 +1081,11 @@
           const com = commentsObj[cKey];
           const authorClass = com.isAdminComment ? 'comment-author admin-author' : 'comment-author';
           const badgeText = com.isAdminComment ? ' [Geliştirici]' : '';
+          const userEmoji = com.emoji || '👤';
           return `
             <div class="comment-item">
               <div class="comment-header">
-                <span class="${authorClass}">${escapeHtml(com.author)}${badgeText}</span>
+                <span class="${authorClass}">${userEmoji} ${escapeHtml(com.author)}${badgeText}</span>
                 <span>${com.time || ''}</span>
               </div>
               <div>${escapeHtml(com.text)}</div>
@@ -1072,7 +1098,7 @@
             <div class="suggestion-top-row">
               <div class="suggestion-main">
                 <div class="suggestion-header">
-                  <span class="nickname-tag">${escapeHtml(item.nickname)}</span>
+                  <span class="nickname-tag">👤 ${escapeHtml(item.nickname)}</span>
                   ${getStatusBadgeHtml(item.status, item.id)}
                   <span class="date-tag"><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
                 </div>
@@ -1104,7 +1130,7 @@
                 </button>
               </div>
 
-              <!-- Yorum Yazma Alanı (Gizli/Açılır) -->
+              <!-- Yorum Yazma Alanı -->
               <div class="comment-form-box" id="comment-form-box-${item.id}">
                 <div class="comment-form">
                   <input type="text" id="comment-name-${item.id}" class="input-field comment-input-name" placeholder="Takma adın..." maxlength="15">
@@ -1113,7 +1139,7 @@
                 </div>
               </div>
 
-              <!-- Yorumların Listelendiği Alan -->
+              <!-- Yorum Listesi -->
               <div class="comments-container" id="comments-${item.id}">
                 ${commentsHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Henüz yorum yapılmamış.</p>'}
               </div>
