@@ -288,12 +288,16 @@
 
     .input-nickname {
       flex: 1;
-      min-width: 160px;
+      min-width: 140px;
+    }
+
+    .input-category {
+      width: 150px;
     }
 
     .input-content {
       flex: 3;
-      min-width: 240px;
+      min-width: 220px;
     }
 
     .submit-btn {
@@ -405,7 +409,7 @@
     .suggestion-header {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       font-size: 0.85rem;
       color: var(--text-muted);
       flex-wrap: wrap;
@@ -417,6 +421,17 @@
       background: rgba(59, 130, 246, 0.1);
       padding: 2px 8px;
       border-radius: 6px;
+    }
+
+    /* Kategori Etiketi */
+    .category-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
     }
 
     .date-tag {
@@ -641,7 +656,7 @@
       .form-row {
         flex-direction: column;
       }
-      .input-nickname, .input-content {
+      .input-nickname, .input-category, .input-content {
         width: 100%;
       }
       .suggestion-top-row {
@@ -709,8 +724,14 @@
         Yeni Öneri / Fikir Ekle
       </div>
       <div class="form-row">
-        <input type="text" id="nicknameInput" class="input-field input-nickname" placeholder="Kısa takma adınız..." maxlength="20">
-        <input type="text" id="contentInput" class="input-field input-content" placeholder="Takma ad | İstediğin şey veya önerin...">
+        <input type="text" id="nicknameInput" class="input-field input-nickname" placeholder="Takma adın..." maxlength="20">
+        <select id="categoryInput" class="input-field input-category">
+          <option value="Öneri">📌 Öneri</option>
+          <option value="Karakter">👤 Karakter</option>
+          <option value="Görsel">🎨 Görsel</option>
+          <option value="Diğer">📦 Diğer</option>
+        </select>
+        <input type="text" id="contentInput" class="input-field input-content" placeholder="İstediğin şey veya önerin...">
       </div>
       <button class="submit-btn" onclick="addSuggestion()">
         <i class="fa-solid fa-paper-plane"></i>
@@ -718,7 +739,7 @@
       </button>
     </div>
 
-    <!-- Arama ve Durum/Sıralama Filtreleri -->
+    <!-- Arama ve Filtreler -->
     <div class="controls-bar">
       <div class="search-box">
         <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
@@ -730,11 +751,15 @@
           <option value="likes">🔥 En Çok Beğenilen</option>
           <option value="newest">🕒 En Yeni</option>
           <option value="oldest">⏳ En Eski</option>
-          <option value="filter_pending">⏳ İnceleniyor Olanlar</option>
-          <option value="filter_planned">🚀 Planlanıyor Olanlar</option>
-          <option value="filter_added">✅ Eklendi Olanlar</option>
-          <option value="filter_rejected">❌ Reddedildi Olanlar</option>
-          <option value="filter_failed">⚠️ Yapılamadı Olanlar</option>
+          <option value="cat_Öneri">📌 Kategori: Öneri</option>
+          <option value="cat_Karakter">👤 Kategori: Karakter</option>
+          <option value="cat_Görsel">🎨 Kategori: Görsel</option>
+          <option value="cat_Diğer">📦 Kategori: Diğer</option>
+          <option value="filter_pending">⏳ Durum: İnceleniyor</option>
+          <option value="filter_planned">🚀 Durum: Planlanıyor</option>
+          <option value="filter_added">✅ Durum: Eklendi</option>
+          <option value="filter_rejected">❌ Durum: Reddedildi</option>
+          <option value="filter_failed">⚠️ Durum: Yapılamadı</option>
         </select>
       </div>
     </div>
@@ -756,7 +781,7 @@
   <script>
     const ADMIN_PASSWORD = "1234";
     let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
-    const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀', '🐱'];
+    const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀'];
 
     const firebaseConfig = {
       databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com/"
@@ -855,7 +880,6 @@
         return;
       }
 
-      // İsme göre sabit bir emoji seçimi
       let emojiIndex = 0;
       for (let i = 0; i < author.length; i++) {
         emojiIndex += author.charCodeAt(i);
@@ -933,17 +957,19 @@
     // Öneri Ekleme
     function addSuggestion() {
       const nicknameInput = document.getElementById('nicknameInput');
+      const categoryInput = document.getElementById('categoryInput');
       const contentInput = document.getElementById('contentInput');
 
       const nickname = nicknameInput.value.trim();
+      const category = categoryInput.value;
       const content = contentInput.value.trim();
 
       if (!nickname) {
-        alert('Lütfen kısa bir takma ad girin!');
+        alert('Lütfen takma adını gir!');
         return;
       }
       if (!content) {
-        alert('Lütfen öneri içeriğini yazın!');
+        alert('Lütfen öneri içeriğini yaz!');
         return;
       }
 
@@ -953,6 +979,7 @@
       const newRef = suggestionsRef.push();
       newRef.set({
         nickname: nickname,
+        category: category,
         content: content,
         timestamp: firebase.database.ServerValue.TIMESTAMP,
         formattedDate: dateStr,
@@ -1007,7 +1034,7 @@
       }
     }
 
-    // Listeleme, Arama ve Durum Filtreleme
+    // Listeleme ve Filtreleme
     function renderSuggestions() {
       const listEl = document.getElementById('suggestionsList');
       const sortType = document.getElementById('sortSelect').value;
@@ -1029,7 +1056,13 @@
         });
       }
 
-      // Durum Filtreleri (Filtre seçeneklerine göre ayıkla)
+      // Kategori Filtresi (cat_...)
+      if (sortType.startsWith('cat_')) {
+        const targetCat = sortType.replace('cat_', '');
+        items = items.filter(item => (item.category || 'Öneri') === targetCat);
+      }
+
+      // Durum Filtresi (filter_...)
       if (sortType.startsWith('filter_')) {
         const targetStatus = sortType.replace('filter_', '');
         items = items.filter(item => (item.status || 'pending') === targetStatus);
@@ -1072,7 +1105,7 @@
           </button>
         ` : '';
 
-        // Yorumları Listeleme
+        // Yorumlar Listeleme
         const commentsObj = item.comments || {};
         const commentKeys = Object.keys(commentsObj);
         const commentCount = commentKeys.length;
@@ -1093,12 +1126,15 @@
           `;
         }).join('');
 
+        const categoryName = item.category || 'Öneri';
+
         return `
           <div class="suggestion-card">
             <div class="suggestion-top-row">
               <div class="suggestion-main">
                 <div class="suggestion-header">
                   <span class="nickname-tag">👤 ${escapeHtml(item.nickname)}</span>
+                  <span class="category-tag">${escapeHtml(categoryName)}</span>
                   ${getStatusBadgeHtml(item.status, item.id)}
                   <span class="date-tag"><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
                 </div>
