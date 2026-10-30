@@ -29,9 +29,14 @@
     
     <!-- Üst Bar, Temalar & Admin Paneli -->
     <div class="top-bar">
-      <div class="status-badge">
-        <div class="dot" id="statusDot"></div>
-        <span id="statusText">Bağlantı Kuruluyor...</span>
+      <div class="status-badge-group">
+        <div class="status-badge">
+          <div class="dot" id="statusDot"></div>
+          <span id="statusText">Bağlantı Kuruluyor...</span>
+        </div>
+        <a href="#" id="gameLinkBtn" class="game-link-btn" target="_blank">
+          <i class="fa-solid fa-gamepad"></i> Oyuna Git
+        </a>
       </div>
       <div class="top-controls">
         <div class="theme-selector">
@@ -48,8 +53,11 @@
       </div>
     </div>
 
-    <!-- Karşılama / Duyuru Alanı -->
-    <div class="announcement-card">
+    <!-- Karşılama / Duyuru Alanı (Şekilli ve Ortalanmış) -->
+    <div class="announcement-card-centered">
+      <div class="announcement-badge-top">
+        <i class="fa-solid fa-bullhorn"></i> Geliştirici Duyurusu
+      </div>
       <div class="announcement-text">
         "Merhaba Ben mecaga Minecraft benzeri olan BlokDiyar oyunu yapıyom fikrin veya düşüncen ve değiştirmesini istediğin varsa tabloya ekleyebilirsin istersen bende bakıp eklemeye çalışırım sırayla"
       </div>
@@ -65,7 +73,7 @@
       </div>
     </div>
 
-    <!-- Öneri Ekleme Formu -->
+    <!-- Öneri Ekleme Formu (Resim Ekleme Alanı Eklendi) -->
     <div class="form-card">
       <div class="form-title">
         <i class="fa-solid fa-lightbulb" style="color: #f59e0b;"></i>
@@ -81,13 +89,16 @@
         </select>
         <input type="text" id="contentInput" class="input-field input-content" placeholder="İstediğin şey veya önerin...">
       </div>
+      <div class="form-row">
+        <input type="text" id="imageInput" class="input-field input-image" placeholder="Görsel / Resim Linki (İsteğe bağlı - URL)...">
+      </div>
       <button class="submit-btn" onclick="addSuggestion()">
         <i class="fa-solid fa-paper-plane"></i>
         Öneriyi Gönder
       </button>
     </div>
 
-    <!-- Durum Sekmeleri (Paneller Arası Geçiş) -->
+    <!-- Durum Sekmeleri -->
     <div class="status-tabs-bar">
       <button class="status-tab-btn active" onclick="filterByStatus('all', this)">📋 Tümü</button>
       <button class="status-tab-btn" onclick="filterByStatus('pending', this)">⏳ İnceleniyor</button>
