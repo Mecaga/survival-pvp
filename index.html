@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BlokDiyar - Öneriler Panosu</title>
+  <title>BlokDiyar - Öneriler ve Duyuru Panosu</title>
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,16 +27,21 @@
 
   <div class="container">
     
-    <!-- Üst Bar, Temalar & Admin Paneli -->
+    <!-- Üst Bar, Oyuna Git, Duyuru Paneli Açma & Admin -->
     <div class="top-bar">
       <div class="status-badge-group">
         <div class="status-badge">
           <div class="dot" id="statusDot"></div>
           <span id="statusText">Bağlantı Kuruluyor...</span>
         </div>
-        <button onclick="oyunaGit()" class="game-link-btn">
-          <i class="fa-solid fa-gamepad"></i> Oyuna Git
-        </button>
+        <div class="top-buttons-row">
+          <button onclick="oyunaGit()" class="game-link-btn">
+            <i class="fa-solid fa-gamepad"></i> Oyuna Git
+          </button>
+          <button onclick="toggleAnnouncementModal()" class="announcement-open-btn">
+            <i class="fa-solid fa-bullhorn"></i> Geliştirici Duyuruları 📢
+          </button>
+        </div>
       </div>
       <div class="top-controls">
         <div class="theme-selector">
@@ -53,10 +58,10 @@
       </div>
     </div>
 
-    <!-- Şekilli ve Ortalanmış Geliştirici Duyurusu -->
+    <!-- Karşılama / Eski Duyuru Alanı -->
     <div class="announcement-card-centered">
       <div class="announcement-badge-top">
-        <i class="fa-solid fa-bullhorn"></i> Geliştirici Duyurusu
+        <i class="fa-solid fa-bullhorn"></i> Geliştirici Notu
       </div>
       <div class="announcement-text">
         "Merhaba Ben mecaga Minecraft benzeri olan BlokDiyar oyunu yapıyom fikrin veya düşüncen ve değiştirmesini istediğin varsa tabloya ekleyebilirsin istersen bende bakıp eklemeye çalışırım sırayla"
@@ -73,7 +78,7 @@
       </div>
     </div>
 
-    <!-- Öneri Ekleme Formu (Galeriden Resim Seçme Alanı) -->
+    <!-- Öneri Ekleme Formu -->
     <div class="form-card">
       <div class="form-title">
         <i class="fa-solid fa-lightbulb" style="color: #f59e0b;"></i>
@@ -139,6 +144,35 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- DUYURU PANELI MODALI (Pencereresi) -->
+  <div id="announcementModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-bullhorn" style="color: #38bdf8;"></i> Geliştirici Duyuruları ve Güncellemeler</h2>
+        <button onclick="toggleAnnouncementModal()" class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Admin Duyuru Ekleme Formu (Sadece Admin Görür) -->
+      <div id="adminAnnouncementFormBox" class="admin-announcement-box" style="display: none;">
+        <h3>👑 Yeni Duyuru / Paylaşım Yap (Admin)</h3>
+        <input type="text" id="announcementTitleInput" class="input-field" placeholder="Duyuru Başlığı (Örn: v55 Güncellemesi Yayınlandı!)">
+        <textarea id="announcementDescInput" class="input-field" placeholder="Duyuru içeriği, yenilikler..." rows="3"></textarea>
+        <div class="file-input-row">
+          <label for="announcementImageFile" class="file-upload-label">
+            <i class="fa-solid fa-image"></i> <span id="announcementImageName">Duyuruya Resim Ekle (İsteğe bağlı)</span>
+          </label>
+          <input type="file" id="announcementImageFile" accept="image/*" style="display: none;" onchange="handleAnnouncementImageSelect(this)">
+        </div>
+        <button class="submit-btn" onclick="publishAnnouncement()">Duyuruyu Yayınla</button>
+      </div>
+
+      <!-- Duyuruların Listeleneceği Alan -->
+      <div id="announcementsListContainer" class="announcements-list-container">
+        <p style="color: var(--text-muted); text-align: center; padding: 20px;">Duyurular yükleniyor...</p>
+      </div>
+    </div>
   </div>
 
   <!-- Harici JavaScript Dosyası -->
