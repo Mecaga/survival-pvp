@@ -2,14 +2,13 @@ const ADMIN_PASSWORD = "1234";
 let isAdmin = localStorage.getItem('blokdiyar_admin') === 'true';
 const profileEmojis = ['👤', '🐱', '🐤', '⚽', '🤓', '🦊', '🤖', '⭐', '🚀'];
 
-// 🎮 Oyuna Git Butonu Yönlendirme Fonksiyonu
 function oyunaGit() {
   window.location.href = "https://mecaga.github.io/ticarium/?v=54";
 }
 
 let currentStatusFilter = 'all';
-let selectedImageBase64 = ""; // Seçilen öneri resminin verisi
-let commentImagesBase64 = {}; // Yorum resimleri verileri (suggestionId bazlı)
+let selectedImageBase64 = ""; 
+let commentImagesBase64 = {}; 
 
 const firebaseConfig = {
   databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com/"
@@ -29,7 +28,6 @@ let localVotes = JSON.parse(localStorage.getItem('blokdiyar_votes') || '{}');
 window.addEventListener('DOMContentLoaded', () => {
   initFloatingEmojis();
 
-  // Enter Tuşu Desteği (Öneri Formu)
   const contentInput = document.getElementById('contentInput');
   if (contentInput) {
     contentInput.addEventListener('keydown', (e) => {
@@ -41,38 +39,62 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Galeriden Resim Seçme (Base64 Dönüştürücü)
+// Galeriden seçilen resmi otomatik sıkıştırıp Base64 yapan akıllı fonksiyon
+function resizeAndConvertImage(file, callback) {
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      
+      const MAX_WIDTH = 500;
+      const MAX_HEIGHT = 500;
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      callback(compressedDataUrl);
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function handleImageSelect(input) {
   if (input.files && input.files[0]) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    
-    reader.onload = function(e) {
-      selectedImageBase64 = e.target.result;
-      document.getElementById('imageFileName').textContent = "✅ " + file.name + " seçildi";
-    };
-    
-    reader.readAsDataURL(file);
+    resizeAndConvertImage(input.files[0], (base64String) => {
+      selectedImageBase64 = base64String;
+      document.getElementById('imageFileName').textContent = "✅ " + input.files[0].name + " seçildi";
+    });
   }
 }
 
-// Yorum İçin Galeriden Resim Seçme
 function handleCommentImageSelect(input, suggestionId) {
   if (input.files && input.files[0]) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    
-    reader.onload = function(e) {
-      commentImagesBase64[suggestionId] = e.target.result;
+    resizeAndConvertImage(input.files[0], (base64String) => {
+      commentImagesBase64[suggestionId] = base64String;
       const nameSpan = document.getElementById('commentImageName-' + suggestionId);
-      if(nameSpan) nameSpan.textContent = "✅ " + file.name + " seçildi";
-    };
-    
-    reader.readAsDataURL(file);
+      if(nameSpan) nameSpan.textContent = "✅ " + input.files[0].name + " seçildi";
+    });
   }
 }
 
-// Arka Planda Hareket Eden Emojiler
 function initFloatingEmojis() {
   const bgContainer = document.getElementById('emojiBackground');
   if (!bgContainer) return;
@@ -94,7 +116,6 @@ function initFloatingEmojis() {
   }
 }
 
-// Admin Modu
 function toggleAdminMode() {
   if (isAdmin) {
     if (confirm("Admin modundan çıkmak istiyor musunuz?")) {
@@ -133,13 +154,11 @@ function updateAdminUI() {
   }
 }
 
-// Durum Değiştirme
 function changeStatus(id, newStatus) {
   if (!isAdmin) return;
   suggestionsRef.child(id).update({ status: newStatus });
 }
 
-// Öneri Silme
 function deleteSuggestion(id) {
   if (!isAdmin) return;
   if (confirm("Bu öneriyi kalıcı olarak silmek istediğinize emin misiniz?")) {
@@ -147,7 +166,6 @@ function deleteSuggestion(id) {
   }
 }
 
-// Sekme Filtreleme
 function filterByStatus(status, btnElement) {
   currentStatusFilter = status;
   document.querySelectorAll('.status-tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -155,19 +173,16 @@ function filterByStatus(status, btnElement) {
   renderSuggestions();
 }
 
-// Yorumları Aç/Kapat
 function toggleComments(id) {
   const container = document.getElementById('comments-' + id);
   container.classList.toggle('open');
 }
 
-// Yorum Formunu Aç/Kapat (+)
 function toggleCommentForm(id) {
   const formBox = document.getElementById('comment-form-box-' + id);
   formBox.classList.toggle('open');
 }
 
-// Yorum Ekleme
 function addComment(suggestionId) {
   const nameInput = document.getElementById('comment-name-' + suggestionId);
   const textInput = document.getElementById('comment-text-' + suggestionId);
@@ -212,7 +227,6 @@ function addComment(suggestionId) {
   });
 }
 
-// Bağlantı Kontrolü
 db.ref('.info/connected').on('value', (snap) => {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
@@ -225,14 +239,12 @@ db.ref('.info/connected').on('value', (snap) => {
   }
 });
 
-// Tema Değiştirici
 function setTheme(theme) {
   document.body.className = 'theme-' + theme;
   document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelector(`.theme-btn.t-${theme}`).classList.add('active');
 }
 
-// Duyuru Beğeni
 function voteMain(type) {
   const voteKey = 'main_announcement';
   const currentVote = localVotes[voteKey];
@@ -271,7 +283,6 @@ function updateMainVoteUI() {
   if (userVote === 'dislike') dislikeBtn.classList.add('active-dislike');
 }
 
-// Öneri Ekleme
 function addSuggestion() {
   const nicknameInput = document.getElementById('nicknameInput');
   const categoryInput = document.getElementById('categoryInput');
@@ -315,7 +326,6 @@ function addSuggestion() {
   });
 }
 
-// Oy Verme
 function voteSuggestion(id, type) {
   const voteKey = 'suggestion_' + id;
   const currentVote = localVotes[voteKey];
@@ -334,7 +344,6 @@ function voteSuggestion(id, type) {
   localStorage.setItem('blokdiyar_votes', JSON.stringify(localVotes));
 }
 
-// Veritabanı Dinleyici
 suggestionsRef.on('value', (snapshot) => {
   suggestionsData = snapshot.val() || {};
   renderSuggestions();
@@ -362,7 +371,6 @@ function getStatusBadgeHtml(status, id) {
   }
 }
 
-// Listeleme ve Render
 function renderSuggestions() {
   const listEl = document.getElementById('suggestionsList');
   const sortType = document.getElementById('sortSelect').value;
@@ -507,7 +515,7 @@ function renderSuggestions() {
             </button>
           </div>
 
-          <!-- Yorum Yazma Alanı (Galeriden Resim Seçme Destekli) -->
+          <!-- Yorum Yazma Alanı (Galeriden Resim Seçme) -->
           <div class="comment-form-box" id="comment-form-box-${item.id}">
             <div class="comment-form">
               <div class="comment-form-inputs">
