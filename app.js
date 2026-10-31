@@ -9,6 +9,8 @@ function oyunaGit() {
 let currentStatusFilter = 'all';
 let selectedImageBase64 = ""; 
 let commentImagesBase64 = {}; 
+let announcementImageBase64 = ""; // Duyuru resmi
+let announcementCommentImagesBase64 = {}; // Duyuru yorumu resmi
 
 const firebaseConfig = {
   databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com/"
@@ -20,9 +22,11 @@ if (!firebase.apps.length) {
 const db = firebase.database();
 
 const suggestionsRef = db.ref('suggestions');
+const announcementsRef = db.ref('announcements'); // Duyurular veritabanı yolu
 const mainVotesRef = db.ref('announcement_votes');
 
 let suggestionsData = {};
+let announcementsData = {};
 let localVotes = JSON.parse(localStorage.getItem('blokdiyar_votes') || '{}');
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -39,7 +43,21 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Galeriden seçilen resmi otomatik sıkıştırıp Base64 yapan akıllı fonksiyon
+// Duyuru Penceresini Aç/Kapat
+function toggleAnnouncementModal() {
+  const modal = document.getElementById('announcementModal');
+  modal.classList.toggle('open');
+  updateAdminAnnouncementUI();
+}
+
+function updateAdminAnnouncementUI() {
+  const formBox = document.getElementById('adminAnnouncementFormBox');
+  if (formBox) {
+    formBox.style.display = isAdmin ? 'flex' : 'none';
+  }
+}
+
+// Resim Sıkıştırma Fonksiyonu
 function resizeAndConvertImage(file, callback) {
   const reader = new FileReader();
   reader.onload = function(event) {
@@ -95,23 +113,209 @@ function handleCommentImageSelect(input, suggestionId) {
   }
 }
 
+function handleAnnouncementImageSelect(input) {
+  if (input.files && input.files[0]) {
+    resizeAndConvertImage(input.files[0], (base64String) => {
+      announcementImageBase64 = base64String;
+      document.getElementById('announcementImageName').textContent = "✅ " + input.files[0].name + " seçildi";
+    });
+  }
+}
+
+function handleAnnouncementCommentImageSelect(input, annId) {
+  if (input.files && input.files[0]) {
+    resizeAndConvertImage(input.files[0], (base64String) => {
+      announcementCommentImagesBase64[annId] = base64String;
+      const nameSpan = document.getElementById('annCommentImageName-' + annId);
+      if(nameSpan) nameSpan.textContent = "✅ " + input.files[0].name + " seçildi";
+    });
+  }
+}
+
+// Admin Duyuru Yayınlama
+function publishAnnouncement() {
+  if (!isAdmin) return;
+  const titleInput = document.getElementById('announcementTitleInput');
+  const descInput = document.getElementById('announcementDescInput');
+
+  const title = titleInput.value.trim();
+  const desc = descInput.value.trim();
+  const imageUrl = announcementImageBase64;
+
+  if (!title || !desc) {
+    alert('Lütfen başlık ve duyuru içeriğini yazın!');
+    return;
+  }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+  const newRef = announcementsRef.push();
+  newRef.set({
+    title: title,
+    description: desc,
+    imageUrl: imageUrl,
+    timestamp: firebase.database.ServerValue.TIMESTAMP,
+    formattedDate: dateStr
+  }).then(() => {
+    titleInput.value = '';
+    descInput.value = '';
+    announcementImageBase64 = "";
+    document.getElementById('announcementImageName').textContent = "Duyuruya Resim Ekle (İsteğe bağlı)";
+    document.getElementById('announcementImageFile').value = "";
+    alert('Duyuru başarıyla yayınlandı!');
+  });
+}
+
+// Duyuru Yorumu Ekleme
+function addAnnouncementComment(annId) {
+  const nameInput = document.getElementById('ann-comment-name-' + annId);
+  const textInput = document.getElementById('ann-comment-text-' + annId);
+
+  const author = nameInput.value.trim();
+  const text = textInput.value.trim();
+  const imageUrl = announcementCommentImagesBase64[annId] || "";
+
+  if (!author) {
+    alert('Lütfen bir takma ad girin!');
+    return;
+  }
+  if (!text && !imageUrl) {
+    alert('Lütfen bir yorum yazın veya resim seçin!');
+    return;
+  }
+
+  let emojiIndex = 0;
+  for (let i = 0; i < author.length; i++) {
+    emojiIndex += author.charCodeAt(i);
+  }
+  const assignedEmoji = profileEmojis[emojiIndex % profileEmojis.length];
+
+  const now = new Date();
+  const timeStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+  const commentRef = announcementsRef.child(annId).child('comments').push();
+  commentRef.set({
+    author: author,
+    emoji: assignedEmoji,
+    text: text,
+    imageUrl: imageUrl,
+    time: timeStr,
+    isAdminComment: isAdmin
+  }).then(() => {
+    textInput.value = '';
+    announcementCommentImagesBase64[annId] = "";
+    const nameSpan = document.getElementById('annCommentImageName-' + annId);
+    if(nameSpan) nameSpan.textContent = "Resim Ekle";
+  });
+}
+
+// Duyuru Silme (Admin)
+function deleteAnnouncement(annId) {
+  if (!isAdmin) return;
+  if (confirm("Bu duyuruyu silmek istediğinize emin misiniz?")) {
+    announcementsRef.child(annId).remove();
+  }
+}
+
+// Duyuruları Dinle ve Listele
+announcementsRef.on('value', (snapshot) => {
+  announcementsData = snapshot.val() || {};
+  renderAnnouncements();
+});
+
+function renderAnnouncements() {
+  const container = document.getElementById('announcementsListContainer');
+  const keys = Object.keys(announcementsData);
+
+  if (keys.length === 0) {
+    container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">Henüz yayınlanmış bir duyuru bulunmuyor.</p>`;
+    return;
+  }
+
+  let items = keys.map(key => ({
+    id: key,
+    ...announcementsData[key]
+  }));
+
+  items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  container.innerHTML = items.map(item => {
+    const imgHtml = item.imageUrl ? `<img src="${item.imageUrl}" class="announcement-post-img" alt="Duyuru Görseli">` : '';
+    const deleteBtn = isAdmin ? `<button class="delete-btn" onclick="deleteAnnouncement('${item.id}')" style="padding: 4px 8px; font-size:0.75rem;"><i class="fa-solid fa-trash-can"></i> Sil</button>` : '';
+
+    const commentsObj = item.comments || {};
+    const commentKeys = Object.keys(commentsObj);
+
+    const commentsHtml = commentKeys.map(cKey => {
+      const com = commentsObj[cKey];
+      const authorClass = com.isAdminComment ? 'comment-author admin-author' : 'comment-author';
+      const badgeText = com.isAdminComment ? ' [Geliştirici]' : '';
+      const userEmoji = com.emoji || '👤';
+      const commentImg = com.imageUrl ? `<img src="${com.imageUrl}" class="comment-image-preview" alt="Yorum Görseli">` : '';
+
+      return `
+        <div class="comment-item">
+          <div class="comment-header">
+            <span class="${authorClass}">${userEmoji} ${escapeHtml(com.author)}${badgeText}</span>
+            <span>${com.time || ''}</span>
+          </div>
+          <div>${escapeHtml(com.text)}</div>
+          ${commentImg}
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="announcement-post-card">
+        <div class="announcement-post-header">
+          <span><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
+          ${deleteBtn}
+        </div>
+        <div class="announcement-post-title">${escapeHtml(item.title)}</div>
+        <div class="announcement-post-text">${escapeHtml(item.description)}</div>
+        ${imgHtml}
+
+        <!-- Duyuru Yorum Alanı -->
+        <div class="announcement-comments-box">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-top: 4px;">Yorumlar (${commentKeys.length})</div>
+          
+          <div class="comment-form" style="margin-top: 6px;">
+            <div class="comment-form-inputs">
+              <input type="text" id="ann-comment-name-${item.id}" class="input-field comment-input-name" placeholder="Takma adın..." maxlength="15">
+              <input type="text" id="ann-comment-text-${item.id}" class="input-field comment-input-text" placeholder="Yorumunu yaz..." onkeydown="if(event.key==='Enter'){addAnnouncementComment('${item.id}');}">
+            </div>
+            <div class="file-input-row" style="margin-top: 6px;">
+              <label for="annCommentImageFile-${item.id}" class="file-upload-label comment-file-label">
+                <i class="fa-solid fa-image"></i> <span id="annCommentImageName-${item.id}">Resim Ekle</span>
+              </label>
+              <input type="file" id="annCommentImageFile-${item.id}" accept="image/*" style="display: none;" onchange="handleAnnouncementCommentImageSelect(this, '${item.id}')">
+            </div>
+            <button class="comment-send-btn" onclick="addAnnouncementComment('${item.id}')" style="margin-top: 6px;">Yorum Gönder</button>
+          </div>
+
+          <div class="comments-container open" style="margin-top: 8px;">
+            ${commentsHtml || '<p style="font-size:0.8rem; color:var(--text-muted);">Henüz yorum yapılmamış.</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Temel sistem fonksiyonları
 function initFloatingEmojis() {
   const bgContainer = document.getElementById('emojiBackground');
   if (!bgContainer) return;
-
   const emojis = ['🧱', '⛏️', '💎', '⭐', '🚀', '🌲', '🛠️', '💡'];
-  const count = 15;
-
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < 15; i++) {
     const span = document.createElement('span');
     span.className = 'floating-emoji';
     span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    
     span.style.left = Math.random() * 100 + 'vw';
     span.style.animationDuration = (10 + Math.random() * 15) + 's';
     span.style.animationDelay = -(Math.random() * 15) + 's';
     span.style.fontSize = (1.2 + Math.random() * 1.5) + 'rem';
-
     bgContainer.appendChild(span);
   }
 }
@@ -123,6 +327,7 @@ function toggleAdminMode() {
       localStorage.removeItem('blokdiyar_admin');
       updateAdminUI();
       renderSuggestions();
+      updateAdminAnnouncementUI();
     }
   } else {
     const password = prompt("Admin Şifresini Girin:");
@@ -132,6 +337,7 @@ function toggleAdminMode() {
       alert("Admin girişi başarılı!");
       updateAdminUI();
       renderSuggestions();
+      updateAdminAnnouncementUI();
     } else if (password !== null) {
       alert("Hatalı şifre!");
     }
@@ -142,7 +348,6 @@ function updateAdminUI() {
   const btn = document.getElementById('adminToggleBtn');
   const icon = document.getElementById('adminIcon');
   const text = document.getElementById('adminText');
-
   if (isAdmin) {
     btn.classList.add('active');
     icon.className = 'fa-solid fa-unlock-keyhole';
@@ -186,24 +391,15 @@ function toggleCommentForm(id) {
 function addComment(suggestionId) {
   const nameInput = document.getElementById('comment-name-' + suggestionId);
   const textInput = document.getElementById('comment-text-' + suggestionId);
-
   const author = nameInput.value.trim();
   const text = textInput.value.trim();
   const imageUrl = commentImagesBase64[suggestionId] || "";
 
-  if (!author) {
-    alert('Lütfen bir takma ad girin!');
-    return;
-  }
-  if (!text && !imageUrl) {
-    alert('Lütfen bir yorum yazın veya resim seçin!');
-    return;
-  }
+  if (!author) { alert('Lütfen bir takma ad girin!'); return; }
+  if (!text && !imageUrl) { alert('Lütfen bir yorum yazın veya resim seçin!'); return; }
 
   let emojiIndex = 0;
-  for (let i = 0; i < author.length; i++) {
-    emojiIndex += author.charCodeAt(i);
-  }
+  for (let i = 0; i < author.length; i++) { emojiIndex += author.charCodeAt(i); }
   const assignedEmoji = profileEmojis[emojiIndex % profileEmojis.length];
 
   const now = new Date();
@@ -248,7 +444,6 @@ function setTheme(theme) {
 function voteMain(type) {
   const voteKey = 'main_announcement';
   const currentVote = localVotes[voteKey];
-
   if (currentVote === type) {
     mainVotesRef.child(type).transaction((current) => Math.max(0, (current || 0) - 1));
     delete localVotes[voteKey];
@@ -259,7 +454,6 @@ function voteMain(type) {
     mainVotesRef.child(type).transaction((current) => (current || 0) + 1);
     localVotes[voteKey] = type;
   }
-
   localStorage.setItem('blokdiyar_votes', JSON.stringify(localVotes));
   updateMainVoteUI();
 }
@@ -275,10 +469,8 @@ function updateMainVoteUI() {
   const userVote = localVotes['main_announcement'];
   const likeBtn = document.getElementById('mainLikeBtn');
   const dislikeBtn = document.getElementById('mainDislikeBtn');
-
   likeBtn.classList.remove('active-like');
   dislikeBtn.classList.remove('active-dislike');
-
   if (userVote === 'like') likeBtn.classList.add('active-like');
   if (userVote === 'dislike') dislikeBtn.classList.add('active-dislike');
 }
@@ -287,20 +479,13 @@ function addSuggestion() {
   const nicknameInput = document.getElementById('nicknameInput');
   const categoryInput = document.getElementById('categoryInput');
   const contentInput = document.getElementById('contentInput');
-
   const nickname = nicknameInput.value.trim();
   const category = categoryInput.value;
   const content = contentInput.value.trim();
   const imageUrl = selectedImageBase64;
 
-  if (!nickname) {
-    alert('Lütfen takma adını gir!');
-    return;
-  }
-  if (!content && !imageUrl) {
-    alert('Lütfen öneri içeriğini yaz veya bir resim seç!');
-    return;
-  }
+  if (!nickname) { alert('Lütfen takma adını gir!'); return; }
+  if (!content && !imageUrl) { alert('Lütfen öneri içeriğini yaz veya bir resim seç!'); return; }
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -329,7 +514,6 @@ function addSuggestion() {
 function voteSuggestion(id, type) {
   const voteKey = 'suggestion_' + id;
   const currentVote = localVotes[voteKey];
-
   if (currentVote === type) {
     suggestionsRef.child(id).child(type === 'like' ? 'likes' : 'dislikes').transaction((current) => Math.max(0, (current || 0) - 1));
     delete localVotes[voteKey];
@@ -340,7 +524,6 @@ function voteSuggestion(id, type) {
     suggestionsRef.child(id).child(type === 'like' ? 'likes' : 'dislikes').transaction((current) => (current || 0) + 1);
     localVotes[voteKey] = type;
   }
-
   localStorage.setItem('blokdiyar_votes', JSON.stringify(localVotes));
 }
 
@@ -375,60 +558,42 @@ function renderSuggestions() {
   const listEl = document.getElementById('suggestionsList');
   const sortType = document.getElementById('sortSelect').value;
   const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
-
   const keys = Object.keys(suggestionsData);
-  
-  let items = keys.map(key => ({
-    id: key,
-    ...suggestionsData[key]
-  }));
+  let items = keys.map(key => ({ id: key, ...suggestionsData[key] }));
 
   if (currentStatusFilter !== 'all') {
     items = items.filter(item => (item.status || 'pending') === currentStatusFilter);
   }
-
   if (searchQuery) {
     items = items.filter(item => {
-      const contentMatch = (item.content || '').toLowerCase().includes(searchQuery);
-      const nicknameMatch = (item.nickname || '').toLowerCase().includes(searchQuery);
-      return contentMatch || nicknameMatch;
+      return (item.content || '').toLowerCase().includes(searchQuery) || (item.nickname || '').toLowerCase().includes(searchQuery);
     });
   }
 
   document.getElementById('totalCount').textContent = items.length;
 
   if (items.length === 0) {
-    listEl.innerHTML = `
-      <div class="empty-state">
-        <i class="fa-regular fa-comments fa-2x" style="margin-bottom: 8px;"></i>
-        <p>Bu sekmede henüz öneri bulunmuyor.</p>
-      </div>
-    `;
+    listEl.innerHTML = `<div class="empty-state"><i class="fa-regular fa-comments fa-2x" style="margin-bottom: 8px;"></i><p>Bu sekmede henüz öneri bulunmuyor.</p></div>`;
     return;
   }
 
   let highestScore = -9999;
   let topFavoriteId = null;
-
-  if (keys.length > 0) {
-    keys.forEach(key => {
-      const itm = suggestionsData[key];
-      const score = (itm.likes || 0) - (itm.dislikes || 0);
-      if (score > highestScore && score > 0) {
-        highestScore = score;
-        topFavoriteId = key;
-      }
-    });
-  }
+  keys.forEach(key => {
+    const itm = suggestionsData[key];
+    const score = (itm.likes || 0) - (itm.dislikes || 0);
+    if (score > highestScore && score > 0) {
+      highestScore = score;
+      topFavoriteId = key;
+    }
+  });
 
   items.sort((a, b) => {
     if (sortType === 'likes') {
-      const scoreA = (a.likes || 0) - (a.dislikes || 0);
-      const scoreB = (b.likes || 0) - (b.dislikes || 0);
-      return scoreB - scoreA;
+      return ((b.likes || 0) - (b.dislikes || 0)) - ((a.likes || 0) - (a.dislikes || 0));
     } else if (sortType === 'newest') {
       return (b.timestamp || 0) - (a.timestamp || 0);
-    } else if (sortType === 'oldest') {
+    } else {
       return (a.timestamp || 0) - (b.timestamp || 0);
     }
   });
@@ -437,30 +602,20 @@ function renderSuggestions() {
     const userVote = localVotes['suggestion_' + item.id];
     const likeActiveClass = userVote === 'like' ? 'active-like' : '';
     const dislikeActiveClass = userVote === 'dislike' ? 'active-dislike' : '';
-
     const isTopFavorite = (item.id === topFavoriteId);
     const cardClass = isTopFavorite ? 'suggestion-card top-favorite' : 'suggestion-card';
     const crownBadge = isTopFavorite ? `<span class="favorite-crown"><i class="fa-solid fa-crown"></i> Topluluk Favorisi</span>` : '';
-
-    const deleteButtonHtml = isAdmin ? `
-      <button class="delete-btn" onclick="deleteSuggestion('${item.id}')" title="Öneriyi Sil">
-        <i class="fa-solid fa-trash-can"></i>
-      </button>
-    ` : '';
-
+    const deleteButtonHtml = isAdmin ? `<button class="delete-btn" onclick="deleteSuggestion('${item.id}')" title="Öneriyi Sil"><i class="fa-solid fa-trash-can"></i></button>` : '';
     const suggestionImageHtml = item.imageUrl ? `<img src="${item.imageUrl}" class="suggestion-image-preview" alt="Öneri Görseli">` : '';
 
     const commentsObj = item.comments || {};
     const commentKeys = Object.keys(commentsObj);
-    const commentCount = commentKeys.length;
-
     const commentsHtml = commentKeys.map(cKey => {
       const com = commentsObj[cKey];
       const authorClass = com.isAdminComment ? 'comment-author admin-author' : 'comment-author';
       const badgeText = com.isAdminComment ? ' [Geliştirici]' : '';
       const userEmoji = com.emoji || '👤';
       const commentImageHtml = com.imageUrl ? `<img src="${com.imageUrl}" class="comment-image-preview" alt="Yorum Görseli">` : '';
-
       return `
         <div class="comment-item">
           <div class="comment-header">
@@ -473,15 +628,13 @@ function renderSuggestions() {
       `;
     }).join('');
 
-    const categoryName = item.category || 'Öneri';
-
     return `
       <div class="${cardClass}">
         <div class="suggestion-top-row">
           <div class="suggestion-main">
             <div class="suggestion-header">
               <span class="nickname-tag">👤 ${escapeHtml(item.nickname)}</span>
-              <span class="category-tag">${escapeHtml(categoryName)}</span>
+              <span class="category-tag">${escapeHtml(item.category || 'Öneri')}</span>
               ${getStatusBadgeHtml(item.status, item.id)}
               ${crownBadge}
               <span class="date-tag"><i class="fa-regular fa-clock"></i> ${item.formattedDate || ''}</span>
@@ -492,30 +645,18 @@ function renderSuggestions() {
             ${suggestionImageHtml}
           </div>
           <div class="suggestion-actions">
-            <button class="vote-btn ${likeActiveClass}" onclick="voteSuggestion('${item.id}', 'like')" title="Beğen / Geri Al">
-              <i class="fa-regular fa-thumbs-up"></i>
-              <span>${item.likes || 0}</span>
-            </button>
-            <button class="vote-btn ${dislikeActiveClass}" onclick="voteSuggestion('${item.id}', 'dislike')" title="Beğenme / Geri Al">
-              <i class="fa-regular fa-thumbs-down"></i>
-              <span>${item.dislikes || 0}</span>
-            </button>
+            <button class="vote-btn ${likeActiveClass}" onclick="voteSuggestion('${item.id}', 'like')"><i class="fa-regular fa-thumbs-up"></i><span>${item.likes || 0}</span></button>
+            <button class="vote-btn ${dislikeActiveClass}" onclick="voteSuggestion('${item.id}', 'dislike')"><i class="fa-regular fa-thumbs-down"></i><span>${item.dislikes || 0}</span></button>
             ${deleteButtonHtml}
           </div>
         </div>
 
-        <!-- Yorumlar Bölümü -->
         <div class="comments-section">
           <div class="comments-bar-row">
-            <button class="toggle-comments-btn" onclick="toggleComments('${item.id}')">
-              <i class="fa-regular fa-comment-dots"></i> Yorumlar (${commentCount})
-            </button>
-            <button class="add-comment-toggle-btn" onclick="toggleCommentForm('${item.id}')" title="Yorum Yaz (+) ">
-              <i class="fa-solid fa-plus"></i>
-            </button>
+            <button class="toggle-comments-btn" onclick="toggleComments('${item.id}')"><i class="fa-regular fa-comment-dots"></i> Yorumlar (${commentKeys.length})</button>
+            <button class="add-comment-toggle-btn" onclick="toggleCommentForm('${item.id}')" title="Yorum Yaz"><i class="fa-solid fa-plus"></i></button>
           </div>
 
-          <!-- Yorum Yazma Alanı (Galeriden Resim Seçme) -->
           <div class="comment-form-box" id="comment-form-box-${item.id}">
             <div class="comment-form">
               <div class="comment-form-inputs">
@@ -532,7 +673,6 @@ function renderSuggestions() {
             </div>
           </div>
 
-          <!-- Yorum Listesi -->
           <div class="comments-container" id="comments-${item.id}">
             ${commentsHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Henüz yorum yapılmamış.</p>'}
           </div>
@@ -544,11 +684,7 @@ function renderSuggestions() {
 
 function escapeHtml(text) {
   if (!text) return '';
-  return text.replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;")
-             .replace(/'/g, "&#039;");
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 updateAdminUI();
