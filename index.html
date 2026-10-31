@@ -53,7 +53,7 @@
       </div>
     </div>
 
-    <!-- Karşılama / Duyuru Alanı (Şekilli ve Ortalanmış) -->
+    <!-- Karşılama / Duyuru Alanı -->
     <div class="announcement-card-centered">
       <div class="announcement-badge-top">
         <i class="fa-solid fa-bullhorn"></i> Geliştirici Duyurusu
@@ -73,7 +73,7 @@
       </div>
     </div>
 
-    <!-- Öneri Ekleme Formu -->
+    <!-- Öneri Ekleme Formu (Galeriden Resim Seçme Alanı) -->
     <div class="form-card">
       <div class="form-title">
         <i class="fa-solid fa-lightbulb" style="color: #f59e0b;"></i>
@@ -89,8 +89,11 @@
         </select>
         <input type="text" id="contentInput" class="input-field input-content" placeholder="İstediğin şey veya önerin...">
       </div>
-      <div class="form-row">
-        <input type="text" id="imageInput" class="input-field input-image" placeholder="Görsel / Resim Linki (İsteğe bağlı - URL)...">
+      <div class="form-row file-input-row">
+        <label for="imageFileInput" class="file-upload-label">
+          <i class="fa-solid fa-image"></i> <span id="imageFileName">Galeriden Resim Seç (İsteğe bağlı)</span>
+        </label>
+        <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleImageSelect(this)">
       </div>
       <button class="submit-btn" onclick="addSuggestion()">
         <i class="fa-solid fa-paper-plane"></i>
