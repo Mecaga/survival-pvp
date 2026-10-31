@@ -793,3 +793,57 @@ body {
     width: 100%;
   }
 }
+
+
+/* Galeriden Resim Seçme Butonu Stilleri */
+.file-input-row {
+  width: 100%;
+}
+
+.file-upload-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--input-bg);
+  border: 1px dashed var(--bg-card-border);
+  color: var(--text-muted);
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.file-upload-label:hover {
+  border-color: var(--accent);
+  color: var(--text-main);
+}
+
+.comment-file-label {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+/* Öneri ve Yorum İçi Görsel Önizleme Stilleri */
+.suggestion-image-preview {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 10px;
+  margin-top: 8px;
+  border: 1px solid var(--bg-card-border);
+  object-fit: contain;
+  display: block;
+}
+
+.comment-image-preview {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 6px;
+  margin-top: 6px;
+  border: 1px solid var(--bg-card-border);
+  object-fit: contain;
+  display: block;
+}
+
+
+
