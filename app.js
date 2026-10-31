@@ -8,6 +8,8 @@ function oyunaGit() {
 }
 
 let currentStatusFilter = 'all';
+let selectedImageBase64 = ""; // Seçilen öneri resminin verisi
+let commentImagesBase64 = {}; // Yorum resimleri verileri (suggestionId bazlı)
 
 const firebaseConfig = {
   databaseURL: "https://survival-pvp-game-default-rtdb.firebaseio.com/"
@@ -38,6 +40,37 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Galeriden Resim Seçme (Base64 Dönüştürücü)
+function handleImageSelect(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      selectedImageBase64 = e.target.result;
+      document.getElementById('imageFileName').textContent = "✅ " + file.name + " seçildi";
+    };
+    
+    reader.readAsDataURL(file);
+  }
+}
+
+// Yorum İçin Galeriden Resim Seçme
+function handleCommentImageSelect(input, suggestionId) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      commentImagesBase64[suggestionId] = e.target.result;
+      const nameSpan = document.getElementById('commentImageName-' + suggestionId);
+      if(nameSpan) nameSpan.textContent = "✅ " + file.name + " seçildi";
+    };
+    
+    reader.readAsDataURL(file);
+  }
+}
 
 // Arka Planda Hareket Eden Emojiler
 function initFloatingEmojis() {
@@ -134,22 +167,21 @@ function toggleCommentForm(id) {
   formBox.classList.toggle('open');
 }
 
-// Yorum Ekleme (Resim ve Enter Desteği ile)
+// Yorum Ekleme
 function addComment(suggestionId) {
   const nameInput = document.getElementById('comment-name-' + suggestionId);
   const textInput = document.getElementById('comment-text-' + suggestionId);
-  const imageInput = document.getElementById('comment-image-' + suggestionId);
 
   const author = nameInput.value.trim();
   const text = textInput.value.trim();
-  const imageUrl = imageInput ? imageInput.value.trim() : '';
+  const imageUrl = commentImagesBase64[suggestionId] || "";
 
   if (!author) {
     alert('Lütfen bir takma ad girin!');
     return;
   }
   if (!text && !imageUrl) {
-    alert('Lütfen bir yorum veya resim ekleyin!');
+    alert('Lütfen bir yorum yazın veya resim seçin!');
     return;
   }
 
@@ -172,7 +204,9 @@ function addComment(suggestionId) {
     isAdminComment: isAdmin
   }).then(() => {
     textInput.value = '';
-    if(imageInput) imageInput.value = '';
+    commentImagesBase64[suggestionId] = "";
+    const nameSpan = document.getElementById('commentImageName-' + suggestionId);
+    if(nameSpan) nameSpan.textContent = "Galeriden Resim Seç (İsteğe bağlı)";
     document.getElementById('comment-form-box-' + suggestionId).classList.remove('open');
     document.getElementById('comments-' + suggestionId).classList.add('open');
   });
@@ -237,24 +271,23 @@ function updateMainVoteUI() {
   if (userVote === 'dislike') dislikeBtn.classList.add('active-dislike');
 }
 
-// Öneri Ekleme (Resim Desteği ile)
+// Öneri Ekleme
 function addSuggestion() {
   const nicknameInput = document.getElementById('nicknameInput');
   const categoryInput = document.getElementById('categoryInput');
   const contentInput = document.getElementById('contentInput');
-  const imageInput = document.getElementById('imageInput');
 
   const nickname = nicknameInput.value.trim();
   const category = categoryInput.value;
   const content = contentInput.value.trim();
-  const imageUrl = imageInput ? imageInput.value.trim() : '';
+  const imageUrl = selectedImageBase64;
 
   if (!nickname) {
     alert('Lütfen takma adını gir!');
     return;
   }
   if (!content && !imageUrl) {
-    alert('Lütfen öneri içeriğini veya resim linkini yaz!');
+    alert('Lütfen öneri içeriğini yaz veya bir resim seç!');
     return;
   }
 
@@ -274,7 +307,9 @@ function addSuggestion() {
     status: 'pending'
   }).then(() => {
     contentInput.value = '';
-    if(imageInput) imageInput.value = '';
+    selectedImageBase64 = "";
+    document.getElementById('imageFileName').textContent = "Galeriden Resim Seç (İsteğe bağlı)";
+    document.getElementById('imageFileInput').value = "";
   }).catch((error) => {
     alert('Gönderilirken hata oluştu: ' + error.message);
   });
@@ -405,7 +440,7 @@ function renderSuggestions() {
       </button>
     ` : '';
 
-    const suggestionImageHtml = item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" class="suggestion-image-preview" alt="Öneri Görseli">` : '';
+    const suggestionImageHtml = item.imageUrl ? `<img src="${item.imageUrl}" class="suggestion-image-preview" alt="Öneri Görseli">` : '';
 
     const commentsObj = item.comments || {};
     const commentKeys = Object.keys(commentsObj);
@@ -416,7 +451,7 @@ function renderSuggestions() {
       const authorClass = com.isAdminComment ? 'comment-author admin-author' : 'comment-author';
       const badgeText = com.isAdminComment ? ' [Geliştirici]' : '';
       const userEmoji = com.emoji || '👤';
-      const commentImageHtml = com.imageUrl ? `<img src="${escapeHtml(com.imageUrl)}" class="comment-image-preview" alt="Yorum Görseli">` : '';
+      const commentImageHtml = com.imageUrl ? `<img src="${com.imageUrl}" class="comment-image-preview" alt="Yorum Görseli">` : '';
 
       return `
         <div class="comment-item">
@@ -472,14 +507,19 @@ function renderSuggestions() {
             </button>
           </div>
 
-          <!-- Yorum Yazma Alanı (Resim Destekli) -->
+          <!-- Yorum Yazma Alanı (Galeriden Resim Seçme Destekli) -->
           <div class="comment-form-box" id="comment-form-box-${item.id}">
             <div class="comment-form">
               <div class="comment-form-inputs">
                 <input type="text" id="comment-name-${item.id}" class="input-field comment-input-name" placeholder="Takma adın..." maxlength="15">
                 <input type="text" id="comment-text-${item.id}" class="input-field comment-input-text" placeholder="Yorumunu yaz..." onkeydown="if(event.key==='Enter'){addComment('${item.id}');}">
               </div>
-              <input type="text" id="comment-image-${item.id}" class="input-field comment-input-image" placeholder="Resim linki ekle (İsteğe bağlı - URL)...">
+              <div class="file-input-row">
+                <label for="commentImageFile-${item.id}" class="file-upload-label comment-file-label">
+                  <i class="fa-solid fa-image"></i> <span id="commentImageName-${item.id}">Galeriden Resim Seç (İsteğe bağlı)</span>
+                </label>
+                <input type="file" id="commentImageFile-${item.id}" accept="image/*" style="display: none;" onchange="handleCommentImageSelect(this, '${item.id}')">
+              </div>
               <button class="comment-send-btn" onclick="addComment('${item.id}')">Gönder</button>
             </div>
           </div>
